@@ -120,9 +120,7 @@
                     <i class="bi bi-fire" style="color: #ff69b4;"></i> 
                     Trending Now
                 </h3>
-                <a href="" class="view-all-link">
-                    View All <i class="bi bi-arrow-right"></i>
-                </a>
+            
             </div>
             
             <div class="row">
@@ -138,7 +136,7 @@
                             </a>
                         </div>
                         <div class="trending-card__content">
-                            <a href="" class="trending-category">
+                            <a href="{{ route('posts.show', $trending) }}" class="trending-category">
                                 {{ $trending->category->name ?? 'Uncategorized' }}
                             </a>
                             <h5 class="trending-card__title">
