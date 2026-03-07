@@ -25,7 +25,7 @@ class CategoryPostController extends Controller
             ->where('category_id', $category->id)
             ->where('status', 'published')
             ->latest()
-            ->paginate(2);
+            ->paginate(10);
 
         $allCategories = Category::withCount(['posts' => function ($query) {
             $query->where('status', 'published');
@@ -33,7 +33,7 @@ class CategoryPostController extends Controller
 
         $latestPosts = Post::where('status', 'published')
             ->latest()
-            ->take(4)
+            ->take(5)
             ->get();
 
         $trendingPosts = Post::where('status', 'published')

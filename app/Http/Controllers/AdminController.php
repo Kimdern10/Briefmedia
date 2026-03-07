@@ -20,7 +20,7 @@ class AdminController extends Controller
     {
         $users = User::where('role_as', 0)
                     ->latest()
-                    ->paginate(5);
+                    ->paginate(10);
 
         return view('admin.users.users-list', compact('users'));
     }
@@ -55,7 +55,7 @@ class AdminController extends Controller
     public function trashedUsers()
     {
         $users = User::onlyTrashed()
-                    ->paginate(5);
+                    ->paginate(10);
 
         return view('admin.users.trashed', compact('users'));
     }
@@ -81,14 +81,30 @@ class AdminController extends Controller
         // Return all comments
     public function comments()
     {
-        $comments = Comment::with('user')->latest()->get(); 
+       $comments = Comment::with(['user','post'])->latest()->paginate(10);
         return view('admin.comments.index', compact('comments'));
     }
+
+    public function destroy($id)
+{
+    $comment = Comment::findOrFail($id);
+    $comment->delete();
+
+    return back()->with('success', 'Comment deleted successfully');
+}
 
     // Return all subscribers
     public function subscribers()
     {
-        $subscribers = Subscriber::where('is_active', true)->latest()->get();
+        $subscribers = Subscriber::latest()->paginate(10);
         return view('admin.subscribers.index', compact('subscribers'));
     }
+
+    public function destroys($id)
+{
+    $subscriber = Subscriber::findOrFail($id);
+    $subscriber->delete();
+
+    return back()->with('success', 'Subscriber deleted successfully');
+}
 }

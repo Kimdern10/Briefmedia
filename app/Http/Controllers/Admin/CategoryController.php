@@ -11,14 +11,14 @@ class CategoryController extends Controller
     // Show all categories
     public function index()
     {
-        $categories = Category::latest()->paginate(2);
+        $categories = Category::latest()->paginate(10);
         return view('admin.categories.index', compact('categories'));
     }
 
     // Show trashed categories
     public function trash()
     {
-        $categories = Category::onlyTrashed()->latest()->paginate(2);
+        $categories = Category::onlyTrashed()->latest()->paginate(10);
         return view('admin.categories.trash', compact('categories'));
     }
 

@@ -20,7 +20,7 @@ class PostController extends Controller
     {
         $posts = Post::with(['category', 'admin'])
             ->latest()
-            ->paginate(4);
+            ->paginate(10);
 
         return view('admin.posts.index', compact('posts'));
     }

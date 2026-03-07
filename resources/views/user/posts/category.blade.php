@@ -68,8 +68,12 @@
                                             <h4 class="post-card__title">
                                                 <a href="{{ route('posts.show', $post) }}" class="post-card__title-link">{{ $post->title }}</a>
                                             </h4>
-                                            <p class="post-card__exerpt">{{ Str::limit($post->excerpt, 100) }}</p>
-
+                                          <p class="post-card__exerpt">
+    {{ Str::limit($post->excerpt, 120) }}
+    <a href="{{ route('posts.show', $post) }}" class="read-more-inline">
+        Read More →
+    </a>
+</p>
                                             <!-- Post Meta -->
                                             <ul class="post-card__meta list-inline d-flex flex-wrap align-items-center" style="gap: 0.5rem; margin:0; padding:0; list-style:none;">
                                                 <li class="post-card__meta-item">
@@ -393,6 +397,16 @@
     margin-bottom: 5px;
 }
 
+.read-more-inline{
+    margin-left:5px;
+    font-weight:600;
+    color:#ff69b4;
+    text-decoration:none;
+}
+
+.read-more-inline:hover{
+    color:#ff4da6;
+}
 .share-minimal-menu.show {
     display: block;
 }

@@ -170,6 +170,9 @@ Route::post('seo-settings', [SeoController::class, 'update'])->name('admin.seo.u
 
   Route::get('comments', [AdminController::class, 'comments'])->name('admin.comments');
     Route::get('subscribers', [AdminController::class, 'subscribers'])->name('admin.subscribers');
+    Route::delete('/admin/comments/{id}', [AdminController::class, 'destroy'])->name('admin.comments.delete');
+    Route::delete('/admin/subscribers/{id}', [AdminController::class, 'destroys'])
+    ->name('admin.subscribers.delete');
 
 Route::get('/admin/send-newsletter', function () {
     Artisan::call('newsletter:weekly');
