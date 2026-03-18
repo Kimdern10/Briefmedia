@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BerifMedia Newsletter</title>
+<title>BriefMedia Newsletter</title>
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -96,8 +96,8 @@
 
         <!-- Header -->
         <div class="header">
-            <img src="{{ asset('assets/img/logo/ChatGPT_Image.png') }}" alt="BerifMedia Logo">
-            <h1>BerifMedia Newsletter</h1>
+            <img src="{{ asset('assets/img/logo/ChatGPT_Image.png') }}" alt="BriefMedia Logo">
+            <h1>BriefMedia Newsletter</h1>
             <p>Your weekly dose of trending posts & updates</p>
         </div>
 
@@ -138,7 +138,7 @@
             <p>If you wish to unsubscribe from these emails, click 
                 <a href="{{ route('newsletter.unsubscribe', $subscriber->unsubscribe_token) }}">here</a>.
             </p>
-            <p>&copy; {{ date('Y') }} BerifMedia. All rights reserved.</p>
+            <p>&copy; {{ date('Y') }} BriefMedia. All rights reserved.</p>
         </div>
 
     </div>

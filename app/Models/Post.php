@@ -288,7 +288,7 @@ class Post extends Model
             return null;
         }
 
-        $authorName = $this->admin ? $this->admin->name : 'BerifMedia';
+        $authorName = $this->admin ? $this->admin->name : 'BriefMedia';
         $imageUrl = $this->social_image;
 
         $schema = [
@@ -308,7 +308,7 @@ class Post extends Model
             ],
             "publisher" => [
                 "@type" => "Organization",
-                "name" => "BerifMedia",
+                "name" => "BriefMedia",
                 "logo" => [
                     "@type" => "ImageObject",
                     "url" => asset('images/logo.png')

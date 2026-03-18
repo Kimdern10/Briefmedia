@@ -223,7 +223,7 @@
                                                    name="meta_keywords" 
                                                    class="form-control" 
                                                    value="{{ old('meta_keywords') }}"
-                                                   placeholder="blog, news, berifmedia, etc.">
+                                                   placeholder="blog, news, briefMedia, etc.">
                                             @error('meta_keywords')
                                                 <small class="text-danger">{{ $message }}</small>
                                             @enderror
@@ -372,11 +372,11 @@
                                         <h6 class="mt-4 mb-3">Facebook/Open Graph Preview</h6>
                                         <div class="facebook-preview border rounded" style="max-width: 500px;">
                                             <div class="p-3 bg-light border-bottom">
-                                                <strong>BerifMedia</strong> · 1 hr
+                                                <strong>BriefMedia</strong> · 1 hr
                                             </div>
                                             <div id="preview-og-image" class="bg-secondary" style="height: 200px; background-size: cover; background-position: center;"></div>
                                             <div class="p-3">
-                                                <div class="text-muted small" id="preview-og-url">berifmedia.com</div>
+                                                <div class="text-muted small" id="preview-og-url">briefMedia.com</div>
                                                 <div class="font-weight-bold" id="preview-og-title">{{ old('og_title') ?? old('meta_title') ?? old('title') ?? 'Post Title' }}</div>
                                                 <div class="text-muted small" id="preview-og-description">{{ old('og_description') ?? old('meta_description') ?? 'Post description...' }}</div>
                                             </div>

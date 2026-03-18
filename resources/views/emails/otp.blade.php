@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Email Verification - BerifMedia</title>
+<title>Email Verification - BriefMedia</title>
 
 <style>
     body {
@@ -96,7 +96,7 @@
         <!-- HEADER -->
         <div class="header">
             <a href="{{ url('/') }}">
-                <img src="{{ asset('assets/img/logo/ChatGPT_Image.png') }}" alt="BerifMedia Logo">
+                <img src="{{ asset('assets/img/logo/ChatGPT_Image.png') }}" alt="BriefMedia Logo">
             </a>
             <h2>Email Verification</h2>
         </div>
@@ -107,7 +107,7 @@
             <p>Hello 👋,</p>
 
             <p>
-                Welcome to <strong>BerifMedia</strong> — your trusted source for 
+                Welcome to <strong>BriefMedia</strong> — your trusted source for 
                 trending stories, deep insights, and global updates.
             </p>
 
@@ -135,7 +135,7 @@
 
         <!-- FOOTER -->
         <div class="footer">
-            © {{ date('Y') }} BerifMedia. All rights reserved.<br>
+            © {{ date('Y') }} BriefMedia. All rights reserved.<br>
             You’re receiving this email because you signed up on our website.
         </div>
 

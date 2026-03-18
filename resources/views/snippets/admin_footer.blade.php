@@ -4,7 +4,7 @@
 
         <h6 class="mb-2">
             © {{ date('Y') }} 
-            <span>BerifMedia</span>
+            <span>BriefMedia</span>
         </h6>
 
         <ul class="list-inline mb-0 p-0">
@@ -32,7 +32,7 @@
                     c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
             </span>
-            by <strong>BerifMedia Team</strong>.
+            by <strong>BriefMedia Team</strong>.
         </p>
 
     </div>

@@ -25,7 +25,7 @@ class ContactController extends Controller
         ]);
 
         // Send email to admin (adjust email)
-        Mail::to('support@berifmedia.com')->send(new ContactFormMail($request->all()));
+        Mail::to('support@briefMedia.com')->send(new ContactFormMail($request->all()));
 
         return redirect()->back()->with('success', 'Your message has been sent successfully!');
     }

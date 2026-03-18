@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>BerifMedia Password Reset</title>
+<title>BriefMedia Password Reset</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
 <style>
@@ -118,9 +118,9 @@ a {
         <!-- HEADER -->
         <div class="header">
             <a href="{{ url('/') }}">
-                <img src="{{ asset('assets/img/logo/ChatGPT_Image.png') }}" alt="BerifMedia Logo">
+                <img src="{{ asset('assets/img/logo/ChatGPT_Image.png') }}" alt="BriefMedia Logo">
             </a>
-            <div class="brand">BerifMedia</div>
+            <div class="brand">BriefMedia</div>
             <div class="sub">Account Security Team</div>
         </div>
 
@@ -134,7 +134,7 @@ a {
             </p>
 
             <p>
-                We received a request to reset your <strong>BerifMedia</strong> account password.
+                We received a request to reset your <strong>BriefMedia</strong> account password.
                 Please use the secure code below to continue.
             </p>
 
@@ -153,8 +153,8 @@ a {
 
             <p class="small">
                 Need help? Contact us at 
-                <a href="mailto:{{ $supportEmail ?? 'support@berifmedia.com' }}">
-                    {{ $supportEmail ?? 'support@berifmedia.com' }}
+                <a href="mailto:{{ $supportEmail ?? 'support@briefMedia.com' }}">
+                    {{ $supportEmail ?? 'support@briefMedia.com' }}
                 </a>
             </p>
 
@@ -162,7 +162,7 @@ a {
 
         <!-- FOOTER -->
         <div class="footer">
-            © {{ date('Y') }} BerifMedia. All rights reserved.<br>
+            © {{ date('Y') }} BriefMedia. All rights reserved.<br>
             You’re receiving this email because a password reset was requested.
         </div>
 

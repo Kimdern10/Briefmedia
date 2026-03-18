@@ -14,7 +14,7 @@
     <meta property="og:image" content="{{ $postImage }}" />
     <meta property="og:url" content="{{ $postUrl }}" />
     <meta property="og:type" content="article" />
-    <meta property="og:site_name" content="BerifMedia" />
+    <meta property="og:site_name" content="BriefMedia" />
     
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -24,7 +24,7 @@
     
     <!-- Optional: Add more meta tags for better SEO -->
     <meta name="description" content="{{ $postDescription }}" />
-    <meta name="author" content="{{ $post->admin->name ?? 'BerifMedia' }}" />
+    <meta name="author" content="{{ $post->admin->name ?? 'BriefMedia' }}" />
     
     <!-- Article Meta -->
     <meta property="article:published_time" content="{{ $post->created_at->toIso8601String() }}" />
