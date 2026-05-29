@@ -1,0 +1,62 @@
+{
+    "name": "kudashevs/laravel-share-buttons",
+    "description": "A Laravel social media share buttons package.",
+    "keywords": [
+        "laravel",
+        "share",
+        "share buttons",
+        "social links"
+    ],
+    "homepage": "https://github.com/kudashevs/laravel-share-buttons",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Sergey Kudashev",
+            "email": "kudashevs@gmail.com",
+            "homepage": "https://kudashevs.com",
+            "role": "developer"
+        },
+        {
+            "name": "Joren Van Hocht",
+            "email": "joren@codeswitch.be",
+            "homepage": "https://codeswitch.be",
+            "role": "creator"
+        }
+    ],
+    "require": {
+        "php": "^8.1"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.0|^9.0",
+        "phpstan/phpstan": "^1.10",
+        "phpunit/phpunit": "^10.1|^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Kudashevs\\ShareButtons\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Kudashevs\\ShareButtons\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit --no-coverage",
+        "test-coverage": "vendor/bin/phpunit --coverage-html build/coverage",
+        "analyze": "phpstan analyze --no-progress --memory-limit=1024M"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Kudashevs\\ShareButtons\\Providers\\ShareButtonsServiceProvider"
+            ],
+            "aliases": {
+                "ShareButtons": "Kudashevs\\ShareButtons\\Facades\\ShareButtonsFacade"
+            }
+        }
+    }
+}

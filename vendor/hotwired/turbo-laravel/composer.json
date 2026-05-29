@@ -1,0 +1,83 @@
+{
+    "name": "hotwired-laravel/turbo-laravel",
+    "description": "Turbo Laravel gives you a set of conventions to make the most out of the Hotwire stack (inspired by turbo-rails gem).",
+    "keywords": [
+        "hotwired",
+        "hotwire",
+        "turbo",
+        "turbo-laravel"
+    ],
+    "homepage": "https://github.com/hotwired-laravel/turbo-laravel",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Tony Messias",
+            "email": "tonysm@hey.com",
+            "homepage": "https://tonysm.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^10.0|^11.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.10",
+        "orchestra/testbench": "^8.14|^9.0",
+        "orchestra/workbench": "^8.0|^9.0",
+        "phpunit/phpunit": "^10.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "HotwiredLaravel\\TurboLaravel\\": "src"
+        },
+        "files": [
+            "src/helpers.php",
+            "src/globals.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "HotwiredLaravel\\TurboLaravel\\Tests\\": "tests",
+            "Workbench\\App\\": "workbench/app/",
+            "Workbench\\Database\\Factories\\": "workbench/database/factories/",
+            "Workbench\\Database\\Seeders\\": "workbench/database/seeders/"
+        }
+    },
+    "scripts": {
+        "psalm": "vendor/bin/psalm",
+        "test": "vendor/bin/phpunit --colors=always",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage",
+        "post-autoload-dump": [
+            "@clear",
+            "@prepare"
+        ],
+        "clear": "@php vendor/bin/testbench package:purge-skeleton --ansi",
+        "prepare": "@php vendor/bin/testbench package:discover --ansi",
+        "build": "@php vendor/bin/testbench workbench:build --ansi",
+        "serve": [
+            "@build",
+            "Composer\\Config::disableProcessTimeout",
+            "@php vendor/bin/testbench serve"
+        ],
+        "lint": [
+            "@php vendor/bin/pint"
+        ]
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "\\HotwiredLaravel\\TurboLaravel\\TurboServiceProvider"
+            ],
+            "aliases": {
+                "Turbo": "\\HotwiredLaravel\\TurboLaravel\\Facades\\Turbo",
+                "TurboStream": "\\HotwiredLaravel\\TurboLaravel\\Facades\\TurboStream"
+            }
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
