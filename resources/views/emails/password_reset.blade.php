@@ -118,7 +118,7 @@ a {
         <!-- HEADER -->
         <div class="header">
             <a href="{{ url('/') }}">
-       <img src="https://briefmediablog.com/assets/img/logo/ChatGPT_Image.png"
+                   <img src="https://briefmediablog.com/assets/img/logo/ChatGPT_Image.png"
      alt="BriefMedia Logo"
      width="160"
      height="80"
