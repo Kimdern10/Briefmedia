@@ -11,11 +11,17 @@
 <div style="max-width:600px; margin:auto; background:#fff; padding:30px; border-radius:12px;">
 
     <!-- Header -->
-    <img src="https://briefmediablog.com/assets/img/logo/ChatGPT_Image.png"
-     alt="BriefMedia Logo"
-     width="160"
-     height="80"
-     style="display:block; border:0;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+    <tr>
+        <td align="center">
+            <img src="https://briefmediablog.com/assets/img/logo/ChatGPT_Image.png"
+                 alt="BriefMedia Logo"
+                 width="160"
+                 height="80"
+                 style="display:block;border:0;outline:none;text-decoration:none;">
+        </td>
+    </tr>
+</table>
         <h1 style="color:#0b7bcc;">BriefMedia Newsletter</h1>
         <p>Your weekly dose of trending posts</p>
     </div>

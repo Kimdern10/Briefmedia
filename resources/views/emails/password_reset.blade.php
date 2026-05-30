@@ -118,11 +118,17 @@ a {
         <!-- HEADER -->
         <div class="header">
             <a href="{{ url('/') }}">
-                   <img src="https://briefmediablog.com/assets/img/logo/ChatGPT_Image.png"
-     alt="BriefMedia Logo"
-     width="160"
-     height="80"
-     style="display:block; border:0;">
+   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+    <tr>
+        <td align="center">
+            <img src="https://briefmediablog.com/assets/img/logo/ChatGPT_Image.png"
+                 alt="BriefMedia Logo"
+                 width="160"
+                 height="80"
+                 style="display:block;border:0;outline:none;text-decoration:none;">
+        </td>
+    </tr>
+</table>
             </a>
             <div class="brand">BriefMedia</div>
             <div class="sub">Account Security Team</div>
