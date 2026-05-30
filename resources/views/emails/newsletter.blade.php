@@ -11,10 +11,11 @@
 <div style="max-width:600px; margin:auto; background:#fff; padding:30px; border-radius:12px;">
 
     <!-- Header -->
-    <div style="text-align:center; margin-bottom:30px;">
-     <img src="{{ config('app.url') . '/assets/img/logo/ChatGPT_Image.png' }}"
+    <img src="https://briefmediablog.com/assets/img/logo/ChatGPT_Image.png"
      alt="BriefMedia Logo"
-     width="150">
+     width="160"
+     height="80"
+     style="display:block; border:0;">
         <h1 style="color:#0b7bcc;">BriefMedia Newsletter</h1>
         <p>Your weekly dose of trending posts</p>
     </div>
