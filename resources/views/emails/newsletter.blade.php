@@ -12,7 +12,9 @@
 
     <!-- Header -->
     <div style="text-align:center; margin-bottom:30px;">
-        <img src="{{ asset('assets/img/logo/ChatGPT_Image.png') }}" alt="Logo" style="height:60px;">
+     <img src="{{ config('app.url') . '/assets/img/logo/ChatGPT_Image.png' }}"
+     alt="BriefMedia Logo"
+     width="150">
         <h1 style="color:#0b7bcc;">BriefMedia Newsletter</h1>
         <p>Your weekly dose of trending posts</p>
     </div>

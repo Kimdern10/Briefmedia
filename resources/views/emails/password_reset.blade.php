@@ -118,7 +118,9 @@ a {
         <!-- HEADER -->
         <div class="header">
             <a href="{{ url('/') }}">
-                <img src="{{ asset('assets/img/logo/ChatGPT_Image.png') }}" alt="BriefMedia Logo">
+                <<img src="{{ config('app.url') . '/assets/img/logo/ChatGPT_Image.png' }}"
+     alt="BriefMedia Logo"
+     width="150">
             </a>
             <div class="brand">BriefMedia</div>
             <div class="sub">Account Security Team</div>
