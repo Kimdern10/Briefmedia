@@ -11,12 +11,28 @@ class NewsletterController extends Controller
     public function subscribe(Request $request)
     {
         $request->validate([
-            'email' => 'required|email|unique:subscribers,email',
+            'email' => 'required|email',
         ]);
+
+        // prevent duplicates safely
+        $subscriber = Subscriber::where('email', $request->email)->first();
+
+        if ($subscriber) {
+            if ($subscriber->is_active) {
+                return back()->with('success', 'You are already subscribed!');
+            }
+
+            $subscriber->is_active = true;
+            $subscriber->unsubscribe_token = Str::random(32);
+            $subscriber->save();
+
+            return back()->with('success', 'Subscription reactivated!');
+        }
 
         Subscriber::create([
             'email' => $request->email,
             'unsubscribe_token' => Str::random(32),
+            'is_active' => true,
         ]);
 
         return back()->with('success', 'You have successfully subscribed!');

@@ -1,10 +1,14 @@
-<aside class="sidebar sidebar-base" id="first-tour" data-toggle="main-sidebar" data-sidebar="responsive" style="height: 100vh; overflow-y: auto;">
+<aside class="sidebar sidebar-base" id="first-tour"
+    data-toggle="main-sidebar"
+    data-sidebar="responsive"
+    style="height: 100vh; overflow-y: auto; padding-bottom: 120px;">
+
     <div class="sidebar-header d-flex align-items-center justify-content-start position-relative">
         <div class="logo pull-left">
             <a href="/" class="img-responsive">
                 <img src="{{ asset('assets/img/logo/ChatGPT.png') }}"
                      alt="BriefMedia Logo"
-                     style="width: 180px; height: auto;"> <!-- bigger logo -->
+                     style="width: 180px; height: auto;">
             </a>
         </div>
 
@@ -31,6 +35,7 @@
                         <span class="default-icon">Main</span>
                     </a>
                 </li>
+
                 <li class="nav-item mb-1">
                     <a class="nav-link" href="/">
                         <i class="ph-duotone ph-house"></i>
@@ -44,12 +49,14 @@
                         <span class="default-icon">Blog Admin</span>
                     </a>
                 </li>
+
                 <li class="nav-item mb-1">
                     <a class="nav-link" href="{{ route('admin.dashboard') }}">
                         <i class="ph-duotone ph-gauge"></i>
                         <span class="item-name">Dashboard</span>
                     </a>
                 </li>
+
                 <li class="nav-item mb-1">
                     <a class="nav-link" href="{{ route('user.list') }}">
                         <i class="ph-duotone ph-users"></i>
@@ -63,12 +70,14 @@
                         <span class="default-icon">Categories</span>
                     </a>
                 </li>
+
                 <li class="nav-item mb-1">
                     <a class="nav-link" href="{{ route('admin.categories.index') }}">
                         <i class="ph-duotone ph-folders"></i>
                         <span class="item-name">All Categories</span>
                     </a>
                 </li>
+
                 <li class="nav-item mb-1">
                     <a class="nav-link" href="{{ route('admin.categories.create') }}">
                         <i class="ph-duotone ph-plus-circle"></i>
@@ -82,12 +91,14 @@
                         <span class="default-icon">Posts</span>
                     </a>
                 </li>
+
                 <li class="nav-item mb-1">
                     <a class="nav-link" href="{{ route('admin.posts.index') }}">
                         <i class="ph-duotone ph-newspaper"></i>
                         <span class="item-name">All Posts</span>
                     </a>
                 </li>
+
                 <li class="nav-item mb-1">
                     <a class="nav-link" href="{{ route('admin.posts.create') }}">
                         <i class="ph-duotone ph-note-pencil"></i>
@@ -101,6 +112,7 @@
                         <span class="default-icon">Newsletter</span>
                     </a>
                 </li>
+
                 <li class="nav-item mb-1">
                     <a class="nav-link" href="{{ route('admin.subscribers') }}">
                         <i class="ph-duotone ph-envelope-simple"></i>
@@ -114,6 +126,7 @@
                         <span class="default-icon">Comments</span>
                     </a>
                 </li>
+
                 <li class="nav-item mb-1">
                     <a class="nav-link" href="{{ route('admin.comments') }}">
                         <i class="ph-duotone ph-chat-text"></i>
@@ -127,7 +140,8 @@
                         <span class="default-icon">Settings</span>
                     </a>
                 </li>
-                <li class="nav-item mb-1">
+
+                <li class="nav-item mb-1" style="margin-bottom: 80px;">
                     <a class="nav-link" href="{{ route('admin.seo.edit') }}">
                         <i class="ph-duotone ph-gear"></i>
                         <span class="item-name">SEO Settings</span>
@@ -137,4 +151,5 @@
             </ul>
         </div>
     </div>
+
 </aside>

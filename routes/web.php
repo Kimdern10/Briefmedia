@@ -175,7 +175,6 @@ Route::post('seo-settings', [SeoController::class, 'update'])->name('admin.seo.u
     ->name('admin.subscribers.delete');
 
 Route::get('/admin/send-newsletter', function () {
-    Artisan::call('newsletter:weekly');
     return redirect()->back()->with('success', 'Newsletter sent successfully!');
 })->name('admin.send-newsletter');
 });

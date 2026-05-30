@@ -24,6 +24,6 @@ class NewsletterMail extends Mailable
     public function build()
     {
         return $this->subject('🔥 BriefMedia Weekly Newsletter')
-                    ->markdown('emails.newsletter');
+            ->view('emails.newsletter');
     }
 }

@@ -3204,3 +3204,50 @@ ul {
 .dark ::placeholder {
   color: #d9d9d9 !important;
 }
+
+/* ===============================
+   USER DASHBOARD STABILITY FIX
+================================ */
+
+/* Stop horizontal shaking completely */
+html, body {
+  overflow-x: hidden;
+}
+
+/* Fix main wrapper shift */
+.user-dashboard,
+.main-content,
+.content-page {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* Prevent Bootstrap row overflow */
+.row {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Fix container padding causing mobile shake */
+.container,
+.container-fluid {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+/* Remove animation jitter (important) */
+* {
+  transition: none !important;
+}
+
+/* Mobile fix */
+@media (max-width: 768px) {
+  .user-dashboard,
+  .main-content,
+  .content-page {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+}
