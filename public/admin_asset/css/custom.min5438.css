@@ -48,3 +48,22 @@ body {
   max-width: 100%;
   box-sizing: border-box;
 }
+
+html,
+body {
+    overflow-x: hidden;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.card,
+.dashboard-card {
+    max-width: 100%;
+}
