@@ -63,6 +63,14 @@ Route::get('/resend.code/{email}/resend', [ForgotPasswordController::class, 'res
 Auth::routes();
 
 
+Route::get('/sitemap.xml', function () {
+  $xml = file_get_contents(public_path('sitemap.xml'));
+  
+  return response($xml, 200)
+    ->header('Content-Type', 'application/xml');
+
+});
+
 Route::get('/category/{category:slug}', [CategoryPostController::class, 'category'])
     ->name('category.page');
 Route::get('/posts/{post}', [CategoryPostController::class, 'show'])->name('posts.show');
