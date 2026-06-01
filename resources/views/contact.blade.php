@@ -15,10 +15,10 @@
                     <strong>Phone:</strong> +234 7041904305
                 </p>
                 <p class="mb-2">
-                    <strong>Email:</strong> info@briefMedia.com
+                    <strong>Email:</strong> support@briefMediablog.com
                 </p>
                 <p>
-                    <strong>Address:</strong> 123 BriefMedia Street, Lagos, Nigeria
+                    <strong>Address:</strong> 123 BriefMedia Street, Awka, Nigeria
                 </p>
             </div>
         </div>
