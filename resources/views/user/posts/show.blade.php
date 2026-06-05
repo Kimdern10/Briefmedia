@@ -38,7 +38,7 @@
 .post-hero {
     position: relative;
     width: 100%;
-    height: 600px;
+    height: 800px;
     overflow: hidden;
     border-radius: 15px;
 }
@@ -178,7 +178,7 @@
 /* HERO IMAGE */
 .post-hero {
     width: 100%;
-    max-height: 600px;       /* maximum height */
+    max-height: 800px;       /* maximum height */
     overflow: hidden;
     border-radius: 15px;
     position: relative;
@@ -187,22 +187,25 @@
 .post-hero-image {
     width: 100%;
     height: 190%;
+    object-position: center;
     object-fit: cover;       /* ensures it fills area without distortion */
 }
 
 /* SECONDARY / MAIN IMAGE */
 .post-main-image {
-    width: 100%;
-    max-height: 490px;       /* limit height */
+   width: 100%;
+    height: 650px;
     object-fit: cover;
+    object-position: center;
     border-radius: 12px;
 }
 
 /* GALLERY IMAGES */
 .post-gallery-image {
     width: 100%;
-    max-height: 360px;       /* limit height */
+    max-height: 450px;       /* limit height */
     object-fit: cover;
+       object-position: center;
     border-radius: 12px;
 }
 
@@ -234,7 +237,7 @@
 /* Responsive */
 @media (max-width: 768px) {
     .post-hero {
-        height: 350px;
+        height: 400px;
     }
 
     .post-single__excerpt,
@@ -243,11 +246,11 @@
     }
 
     .post-main-image {
-        height: 280px;
+        height: 300px;
     }
 
     .post-gallery-image {
-        height: 200px;
+        height: 220px;
     }
     
     .post-share-minimal {

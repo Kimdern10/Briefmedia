@@ -8,38 +8,54 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+
+     <!-- ================= PAGE SEO OVERRIDE ================= -->
+    @yield('meta_tags')
+
+    @if (!View::hasSection('meta_tags'))
+
+
     <!-- ================= TITLE ================= -->
     <title>{{ $globalSeo->default_title ?? config('app.name') }}</title>
 
-    <!-- ================= BASIC SEO ================= -->
-    <meta name="description" content="{{ $globalSeo->meta_description ?? '' }}">
-    <meta name="keywords" content="{{ $globalSeo->meta_keywords ?? '' }}">
-    <meta name="author" content="{{ $globalSeo->author ?? '' }}">
-    <meta name="robots" content="{{ $globalSeo->robots_meta ?? 'index, follow' }}">
-    <link rel="canonical" href="{{ $globalSeo->canonical_url ?? url()->current() }}">
+ <!-- ================= BASIC SEO ================= -->
+        <meta name="description" content="{{ $globalSeo->meta_description ?? '' }}">
+        <meta name="keywords" content="{{ $globalSeo->meta_keywords ?? '' }}">
+        <meta name="author" content="{{ $globalSeo->author ?? '' }}">
+        <meta name="robots" content="{{ $globalSeo->robots_meta ?? 'index, follow' }}">
+        <link rel="canonical" href="{{ $globalSeo->canonical_url ?? url()->current() }}">
 
-    <!-- ================= OPEN GRAPH ================= -->
-    <meta property="og:title" content="{{ $globalSeo->og_title ?? $globalSeo->default_title ?? config('app.name') }}">
-    <meta property="og:description" content="{{ $globalSeo->og_description ?? $globalSeo->meta_description ?? '' }}">
-    <meta property="og:type" content="{{ $globalSeo->og_type ?? 'website' }}">
-    <meta property="og:url" content="{{ url()->current() }}">
+
+          <!-- ================= OPEN GRAPH ================= -->
+        <meta property="og:title" content="{{ $globalSeo->og_title ?? $globalSeo->default_title ?? config('app.name') }}">
+        <meta property="og:description" content="{{ $globalSeo->og_description ?? $globalSeo->meta_description ?? '' }}">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="{{ url()->current() }}">
+
 
     @if(!empty($globalSeo?->og_image))
-        <meta property="og:image" content="{{ asset('storage/'.$globalSeo->og_image) }}">
-    @endif
+            <meta property="og:image" content="{{ asset('storage/'.$globalSeo->og_image) }}">
+            <meta property="og:image:secure_url" content="{{ asset('storage/'.$globalSeo->og_image) }}">
+        @endif
 
     <!-- ================= TWITTER CARD ================= -->
-    <meta name="twitter:card" content="{{ $globalSeo->twitter_card ?? 'summary' }}">
-    <meta name="twitter:title" content="{{ $globalSeo->twitter_title ?? $globalSeo->default_title ?? config('app.name') }}">
-    <meta name="twitter:description" content="{{ $globalSeo->twitter_description ?? $globalSeo->meta_description ?? '' }}">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="{{ $globalSeo->twitter_title ?? $globalSeo->default_title ?? config('app.name') }}">
+        <meta name="twitter:description" content="{{ $globalSeo->twitter_description ?? $globalSeo->meta_description ?? '' }}">
 
-    @if(!empty($globalSeo?->twitter_image))
-        <meta name="twitter:image" content="{{ asset('storage/'.$globalSeo->twitter_image) }}">
+        @if(!empty($globalSeo?->twitter_image))
+            <meta name="twitter:image" content="{{ asset('storage/'.$globalSeo->twitter_image) }}">
+        @elseif(!empty($globalSeo?->og_image))
+            <meta name="twitter:image" content="{{ asset('storage/'.$globalSeo->og_image) }}">
+        @endif
+
+        <meta name="twitter:site" content="{{ $globalSeo->twitter_site ?? '' }}">
+
     @endif
 
-    <meta name="twitter:site" content="{{ $globalSeo->twitter_site ?? '' }}">
+    <!-- <meta name="twitter:site" content="{{ $globalSeo->twitter_site ?? '' }}"> -->
 
-    <!-- ================= FAVICON ================= -->
+     <!-- ================= FAVICON ================= -->
     @if(!empty($globalSeo?->favicon))
         <link rel="icon" type="image/png" href="{{ asset('storage/'.$globalSeo->favicon) }}">
     @endif
@@ -49,7 +65,7 @@
         <meta name="google-site-verification" content="{{ $globalSeo->google_verification }}">
     @endif
 
-    <!-- ================= GOOGLE ANALYTICS ================= -->
+ <!-- ================= GOOGLE ANALYTICS ================= -->
     @if(!empty($globalSeo?->google_analytics_id))
         <script async src="https://www.googletagmanager.com/gtag/js?id={{ $globalSeo->google_analytics_id }}"></script>
         <script>

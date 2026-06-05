@@ -12,7 +12,7 @@
         <div class="swiper-wrapper">
             @foreach ($sliderPosts as $post)
             <div class="swiper-slide slider__item"
-                  style="background-image: url('{{ asset('storage/' . ($post->featured_image_1 ?? 'default.jpg')) }}'); height: 800px;">
+                  style="background-image: url('{{ asset('storage/' . ($post->featured_image_1 ?? 'default.jpg')) }}'); height: 900px;">
                 
                 <div class="container-fluid">
                     <div class="row">
@@ -430,12 +430,12 @@
 .trending-card__image {
     position: relative;
     overflow: hidden;
-    height: 200px;
+    height: 280px;
 }
 
 .trending-card__img {
     width: 100%;
-    height: 140%;
+    height: 100%;
     object-fit: cover;
     transition: transform 0.5s ease;
 }
@@ -687,14 +687,14 @@
 
 .post-card__image {
     width: 100%;
-    height: 270px; /* Fixed height for all images */
+    height: 350px; /* Fixed height for all images */
     overflow: hidden;
     position: relative;
 }
 
 .post-card__image img {
     width: 100%;
-    height: 140%;
+    height: 100%;
     object-fit: cover; /* This ensures the image covers the area without distortion */
     object-position: center; /* Centers the image within the container */
     transition: transform 0.3s ease; /* Optional: smooth hover effect */
@@ -779,6 +779,18 @@
     .trending-card__image {
         height: 160px;
     }
+
+    @media (max-width: 768px) {
+    .post-card__image {
+        height: 250px;
+    }
+}
+
+@media (max-width: 480px) {
+    .post-card__image {
+        height: 220px;
+    }
+}
     
     .share-minimal-menu {
         position: fixed;
