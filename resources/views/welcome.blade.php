@@ -172,6 +172,18 @@
 @endif
     <!-- ================= END TRENDING NEWS ================= -->
 
+<!-- Inside your post content -->
+<div class="my-4">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-6884205395656406"
+         data-ad-slot="YOUR_AD_SLOT_ID"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+</div>
 
     <!-- ================= CATEGORY SECTIONS ================= -->
  @foreach ($categoriesWithPosts as $category)

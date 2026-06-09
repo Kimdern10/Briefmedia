@@ -8,7 +8,9 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6884205395656406"
+     crossorigin="anonymous"></script>
+     
      <!-- ================= PAGE SEO OVERRIDE ================= -->
     @yield('meta_tags')
 
