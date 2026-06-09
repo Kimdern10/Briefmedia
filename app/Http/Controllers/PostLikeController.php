@@ -32,11 +32,18 @@ class PostLikeController extends Controller
 
     // Show post and increment views
     public function show(Post $post)
-    {
-        // Increment views
+{
+    $cookieName = 'post_view_' . $post->id;
+
+    // check cookie first
+    if (!request()->cookie($cookieName)) {
+
         $post->increment('views');
 
-         // RELATED POSTS (same category, exclude current post)
+        // store cookie for 24 hours (you can change duration)
+        cookie()->queue(cookie($cookieName, true, 60 * 24));
+    }
+
     $relatedPosts = Post::where('status', 'published')
         ->where('category_id', $post->category_id)
         ->where('id', '!=', $post->id)
@@ -44,11 +51,8 @@ class PostLikeController extends Controller
         ->take(4)
         ->get();
 
-    return view('user.posts.show', compact(
-        'post',
-        'relatedPosts'
-    ));
-    }
+    return view('user.posts.show', compact('post', 'relatedPosts'));
+}
 
     // Like a post
     public function toggleLike(Post $post)

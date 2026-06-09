@@ -38,15 +38,19 @@
 .post-hero {
     position: relative;
     width: 100%;
-    height: 800px;
+    height: 600px;
     overflow: hidden;
     border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content:center
 }
 
 .post-hero-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center;
 }
 
 /* ===== Excerpt Styling ===== */
@@ -80,13 +84,16 @@
     height: 450px;
     object-fit: cover;
     border-radius: 12px;
+    /* object-fit: cover;
+    object-position: center; */
 }
 
 .post-gallery-image {
     width: 100%;
-    height: 300px;
+    height: 350px;
     object-fit: cover;
     border-radius: 12px;
+    object-position: center;
 }
 
 /* ===== MINIMAL SHARE STYLES - LIKE ALPHATIMES.NG ===== */
@@ -186,7 +193,7 @@
 
 .post-hero-image {
     width: 100%;
-    height: 190%;
+    height: 130%;
     object-position: center;
     object-fit: cover;       /* ensures it fills area without distortion */
 }
@@ -212,32 +219,32 @@
 /* RESPONSIVE ADJUSTMENTS */
 @media (max-width: 992px) {
     .post-hero {
-        max-height: 400px;
+        max-height: 460px;
     }
     .post-main-image {
-        max-height: 300px;
+        max-height: 350px;
     }
     .post-gallery-image {
-        max-height: 200px;
+        max-height: 240px;
     }
 }
 
 @media (max-width: 576px) {
     .post-hero {
-        max-height: 300px;
+        max-height: 550px;
     }
     .post-main-image {
-        max-height: 200px;
+        max-height: 270px;
     }
     .post-gallery-image {
-        max-height: 150px;
+        max-height: 190px;
     }
 }
 
 /* Responsive */
 @media (max-width: 768px) {
     .post-hero {
-        height: 400px;
+        height: 470px;
     }
 
     .post-single__excerpt,
@@ -246,11 +253,11 @@
     }
 
     .post-main-image {
-        height: 300px;
+        height: 370px;
     }
 
     .post-gallery-image {
-        height: 220px;
+        height: 270px;
     }
     
     .post-share-minimal {

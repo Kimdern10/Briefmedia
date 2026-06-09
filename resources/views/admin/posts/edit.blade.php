@@ -499,60 +499,105 @@
 {{-- CKEditor --}}
 @push('scripts')
 <script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
+
 <script>
-    CKEDITOR.replace('editor');
-    
-    // Character counters
-    document.getElementById('meta_title')?.addEventListener('keyup', function() {
-        document.getElementById('meta_title_count').textContent = this.value.length;
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ======================
+    // CKEDITOR FIX (IMPORTANT)
+    // ======================
+    const editor = CKEDITOR.replace('editor');
+
+    // 🔥 FIX: ensure content is sent to backend
+    document.querySelector('form').addEventListener('submit', function () {
+        for (instance in CKEDITOR.instances) {
+            CKEDITOR.instances[instance].updateElement();
+        }
     });
 
-    document.getElementById('meta_description')?.addEventListener('keyup', function() {
-        document.getElementById('meta_description_count').textContent = this.value.length;
-    });
-
-    // Toggle auto SEO
-    document.getElementById('enableAutoSeo')?.addEventListener('change', function() {
-        const autoMode = this.checked;
-        document.getElementById('autoSeoNotice').style.display = autoMode ? 'block' : 'none';
-        document.getElementById('manualSeoNotice').style.display = autoMode ? 'none' : 'block';
-        
-        // Update placeholders
-        const inputs = document.querySelectorAll('[name="meta_title"], [name="meta_description"], [name="meta_keywords"]');
-        inputs.forEach(input => {
-            input.placeholder = autoMode ? 'Leave empty to auto-generate' : '';
-        });
-    });
-
-    // Live preview updates
-    function updatePreview() {
-        const title = document.querySelector('[name="meta_title"]')?.value || document.querySelector('[name="title"]')?.value || '{{ $post->title }}';
-        const description = document.querySelector('[name="meta_description"]')?.value || '{{ $post->meta_description ?? 'Post description...' }}';
-        
-        const previewTitle = document.getElementById('preview-title');
-        const previewDesc = document.getElementById('preview-description');
-        
-        if (previewTitle) previewTitle.textContent = title;
-        if (previewDesc) previewDesc.textContent = description;
-        
-        // OG preview
-        const ogTitle = document.querySelector('[name="og_title"]')?.value || title;
-        const ogDesc = document.querySelector('[name="og_description"]')?.value || description;
-        
-        const previewOgTitle = document.getElementById('preview-og-title');
-        const previewOgDesc = document.getElementById('preview-og-description');
-        
-        if (previewOgTitle) previewOgTitle.textContent = ogTitle;
-        if (previewOgDesc) previewOgDesc.textContent = ogDesc;
+    // ======================
+    // SAFE VALUE GETTERS
+    // ======================
+    function safe(val) {
+        return val || '';
     }
 
-    // Listen for changes
-    document.querySelectorAll('[name="meta_title"], [name="meta_description"], [name="title"], [name="og_title"], [name="og_description"]')
-        .forEach(input => {
-            if (input) {
-                input.addEventListener('keyup', updatePreview);
-            }
+    // ======================
+    // COUNTERS
+    // ======================
+    const metaTitle = document.getElementById('meta_title');
+    const metaDesc = document.getElementById('meta_description');
+
+    function updateCounters() {
+        if (metaTitle) {
+            document.getElementById('meta_title_count').textContent = metaTitle.value.length;
+        }
+        if (metaDesc) {
+            document.getElementById('meta_description_count').textContent = metaDesc.value.length;
+        }
+    }
+
+    if (metaTitle) metaTitle.addEventListener('keyup', updateCounters);
+    if (metaDesc) metaDesc.addEventListener('keyup', updateCounters);
+
+    updateCounters();
+
+    // ======================
+    // AUTO SEO TOGGLE
+    // ======================
+    const toggle = document.getElementById('enableAutoSeo');
+
+    if (toggle) {
+        toggle.addEventListener('change', function () {
+            const auto = this.checked;
+
+            document.getElementById('autoSeoNotice').style.display = auto ? 'block' : 'none';
+            document.getElementById('manualSeoNotice').style.display = auto ? 'none' : 'block';
         });
+    }
+
+    // ======================
+    // LIVE PREVIEW (FIXED)
+    // ======================
+    function updatePreview() {
+
+        const title =
+            document.querySelector('[name="meta_title"]')?.value ||
+            document.querySelector('[name="title"]')?.value ||
+            '{{ $post->title }}';
+
+        const description =
+            document.querySelector('[name="meta_description"]')?.value ||
+            '{{ $post->meta_description ?? '' }}';
+
+        const previewTitle = document.getElementById('preview-title');
+        const previewDesc = document.getElementById('preview-description');
+
+        if (previewTitle) previewTitle.textContent = title;
+        if (previewDesc) previewDesc.textContent = description;
+
+        const ogTitle =
+            document.querySelector('[name="og_title"]')?.value || title;
+
+        const ogDesc =
+            document.querySelector('[name="og_description"]')?.value || description;
+
+        const ogTitleEl = document.getElementById('preview-og-title');
+        const ogDescEl = document.getElementById('preview-og-description');
+
+        if (ogTitleEl) ogTitleEl.textContent = ogTitle;
+        if (ogDescEl) ogDescEl.textContent = ogDesc;
+    }
+
+    document.querySelectorAll(
+        '[name="meta_title"], [name="meta_description"], [name="title"], [name="og_title"], [name="og_description"]'
+    ).forEach(el => {
+        el.addEventListener('keyup', updatePreview);
+    });
+
+    updatePreview();
+
+});
 </script>
 @endpush
 
