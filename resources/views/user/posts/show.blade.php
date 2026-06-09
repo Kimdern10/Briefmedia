@@ -231,20 +231,29 @@
 
 @media (max-width: 576px) {
     .post-hero {
-        max-height: 550px;
+        max-height: 100px;
+        height: auto;
+        min-height: 400px;
+        width: 100%;
     }
-    .post-main-image {
-        max-height: 270px;
+
+    .post-hero-image{
+        object-fit: cover;
+        object-position: center;
     }
-    .post-gallery-image {
-        max-height: 190px;
+    .post-main-image, .post-gallery-image {
+        display: block;
+        margin:0 auto;
+        max-width: 100%;
     }
-}
+
+     }
+
 
 /* Responsive */
 @media (max-width: 768px) {
     .post-hero {
-        height: 470px;
+        height: 560px;
     }
 
     .post-single__excerpt,
