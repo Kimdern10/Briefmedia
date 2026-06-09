@@ -430,7 +430,7 @@
 .trending-card__image {
     position: relative;
     overflow: hidden;
-    height: 280px;
+    height: 300px;
 }
 
 .trending-card__img {
@@ -687,7 +687,7 @@
 
 .post-card__image {
     width: 100%;
-    height: 350px; /* Fixed height for all images */
+    height: 380px; /* Fixed height for all images */
     overflow: hidden;
     position: relative;
 }
@@ -777,18 +777,18 @@
     }
     
     .trending-card__image {
-        height: 160px;
+        height: 220px;
     }
 
     @media (max-width: 768px) {
     .post-card__image {
-        height: 250px;
+        height: 280px;
     }
 }
 
 @media (max-width: 480px) {
     .post-card__image {
-        height: 220px;
+        height: 280px;
     }
 }
     

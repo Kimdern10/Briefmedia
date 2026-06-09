@@ -465,7 +465,7 @@
 
 .post-card__image {
     width: 100%;
-    height: 270px; /* Fixed height for all images */
+    height: 300px; /* Fixed height for all images */
     overflow: hidden;
     position: relative;
 }
@@ -529,6 +529,19 @@
             transform: translateY(0);
         }
     }
+
+      @media (max-width: 768px) {
+    .post-card__image {
+        height: 280px;
+    }
+}
+
+@media (max-width: 480px) {
+    .post-card__image {
+        height: 280px;
+    }
+}
+    
 }
 </style>
 

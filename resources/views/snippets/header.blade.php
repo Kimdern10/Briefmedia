@@ -158,6 +158,22 @@
 
 <!-- No additional styles that could affect the icon -->
 
+
+
+            </div>
+            
+            <!--navbar-toggler-->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" 
+                    data-bs-target="#navbarSupportedContent" 
+                    aria-controls="navbarSupportedContent" 
+                    aria-expanded="false" 
+                    aria-label="Toggle navigation">
+                <span class="navbar-toggler__icon"></span>
+            </button>
+        </div>
+    </div>
+</header>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const searchToggle = document.getElementById('searchToggle');
@@ -202,20 +218,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-            </div>
-            
-            <!--navbar-toggler-->
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" 
-                    data-bs-target="#navbarSupportedContent" 
-                    aria-controls="navbarSupportedContent" 
-                    aria-expanded="false" 
-                    aria-label="Toggle navigation">
-                <span class="navbar-toggler__icon"></span>
-            </button>
-        </div>
-    </div>
-</header>
-
 <!-- Profile Image Styles -->
 <style>
 .profile-link {
@@ -251,5 +253,19 @@ document.addEventListener('DOMContentLoaded', function() {
     color: #007bff;
 }
 
+/* FORCE search icon visibility on mobile */
+@media (max-width: 991px) {
+    .search-icon {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    .search-wrapper {
+        display: flex !important;
+    }
+}
 
 </style>

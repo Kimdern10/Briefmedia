@@ -31,17 +31,29 @@ class PostLikeController extends Controller
     }
 
     // Show post and increment views
-    public function show(Post $post)
+ public function show(Post $post)
 {
-    $cookieName = 'post_view_' . $post->id;
+    $user = auth()->user();
+    $ip = request()->ip();
 
-    // check cookie first
-    if (!request()->cookie($cookieName)) {
+    $alreadyViewed = \App\Models\PostUserView::where('post_id', $post->id)
+        ->where(function ($q) use ($user, $ip) {
+            if ($user) {
+                $q->where('user_id', $user->id);
+            } else {
+                $q->where('ip_address', $ip);
+            }
+        })
+        ->exists();
+
+    if (!$alreadyViewed) {
+        \App\Models\PostUserView::create([
+            'post_id' => $post->id,
+            'user_id' => $user ? $user->id : null,
+            'ip_address' => $ip,
+        ]);
 
         $post->increment('views');
-
-        // store cookie for 24 hours (you can change duration)
-        cookie()->queue(cookie($cookieName, true, 60 * 24));
     }
 
     $relatedPosts = Post::where('status', 'published')
@@ -53,7 +65,6 @@ class PostLikeController extends Controller
 
     return view('user.posts.show', compact('post', 'relatedPosts'));
 }
-
     // Like a post
     public function toggleLike(Post $post)
     {

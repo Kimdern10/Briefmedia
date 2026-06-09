@@ -83,5 +83,17 @@
 .post-card__image:hover img {
     transform: scale(1.05);
 }
+
+   @media (max-width: 768px) {
+    .post-card__image {
+        height: 290px;
+    }
+}
+
+@media (max-width: 480px) {
+    .post-card__image {
+        height: 300px;
+    }
+}
 </style>
 @endsection
