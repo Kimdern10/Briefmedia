@@ -173,7 +173,7 @@
     <!-- ================= END TRENDING NEWS ================= -->
 
 <!-- Inside your post content -->
-<div class="my-4">
+<!-- <div class="my-4">
     <ins class="adsbygoogle"
          style="display:block"
          data-ad-client="ca-pub-6884205395656406"
@@ -183,7 +183,7 @@
     <script>
          (adsbygoogle = window.adsbygoogle || []).push({});
     </script>
-</div>
+</div> -->
 
     <!-- ================= CATEGORY SECTIONS ================= -->
  @foreach ($categoriesWithPosts as $category)

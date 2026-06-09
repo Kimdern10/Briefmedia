@@ -53,17 +53,15 @@
                         </div>
 
                         {{-- Content --}}
-<div class="mb-3">
-    <label class="form-label">Full Content</label>
+                        <div class="mb-3">
+                            <label class="form-label">Full Content</label>
+                            <textarea name="content" id="editor" class="form-control @error('content') is-invalid @enderror" 
+                                      rows="6" required>{{ old('content') }}</textarea>
+                            @error('content')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
 
-    <textarea name="content" id="editor" class="form-control @error('content') is-invalid @enderror" rows="6" required>
-        {{ old('content') }}
-    </textarea>
-
-    @error('content')
-        <small class="text-danger">{{ $message }}</small>
-    @enderror
-</div>
                         {{-- Featured Images --}}
                         <div class="row">
                             <div class="col-md-6">
@@ -403,112 +401,82 @@
 
 {{-- CKEditor --}}
 @push('scripts')
-@push('scripts')
 <script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
-
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+    CKEDITOR.replace('editor');
+    
+    // Character counters
+    document.getElementById('meta_title')?.addEventListener('keyup', function() {
+        document.getElementById('meta_title_count').textContent = this.value.length;
+    });
 
-    // =========================
-    // CKEDITOR INIT (FIXED)
-    // =========================
-    if (document.getElementById('editor')) {
-        CKEDITOR.replace('editor', {
-            height: 400
-        });
-    }
+    document.getElementById('meta_description')?.addEventListener('keyup', function() {
+        document.getElementById('meta_description_count').textContent = this.value.length;
+    });
 
-    // =========================
-    // SEO COUNTERS
-    // =========================
-    const metaTitle = document.getElementById('meta_title');
-    const metaDesc = document.getElementById('meta_description');
-
-    function updateCounters() {
+    // Initialize counters
+    document.addEventListener('DOMContentLoaded', function() {
+        const metaTitle = document.getElementById('meta_title');
+        const metaDesc = document.getElementById('meta_description');
+        
         if (metaTitle) {
             document.getElementById('meta_title_count').textContent = metaTitle.value.length;
         }
         if (metaDesc) {
             document.getElementById('meta_description_count').textContent = metaDesc.value.length;
         }
-    }
+    });
 
-    if (metaTitle) metaTitle.addEventListener('keyup', updateCounters);
-    if (metaDesc) metaDesc.addEventListener('keyup', updateCounters);
-
-    updateCounters();
-
-    // =========================
-    // AUTO SEO TOGGLE
-    // =========================
-    const seoToggle = document.getElementById('enableAutoSeo');
-
-    if (seoToggle) {
-        seoToggle.addEventListener('change', function () {
-            const autoMode = this.checked;
-
-            const autoNotice = document.getElementById('autoSeoNotice');
-            const manualNotice = document.getElementById('manualSeoNotice');
-
-            if (autoNotice) autoNotice.style.display = autoMode ? 'block' : 'none';
-            if (manualNotice) manualNotice.style.display = autoMode ? 'none' : 'block';
+    // Toggle auto SEO
+    document.getElementById('enableAutoSeo')?.addEventListener('change', function() {
+        const autoMode = this.checked;
+        document.getElementById('autoSeoNotice').style.display = autoMode ? 'block' : 'none';
+        document.getElementById('manualSeoNotice').style.display = autoMode ? 'none' : 'block';
+        
+        // Update placeholders
+        const inputs = document.querySelectorAll('[name="meta_title"], [name="meta_description"], [name="meta_keywords"]');
+        inputs.forEach(input => {
+            input.placeholder = autoMode ? 'Leave empty to auto-generate' : '';
         });
-    }
+    });
 
-    // =========================
-    // LIVE PREVIEW
-    // =========================
+    // Live preview updates
     function updatePreview() {
-
-        const title =
-            document.querySelector('[name="meta_title"]')?.value ||
-            document.querySelector('[name="title"]')?.value ||
-            'Post Title';
-
-        const desc =
-            document.querySelector('[name="meta_description"]')?.value ||
-            'Post description...';
-
+        const title = document.querySelector('[name="meta_title"]')?.value || document.querySelector('[name="title"]')?.value || 'Post Title';
+        const description = document.querySelector('[name="meta_description"]')?.value || 'Post description will appear here...';
+        
         const previewTitle = document.getElementById('preview-title');
         const previewDesc = document.getElementById('preview-description');
-
+        
         if (previewTitle) previewTitle.textContent = title;
-        if (previewDesc) previewDesc.textContent = desc;
-
-        const ogTitle =
-            document.querySelector('[name="og_title"]')?.value || title;
-
-        const ogDesc =
-            document.querySelector('[name="og_description"]')?.value || desc;
-
-        const ogTitleEl = document.getElementById('preview-og-title');
-        const ogDescEl = document.getElementById('preview-og-description');
-
-        if (ogTitleEl) ogTitleEl.textContent = ogTitle;
-        if (ogDescEl) ogDescEl.textContent = ogDesc;
-
-        const slug = (document.querySelector('[name="title"]')?.value || 'post')
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/(^-|-$)/g, '');
-
-        const urlEl = document.getElementById('preview-url');
-        if (urlEl) {
-            urlEl.textContent = `{{ url('/') }}/posts/${slug}`;
+        if (previewDesc) previewDesc.textContent = description;
+        
+        // OG preview
+        const ogTitle = document.querySelector('[name="og_title"]')?.value || title;
+        const ogDesc = document.querySelector('[name="og_description"]')?.value || description;
+        
+        const previewOgTitle = document.getElementById('preview-og-title');
+        const previewOgDesc = document.getElementById('preview-og-description');
+        
+        if (previewOgTitle) previewOgTitle.textContent = ogTitle;
+        if (previewOgDesc) previewOgDesc.textContent = ogDesc;
+        
+        // Update URL preview
+        const titleSlug = document.querySelector('[name="title"]')?.value || 'sample-post';
+        const urlPreview = document.getElementById('preview-url');
+        if (urlPreview) {
+            urlPreview.textContent = '{{ url('/') }}/posts/' + titleSlug.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
         }
     }
 
-    document.querySelectorAll(
-        '[name="meta_title"], [name="meta_description"], [name="title"], [name="og_title"], [name="og_description"]'
-    ).forEach(el => {
-        el.addEventListener('keyup', updatePreview);
-    });
-
-    updatePreview();
-
-});
+    // Listen for changes
+    document.querySelectorAll('[name="meta_title"], [name="meta_description"], [name="title"], [name="og_title"], [name="og_description"]')
+        .forEach(input => {
+            if (input) {
+                input.addEventListener('keyup', updatePreview);
+            }
+        });
 </script>
-@endpush
 @endpush
 
 @push('styles')
