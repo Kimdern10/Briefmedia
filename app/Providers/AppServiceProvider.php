@@ -31,15 +31,18 @@ class AppServiceProvider extends ServiceProvider
         ->take(4)
         ->get();
 
-            // Trending posts
-            $trendingPosts = Post::with(['category', 'likedByUsers'])
-                ->withCount(['comments', 'likedByUsers as likes_count'])
-                ->where('status', 'published')
-                ->orderByDesc('views')
-                ->orderByDesc('likes_count')
-                ->orderByDesc('comments_count')
-                ->take(8)
-                ->get();
+          $trendingPosts = Post::with(['category', 'likedByUsers'])
+    ->withCount([
+        'comments',
+        'likedByUsers as likes_count'
+    ])
+    ->where('status', 'published')
+    ->where('created_at', '>=', now()->subDays(2))
+    ->orderByDesc('views')
+    ->orderByDesc('likes_count')
+    ->orderByDesc('comments_count')
+    ->take(8)
+    ->get();
 
             // Latest 6 posts for EACH category
           $categoriesWithPosts = Category::with(['posts' => function ($query) {
