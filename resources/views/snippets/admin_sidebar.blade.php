@@ -106,6 +106,13 @@
                     </a>
                 </li>
 
+                <li class="nav-item mb-1">
+    <a class="nav-link" href="{{ route('admin.news.headlines') }}">
+        <i class="ph-duotone ph-share-network"></i>
+        <span class="item-name">Generate Headlines</span>
+    </a>
+</li>
+
                 <!-- NEWSLETTER -->
                 <li class="nav-item static-item mt-1 mb-1">
                     <a class="nav-link static-item disabled">
@@ -147,6 +154,8 @@
                         <span class="item-name">SEO Settings</span>
                     </a>
                 </li>
+
+             
 
             </ul>
         </div>

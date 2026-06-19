@@ -572,4 +572,23 @@ class PostController extends Controller
             }
         }
     }
+
+    public function headlines()
+{
+    $posts = Post::latest()
+        ->where('status', 'published')
+        ->take(5)
+        ->get();
+
+    $message = "*Briefmedia Headlines For " . now()->format('jS F Y') . ".*\n\n";
+
+    foreach ($posts as $post) {
+        $message .= $post->title . "\n";
+        $message .= route('posts.show', $post->slug) . "\n\n";
+    }
+
+    $message .= "Visit www.briefmediablog.com for more news stories.\n\n";
+
+    return view('admin.news.headlines', compact('message'));
+}
 }

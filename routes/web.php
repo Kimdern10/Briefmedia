@@ -124,6 +124,9 @@ Route::delete('/posts/{id}/force-delete', [PostController::class, 'forceDelete']
 // Toggle post status
 Route::patch('/posts/{post}/toggle-status', [PostController::class, 'toggleStatus'])->name('admin.posts.toggle-status');
 
+
+ Route::get('/admin/news-headlines', [PostController::class, 'headlines'])
+        ->name('admin.news.headlines');
 // ===============================
 // SEO ROUTES
 // ===============================
