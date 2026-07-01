@@ -7,6 +7,7 @@ use App\Models\Post;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -90,6 +91,24 @@ class PostController extends Controller
             
             // Create the post
             $post = Post::create($data);
+
+            // Auto post to Facebook
+if ($post->status == 'published') {
+    try {
+        \Illuminate\Support\Facades\Http::post(
+            "https://graph.facebook.com/" .
+            config('facebook.graph_version') . "/" .
+            config('facebook.page_id') . "/feed",
+            [
+                'message' => $post->title . "\n\n" .
+                             route('posts.show', $post->slug),
+                'access_token' => config('facebook.access_token'),
+            ]
+        );
+    } catch (\Exception $e) {
+        Log::error('Facebook post failed: ' . $e->getMessage());
+    }
+}
             
             // Log the activity
             Log::info('Post created', [
@@ -572,22 +591,21 @@ class PostController extends Controller
             }
         }
     }
-
-    public function headlines()
+public function headlines()
 {
     $posts = Post::latest()
         ->where('status', 'published')
         ->take(5)
         ->get();
 
-    $message = "*Briefmedia Headlines For " . now()->format('jS F Y') . ".*\n\n";
+    $message = "*Briefmedia Headlines For " . now()->format('jS F Y') . "*\n\n";
 
     foreach ($posts as $post) {
-        $message .= $post->title . "\n";
+        $message .= "🔹 " . $post->title . "\n";
         $message .= route('posts.show', $post->slug) . "\n\n";
     }
 
-    $message .= "Visit www.briefmediablog.com for more news stories.\n\n";
+    $message .= "Visit www.briefmediablog.com for more news stories.";
 
     return view('admin.news.headlines', compact('message'));
 }
