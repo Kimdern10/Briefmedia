@@ -20,13 +20,7 @@
 
                 <div class="card-body">
 
-                    {{-- Success Message --}}
-                    @if(session('success'))
-                        <div class="alert alert-success">
-                            {{ session('success') }}
-                        </div>
-                    @endif
-
+                  
                     <div class="table-responsive">
                         <table class="table table-bordered mb-0 post-table">
                             <thead>

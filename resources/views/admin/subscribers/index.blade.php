@@ -11,6 +11,12 @@
                         <h4 class="card-title">All Subscribers</h4>
                     </div>
                 </div>
+  {{-- Success Message --}}
+                    @if(session('success'))
+                        <div class="alert alert-success">
+                            {{ session('success') }}
+                        </div>
+                    @endif
 
                 <div class="card-body">
                     <div class="table-responsive">
