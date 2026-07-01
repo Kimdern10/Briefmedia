@@ -92,22 +92,26 @@ class PostController extends Controller
             // Create the post
             $post = Post::create($data);
 
-            // Auto post to Facebook
-if ($post->status == 'published') {
-    try {
-        \Illuminate\Support\Facades\Http::post(
-            "https://graph.facebook.com/" .
-            config('facebook.graph_version') . "/" .
-            config('facebook.page_id') . "/feed",
-            [
-                'message' => $post->title . "\n\n" .
-                             route('posts.show', $post->slug),
-                'access_token' => config('facebook.access_token'),
-            ]
-        );
-    } catch (\Exception $e) {
-        Log::error('Facebook post failed: ' . $e->getMessage());
-    }
+try {
+
+    $response = Http::post(
+        "https://graph.facebook.com/" .
+        config('facebook.graph_version') . "/" .
+        config('facebook.page_id') . "/feed",
+        [
+            'message' => $post->title . "\n\n" .
+                route('posts.show', $post->slug),
+            'access_token' => config('facebook.access_token'),
+        ]
+    );
+
+    Log::info('Facebook Response', [
+        'status' => $response->status(),
+        'body' => $response->body(),
+    ]);
+
+} catch (\Exception $e) {
+    Log::error('Facebook post failed: ' . $e->getMessage());
 }
             
             // Log the activity
