@@ -12,7 +12,7 @@ The platform operates across multiple segments, including news reporting, entert
 Driven by excellence and a passion for impactful communication, Brief Media continues to serve as a reliable hub for media solutions and public engagement.
                     </p>
                     <div class="footer-widget__social">
-                        <a href="#" class="footer-widget__social-link"><i class="bi bi-facebook"></i></a>
+                        <a href="https://www.facebook.com/BriefMediablog" target="_blank" class="footer-widget__social-link"><i class="bi bi-facebook"></i></a>
                         <a href="#" class="footer-widget__social-link"><i class="bi bi-instagram"></i></a>
                         <a href="#" class="footer-widget__social-link"><i class="bi bi-tiktok"></i></a>
                         <a href="#" class="footer-widget__social-link"><i class="bi bi-twitter-x"></i></a>
@@ -47,7 +47,12 @@ Driven by excellence and a passion for impactful communication, Brief Media cont
         <div class="footer-widget__contact mt-4">
             <h6 class="text-white mb-3">Connect With Us:</h6>
             <div class="footer-widget__handles">
-                <p class="mb-2"><i class="bi bi-facebook me-2"></i>BriefMedia</p>
+               <p class="mb-2">
+    <i class="bi bi-facebook me-2"></i>
+    <a href="https://www.facebook.com/Briefmediablog" target="_blank">
+        BriefMedia
+    </a>
+</p>
                 <p class="mb-2"><i class="bi bi-instagram me-2"></i>@BriefMedia</p>
                 <p class="mb-2"><i class="bi bi-tiktok me-2"></i>@BriefMedia</p>
                 <p class="mb-0"><i class="bi bi-twitter-x me-2"></i>@BriefMedia</p>
