@@ -94,20 +94,17 @@ class PostController extends Controller
 
 try {
 
-    $caption =
-        "📰" . $post->title . "\n\n" .
-        Str::limit($post->content, 300) . "\n\n" .
-        "Read full story:\n" .
-        route('posts.show', $post->slug) . "\n\n" .
-        "#News #Update";
-
     $response = Http::post(
         "https://graph.facebook.com/" .
         config('facebook.graph_version') . "/" .
-        config('facebook.page_id') . "/photos",
+        config('facebook.page_id') . "/feed",
         [
-            'url' => asset('storage/' . $post->image),
-            'caption' => $caption,
+            'message' => $post->title . "\n\n" .
+                Str::limit($post->content, 300) . "\n\n" .
+                route('posts.show', $post->slug),
+
+            'link' => asset('storage/' . $post->featured_image_1),
+
             'access_token' => config('facebook.access_token'),
         ]
     );
