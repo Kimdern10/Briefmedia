@@ -8,28 +8,33 @@
 @endphp
 
 @section('meta_tags')
-    <!-- Open Graph / Facebook / WhatsApp / LinkedIn -->
-    <meta property="og:title" content="{{ $postTitle }}" />
-    <meta property="og:description" content="{{ $postDescription }}" />
-    <meta property="og:image" content="{{ $postImage }}" />
-    <meta property="og:url" content="{{ $postUrl }}" />
-    <meta property="og:type" content="article" />
-    <meta property="og:site_name" content="BriefMedia" />
-    
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="{{ $postTitle }}" />
-    <meta name="twitter:description" content="{{ $postDescription }}" />
-    <meta name="twitter:image" content="{{ $postImage }}" />
-    
-    <!-- Optional: Add more meta tags for better SEO -->
-    <meta name="description" content="{{ $postDescription }}" />
-    <meta name="author" content="{{ $post->admin->name ?? 'BriefMedia' }}" />
-    
-    <!-- Article Meta -->
-    <meta property="article:published_time" content="{{ $post->created_at->toIso8601String() }}" />
-    <meta property="article:modified_time" content="{{ $post->updated_at->toIso8601String() }}" />
-    <meta property="article:section" content="{{ $post->category->name ?? 'Article' }}" />
+
+<title>{{ $post->title }}</title>
+
+<meta name="description" content="{{ $postDescription }}">
+<link rel="canonical" href="{{ $postUrl }}">
+
+<meta property="og:title" content="{{ $postTitle }}">
+<meta property="og:description" content="{{ $postDescription }}">
+<meta property="og:type" content="article">
+<meta property="og:url" content="{{ $postUrl }}">
+<meta property="og:site_name" content="BriefMedia">
+<meta property="og:locale" content="en_US">
+
+<meta property="og:image" content="{{ $postImage }}">
+<meta property="og:image:secure_url" content="{{ $postImage }}">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ $postTitle }}">
+<meta name="twitter:description" content="{{ $postDescription }}">
+<meta name="twitter:image" content="{{ $postImage }}">
+
+<meta property="article:published_time" content="{{ $post->created_at->toIso8601String() }}">
+<meta property="article:modified_time" content="{{ $post->updated_at->toIso8601String() }}">
+
 @endsection
 
 @section('content')

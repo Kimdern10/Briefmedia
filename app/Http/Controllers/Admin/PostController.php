@@ -92,15 +92,24 @@ class PostController extends Controller
             // Create the post
             $post = Post::create($data);
 
+
+
+
+
 try {
+
+    $url = route('posts.show', $post->slug);
+
+    $message = $post->title . "\n\n"
+        . Str::limit(strip_tags($post->content), 300);
 
     $response = Http::post(
         "https://graph.facebook.com/" .
         config('facebook.graph_version') . "/" .
         config('facebook.page_id') . "/feed",
         [
-            'message' => $post->title . "\n\n" .
-                route('posts.show', $post->slug),
+            'message' => $message,
+            'link' => $url,
             'access_token' => config('facebook.access_token'),
         ]
     );
