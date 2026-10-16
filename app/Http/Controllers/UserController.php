@@ -146,12 +146,12 @@ class UserController extends Controller
             return redirect()->back()->with('error', 'Please enter a search term');
         }
         
-        // Search in posts
-        $posts = Post::where('title', 'LIKE', "%{$query}%")
-                      ->orWhere('content', 'LIKE', "%{$query}%")
-                      ->orWhere('excerpt', 'LIKE', "%{$query}%")
+        // Search published posts only (drafts must not leak into results)
+        $posts = Post::with(['category', 'admin', 'likedByUsers'])
+                      ->published()
+                      ->search($query)
                       ->latest()
-                      ->paginate(10);
+                      ->paginate(12);
         
         // Get categories for sidebar if needed
         $categories = Category::all();

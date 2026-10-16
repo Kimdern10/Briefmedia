@@ -1,271 +1,174 @@
-<header class="header fixed-top navbar-expand-xl">
-    <div class="container-fluid">
-        <div class="header__main">
+{{-- $navCategories, $moreCategories and $tickerPosts come from the snippets.header composer in AppServiceProvider --}}
+@php
+    $profileImage = null;
+    if (auth()->check()) {
+        $profileImage = optional(auth()->user()->Userprofile)->profile_picture
+            ? asset('Userprofile/' . auth()->user()->Userprofile->profile_picture)
+            : 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&background=e4407f&color=fff&size=120';
+    }
+@endphp
 
-            <!-- logo -->
-            <div class="logo">
-                <a class="logo__link logo--dark" href="/">
-                    <img src="{{ asset('assets/img/logo/ChatGPT.png') }}" alt="" class="logo__img">
-                </a>
-                <a class="logo__link logo--light" href="/">
-                    <img src="{{ asset('assets/img/logo/ChatGPT_Image.png') }}" alt="" class="logo__img">
-                </a>
+<!-- ================= TOP BAR ================= -->
+<div class="bm-topbar">
+    <div class="bm-container bm-topbar__inner">
+        <span class="bm-topbar__date">{{ now()->format('l, F j, Y') }}</span>
+
+        @if($tickerPosts->isNotEmpty())
+            <div class="bm-ticker" aria-label="Latest headlines">
+                <span class="bm-ticker__label">Latest</span>
+                <div class="bm-ticker__track">
+                    <div class="bm-ticker__items">
+                        {{-- Rendered twice so the marquee loops seamlessly --}}
+                        @foreach([1, 2] as $copy)
+                            @foreach($tickerPosts as $tickerPost)
+                                <a href="{{ route('posts.show', $tickerPost) }}" @if($copy === 2) aria-hidden="true" tabindex="-1" @endif>{{ $tickerPost->title }}</a>
+                            @endforeach
+                        @endforeach
+                    </div>
+                </div>
             </div>
-            
-            <!-- Hamburger (small screens only) -->
-            <button class="navbar-toggler d-xl-none" type="button" 
-                    data-bs-toggle="collapse"
-                    data-bs-target="#navbarSupportedContent"
-                    aria-controls="navbarSupportedContent"
-                    aria-expanded="false"
-                    aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
+        @endif
+
+        <div class="bm-topbar__social">
+            <a href="https://www.facebook.com/BriefMediablog" target="_blank" rel="noopener" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+            <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+            <a href="#" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>
+            <a href="#" aria-label="X"><i class="bi bi-twitter-x"></i></a>
+        </div>
+    </div>
+</div>
+
+<!-- ================= HEADER ================= -->
+<header class="bm-header">
+    <div class="bm-container bm-header__inner">
+
+        <a href="{{ url('/') }}" class="bm-logo" aria-label="BriefMedia home">
+            <span class="bm-logo__mark">B</span>
+            <span class="bm-logo__text">Brief<b>Media</b></span>
+        </a>
+
+        <nav class="bm-nav" aria-label="Main">
+            <a href="{{ url('/') }}" class="bm-nav__link {{ request()->is('/') ? 'is-active' : '' }}">Home</a>
+
+            @foreach($navCategories as $navCategory)
+                <a href="{{ route('category.page', $navCategory->slug) }}"
+                   class="bm-nav__link {{ request()->is('category/' . $navCategory->slug) ? 'is-active' : '' }}">
+                    {{ $navCategory->name }}
+                </a>
+            @endforeach
+
+            <div class="bm-dropdown">
+                <button type="button" class="bm-nav__link" data-dropdown-toggle aria-expanded="false" aria-haspopup="true">
+                    More <i class="bi bi-chevron-down" style="font-size: 11px;"></i>
+                </button>
+                <div class="bm-dropdown__menu bm-dropdown__menu--left">
+                    @if($moreCategories->isNotEmpty())
+                        <div class="bm-dropdown__label">Categories</div>
+                        @foreach($moreCategories as $moreCategory)
+                            <a class="bm-dropdown__item" href="{{ route('category.page', $moreCategory->slug) }}">{{ $moreCategory->name }}</a>
+                        @endforeach
+                        <div class="bm-dropdown__divider"></div>
+                    @endif
+                    <a class="bm-dropdown__item" href="{{ route('contact') }}"><i class="bi bi-envelope"></i> Contact us</a>
+                    <a class="bm-dropdown__item" href="{{ route('terms') }}"><i class="bi bi-file-text"></i> Terms &amp; Conditions</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="bm-header__actions">
+            <button type="button" class="bm-icon-btn" data-search-open aria-label="Search (Ctrl+K)">
+                <i class="bi bi-search"></i>
             </button>
 
-            <div class="header__navbar">
-                <nav class="navbar">
-                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                        <ul class="navbar-nav">
+            <button type="button" class="bm-icon-btn bm-theme-toggle" data-theme-toggle aria-label="Toggle dark mode">
+                <i class="bi bi-moon-stars"></i><i class="bi bi-sun"></i>
+            </button>
 
-                            <!-- Home -->
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->is('/') ? 'active' : '' }}" href="/">Home</a>
-                            </li>
-
-                            <!-- Dynamic Categories - First 5 -->
-                            @php
-                                $allCategories = \App\Models\Category::all();
-                                $navbarCategories = $allCategories->take(5);
-                                $pageCategories = $allCategories->skip(5);
-                            @endphp
-
-                            @foreach($navbarCategories as $category)
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('category.page', $category->slug) }}">
-                                        {{ $category->name }}
-                                    </a>
-                                </li>
-                            @endforeach
-
-                            <!-- Pages Dropdown -->
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="javascript:void(0)"
-                                   data-bs-toggle="dropdown">Pages</a>
-                                <ul class="dropdown-menu">
-                                    <!-- Remaining Categories -->
-                                    @if($pageCategories->isNotEmpty())
-                                        @foreach($pageCategories as $category)
-                                            <li>
-                                                <a class="dropdown-item" href="{{ route('category.page', $category->slug) }}">
-                                                    {{ $category->name }}
-                                                </a>
-                                            </li>
-                                        @endforeach
-                                        <li><hr class="dropdown-divider"></li>
-                                    @endif
-
-                                    <!-- Static Pages -->
-                                    <li><a class="dropdown-item" href="{{ route('contact') }}">Contact us</a></li>
-                                    
-                                    @auth
-                                        <li><hr class="dropdown-divider"></li>
-                                        <!-- Dashboard for Admin -->
-                                        @if(Auth::user()->role_as == 1)
-                                            <li>
-                                                <a class="dropdown-item" href="{{ route('admin.dashboard') }}">
-                                                    <i class="bi bi-speedometer2"></i> Dashboard
-                                                </a>
-                                            </li>
-                                        @endif
-                                        
-                                        <!-- Logout -->
-                                        <li>
-                                            <a class="dropdown-item" href="{{ route('logout') }}"
-                                               onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                                <i class="bi bi-box-arrow-right"></i> Logout
-                                            </a>
-                                        </li>
-                                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                            @csrf
-                                        </form>
-                                    @endauth
-
-                                    @guest
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item" href="{{ route('login') }}"><i class="bi bi-box-arrow-in-right"></i> Login</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('sign-up') }}"><i class="bi bi-person-plus"></i> Sign up</a></li>
-                                    @endguest
-                                </ul>
-                            </li>
-                        </ul>
+            @auth
+                <div class="bm-dropdown">
+                    <button type="button" class="bm-avatar" data-dropdown-toggle aria-expanded="false" aria-label="Account menu"
+                            style="background-image: url('{{ $profileImage }}'); background-size: cover; background-position: center;">
+                    </button>
+                    <div class="bm-dropdown__menu">
+                        <div class="bm-dropdown__label">{{ auth()->user()->name }}</div>
+                        @if(auth()->user()->role_as == 1)
+                            <a class="bm-dropdown__item" href="{{ route('admin.dashboard') }}"><i class="bi bi-speedometer2"></i> Admin dashboard</a>
+                        @endif
+                        <a class="bm-dropdown__item" href="{{ route('profile') }}"><i class="bi bi-person"></i> My profile</a>
+                        <div class="bm-dropdown__divider"></div>
+                        <form action="{{ route('logout') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="bm-dropdown__item"><i class="bi bi-box-arrow-right"></i> Log out</button>
+                        </form>
                     </div>
-                </nav>
-            </div>
-
-            <!-- header actions -->
-            <div class="header__action-items d-flex align-items-center">
-
-                <!-- User Profile Image -->
-              <div class="ms-3">
-    @auth
-        @php
-            $profileImage = optional(Auth::user()->Userprofile)->profile_picture
-                ? asset('Userprofile/' . Auth::user()->Userprofile->profile_picture)
-                : asset('assets/img/user/1.jpg');
-        @endphp
-        <a href="{{ route('profile') }}" class="profile-link">
-            <img src="{{ $profileImage }}" 
-                 alt="Profile" 
-                 class="profile-image"
-                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=ff69b4&color=fff&size=150'; this.style.backgroundColor='transparent';">
-        </a>
-    @endauth
-</div>
-
-                <!-- Theme switch -->
-                <div class="theme-switch ms-3">
-                    <label class="theme-switch__label" for="checkbox">
-                        <input type="checkbox" id="checkbox" class="theme-switch__checkbox">
-                        <span class="theme-switch__slider round">
-                            <i class="bi bi-sun icon-light theme-switch__icon theme-switch__icon--light"></i>
-                            <i class="bi bi-moon icon-dark theme-switch__icon theme-switch__icon--dark"></i>
-                        </span>
-                    </label>
                 </div>
+            @else
+                <a href="{{ route('login') }}" class="bm-btn bm-btn--ghost bm-btn--sm bm-hide-sm">Log in</a>
+                <a href="{{ route('sign-up') }}" class="bm-btn bm-btn--primary bm-btn--sm bm-hide-sm">Sign up</a>
+            @endauth
 
-                <!-- Search icon -->
-               <div class="search-wrapper  position-relative d-flex align-items-center">
-    <!-- Search Icon (exactly as original, untouched) -->
-    <div class="search-icon ms-3">
-        <a href="{{ route('user.posts.search') }}" class="search-icon__link" id="searchToggle">
-            <i class="bi bi-search search-icon__icon"></i>
-        </a>
-    </div>
-    
-    <!-- Search Input (hidden by default) -->
-    <div class="search-input-container overflow-hidden" style="width: 0; transition: width 0.3s ease;">
-        <form action="{{ route('user.posts.search') }}" method="GET" class="d-flex">
-            <input type="text" 
-                   name="query" 
-                   class="form-control form-control-sm" 
-                   placeholder="Search posts..." 
-                   aria-label="Search"
-                   id="searchInput"
-                   required>
-        </form>
-    </div>
-</div>
-
-<!-- No additional styles that could affect the icon -->
-
-
-
-            </div>
-            
-            <!--navbar-toggler-->
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" 
-                    data-bs-target="#navbarSupportedContent" 
-                    aria-controls="navbarSupportedContent" 
-                    aria-expanded="false" 
-                    aria-label="Toggle navigation">
-                <span class="navbar-toggler__icon"></span>
+            <button type="button" class="bm-icon-btn bm-burger" data-drawer-open aria-label="Open menu">
+                <i class="bi bi-list"></i>
             </button>
         </div>
     </div>
 </header>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const searchToggle = document.getElementById('searchToggle');
-    const searchContainer = document.querySelector('.search-input-container');
-    const searchInput = document.getElementById('searchInput');
-    let isOpen = false;
+<!-- ================= MOBILE DRAWER ================= -->
+<div class="bm-drawer" id="bm-drawer" aria-hidden="true">
+    <div class="bm-drawer__backdrop" data-drawer-close></div>
+    <aside class="bm-drawer__panel" aria-label="Menu">
+        <div class="bm-drawer__head">
+            <a href="{{ url('/') }}" class="bm-logo">
+                <span class="bm-logo__mark">B</span>
+                <span class="bm-logo__text">Brief<b>Media</b></span>
+            </a>
+            <button type="button" class="bm-icon-btn" data-drawer-close aria-label="Close menu"><i class="bi bi-x-lg"></i></button>
+        </div>
 
-    searchToggle.addEventListener('click', function(e) {
-        e.preventDefault();
-        
-        if (!isOpen) {
-            // Slide open
-            searchContainer.style.width = '200px';
-            setTimeout(() => {
-                searchInput.focus();
-            }, 300);
-            isOpen = true;
-        } else {
-            // Slide closed
-            searchContainer.style.width = '0';
-            isOpen = false;
-        }
-    });
+        <button type="button" class="bm-btn bm-btn--ghost bm-btn--block" data-search-open>
+            <i class="bi bi-search"></i> Search stories
+        </button>
 
-    // Close when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.search-wrapper')) {
-            if (isOpen) {
-                searchContainer.style.width = '0';
-                isOpen = false;
-            }
-        }
-    });
+        <div class="bm-drawer__section">Sections</div>
+        <nav class="bm-drawer__links">
+            <a href="{{ url('/') }}" class="{{ request()->is('/') ? 'is-active' : '' }}">Home <i class="bi bi-arrow-right"></i></a>
+            @foreach($navCategories->concat($moreCategories) as $drawerCategory)
+                <a href="{{ route('category.page', $drawerCategory->slug) }}" class="{{ request()->is('category/' . $drawerCategory->slug) ? 'is-active' : '' }}">
+                    {{ $drawerCategory->name }} <i class="bi bi-arrow-right"></i>
+                </a>
+            @endforeach
+            <a href="{{ route('contact') }}">Contact us <i class="bi bi-arrow-right"></i></a>
+        </nav>
 
-    // Submit form on Enter
-    searchInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            this.closest('form').submit();
-        }
-    });
-});
-</script>
+        <div class="bm-drawer__section">Account</div>
+        <nav class="bm-drawer__links">
+            @auth
+                @if(auth()->user()->role_as == 1)
+                    <a href="{{ route('admin.dashboard') }}">Admin dashboard <i class="bi bi-speedometer2"></i></a>
+                @endif
+                <a href="{{ route('profile') }}">My profile <i class="bi bi-person"></i></a>
+                <form action="{{ route('logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="bm-btn bm-btn--ghost bm-btn--block" style="margin-top: 8px;">Log out</button>
+                </form>
+            @else
+                <a href="{{ route('login') }}">Log in <i class="bi bi-box-arrow-in-right"></i></a>
+                <a href="{{ route('sign-up') }}">Create account <i class="bi bi-person-plus"></i></a>
+            @endauth
+        </nav>
+    </aside>
+</div>
 
-<!-- Profile Image Styles -->
-<style>
-.profile-link {
-    display: inline-block;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    overflow: hidden;
-    transition: 0.3s;
-    margin-top: 6px;
-}
-
-.profile-link:hover {
-    opacity: 0.8;
-}
-
-.profile-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    border: 2px solid #fff;
-}
-
-/* Dropdown icon spacing */
-.dropdown-item i {
-    margin-right: 8px;
-    font-size: 1rem;
-}
-
-/* Active state for home */
-.nav-link.active {
-    color: #007bff;
-}
-
-/* FORCE search icon visibility on mobile */
-@media (max-width: 991px) {
-    .search-icon {
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-        visibility: visible !important;
-        opacity: 1 !important;
-    }
-
-    .search-wrapper {
-        display: flex !important;
-    }
-}
-
-</style>
+<!-- ================= SEARCH OVERLAY ================= -->
+<div class="bm-search" id="bm-search" aria-hidden="true" role="dialog" aria-label="Search">
+    <div class="bm-search__box">
+        <form action="{{ route('user.posts.search') }}" method="GET" class="bm-search__form">
+            <i class="bi bi-search"></i>
+            <input type="search" name="query" class="bm-search__input" placeholder="Search stories, topics, people…"
+                   value="{{ request('query') }}" required autocomplete="off" aria-label="Search posts">
+            <button type="submit" class="bm-btn bm-btn--primary bm-btn--sm">Search</button>
+        </form>
+        <div class="bm-search__hint">Press <kbd>Enter</kbd> to search · <kbd>Esc</kbd> to close · <kbd>Ctrl</kbd> + <kbd>K</kbd> anywhere</div>
+    </div>
+</div>

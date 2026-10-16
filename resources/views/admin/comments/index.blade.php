@@ -1,106 +1,70 @@
 @extends('layouts.admin')
 
+@section('title', 'Comments')
+
 @section('content')
-<div class="content-inner container-fluid pb-0">
-    <div class="row">
-        <div class="col-sm-12">
-
-            <div class="card">
-                <div class="card-header d-flex justify-content-between">
-                    <div class="header-title">
-                        <h4 class="card-title">All User Comments</h4>
-                    </div>
-                </div>
-
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered mb-0 comments-table">
-                            <thead>
-                                <tr class="bg-white">
-                                    <th class="bg-primary text-white">User</th>
-                                    <th class="bg-primary text-white">Comment</th>
-                                    <th class="bg-primary text-white">Post</th>
-                                    <th class="bg-primary text-white">Date</th>
-                                    <th class="bg-primary text-white">Action</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                @forelse($comments as $comment)
-                                <tr>
-                                    <td>{{ $comment->user->name ?? 'Guest' }}</td>
-
-                                    <td>{{ $comment->content }}</td>
-
-                                    <td>{{ $comment->post->title ?? 'N/A' }}</td>
-
-                                    <td>{{ $comment->created_at->format('j F, Y') }}</td>
-
-                                    <td>
-                                        <form action="{{ route('admin.comments.delete', $comment->id) }}" method="POST" onsubmit="return confirm('Delete this comment?')">
-                                            @csrf
-                                            @method('DELETE')
-
-                                            <button class="btn btn-danger-subtle btn-sm">
-                                                <i class="ph ph-trash"></i>
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-
-                                @empty
-                                <tr>
-                                    <td colspan="5" class="text-center text-danger">
-                                        No comments found
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-
-                        <!-- Pagination -->
-                        <div class="mt-3 d-flex justify-content-center">
-                            {{ $comments->links() }}
-                        </div>
-
-                    </div>
-                </div>
-
-            </div>
-
-        </div>
+<div class="ad-head">
+    <div>
+        <h1 class="ad-head__title">Comments</h1>
+        <p class="ad-head__sub">Keep the conversation healthy. Remove spam or abuse.</p>
     </div>
 </div>
 
-<style>
-@media (max-width: 768px) {
-    .comments-table th,
-    .comments-table td {
-        font-size: 12px;
-        padding: 4px 6px;
-        white-space: nowrap;
-    }
+<div class="ad-card">
+    <div class="ad-card__head">
+        <label class="ad-search">
+            <i class="bi bi-search"></i>
+            <input type="search" placeholder="Filter comments…" data-table-filter="#comments-table" aria-label="Filter comments">
+        </label>
+    </div>
+    <div class="ad-table-wrap">
+        <table class="ad-table" id="comments-table">
+            <thead>
+                <tr>
+                    <th>Author</th>
+                    <th>Comment</th>
+                    <th class="ad-hide-sm">On post</th>
+                    <th class="ad-hide-sm">Date</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($comments as $comment)
+                    <tr data-row>
+                        <td>
+                            <div class="ad-person">
+                                <span class="ad-initial">{{ strtoupper(substr($comment->user->name ?? 'G', 0, 1)) }}</span>
+                                <strong style="white-space: nowrap;">{{ $comment->user->name ?? 'Guest' }}</strong>
+                            </div>
+                        </td>
+                        <td style="min-width: 240px; max-width: 460px;">{{ Str::limit($comment->content, 180) }}</td>
+                        <td class="ad-hide-sm" style="max-width: 260px;">
+                            @if($comment->post)
+                                <a href="{{ route('posts.show', $comment->post) }}#comments" target="_blank" class="ad-post-cell__title" style="font-weight: 500;">{{ $comment->post->title }}</a>
+                            @else
+                                <span style="color: var(--ad-muted);">N/A</span>
+                            @endif
+                        </td>
+                        <td class="ad-hide-sm" style="white-space: nowrap;">{{ $comment->created_at->format('j M Y') }}</td>
+                        <td>
+                            <div class="ad-table__actions">
+                                <form action="{{ route('admin.comments.delete', $comment->id) }}" method="POST"
+                                      data-confirm="This comment will be deleted." data-confirm-title="Delete comment?" data-confirm-button="Delete">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="ad-btn ad-btn--danger ad-btn--sm ad-btn--icon" title="Delete comment"><i class="bi bi-trash3"></i></button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                @empty
+                    <tr><td colspan="5" class="ad-table-empty"><i class="bi bi-chat-square"></i>No comments yet</td></tr>
+                @endforelse
+                <tr data-filter-empty hidden><td colspan="5" class="ad-table-empty"><i class="bi bi-funnel"></i>No comments match this filter.</td></tr>
+            </tbody>
+        </table>
+    </div>
 
-    .comments-table {
-        font-size: 12px;
-    }
-
-    .card-title {
-        font-size: 16px;
-    }
-}
-
-@media (max-width: 480px) {
-    .comments-table th,
-    .comments-table td {
-        font-size: 10px;
-        padding: 2px 4px;
-    }
-
-    .card-title {
-        font-size: 14px;
-    }
-}
-</style>
-
+    {{ $comments->links('snippets.site.pagination') }}
+</div>
 @endsection

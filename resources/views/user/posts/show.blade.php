@@ -5,6 +5,12 @@
     $postTitle = $post->title;
     $postDescription = Str::limit(strip_tags($post->content ?? $post->excerpt), 160);
     $postImage = asset('storage/' . ($post->featured_image_1 ?? 'default.jpg'));
+    $placeholderImage = asset('assets/img/bm-placeholder.svg');
+    $authorName = optional($post->admin)->name ?? 'BriefMedia';
+    $authorFallbackPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($authorName) . '&background=e4407f&color=fff&size=120';
+    $authorProfilePicture = optional(optional($post->admin)->Userprofile)->profile_picture;
+    $authorPhoto = $authorProfilePicture ? asset('Userprofile/' . $authorProfilePicture) : $authorFallbackPhoto;
+    $extraImages = collect([$post->featured_image_3, $post->featured_image_4])->filter();
 @endphp
 
 @section('meta_tags')
@@ -38,546 +44,227 @@
 @endsection
 
 @section('content')
-<style>
-/* ===== Hero Image ===== */
-.post-hero {
-    position: relative;
-    width: 100%;
-    height: 600px;
-    overflow: hidden;
-    border-radius: 15px;
-    display: flex;
-    align-items: center;
-    justify-content:center
-}
+<main>
+    <div class="bm-container">
 
-.post-hero-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
-}
+        <!-- ================= ARTICLE HEADER ================= -->
+        <header class="bm-article-head">
+            <nav class="bm-breadcrumb" aria-label="Breadcrumb">
+                <a href="{{ url('/') }}">Home</a>
+                <i class="bi bi-chevron-right" style="font-size: 10px;"></i>
+                @if($post->category)
+                    <a href="{{ route('category.page', $post->category->slug) }}">{{ $post->category->name }}</a>
+                @endif
+            </nav>
 
-/* ===== Excerpt Styling ===== */
-.post-single__excerpt {
-    font-size: 18px;
-    font-style: italic;
-    line-height: 1.6;
-    padding: 15px 0;
-    border-left: 4px solid #007bff;
-    padding-left: 15px;
-}
+            @if($post->category)
+                <a href="{{ route('category.page', $post->category->slug) }}" class="bm-chip">{{ $post->category->name }}</a>
+            @endif
 
-/* ===== Make Full Content Same Style As Excerpt ===== */
-.post-single__body {
-    font-size: 18px;
-    font-style: italic;
-    line-height: 1.6;
-    padding: 15px 0;
-    border-left: 4px solid #007bff;
-    padding-left: 15px;
-}
+            <h1 class="bm-article__title">{{ $post->title }}</h1>
 
-/* Ensure paragraphs inside content inherit properly */
-.post-single__body p {
-    margin-bottom: 15px;
-}
+            @if($post->excerpt)
+                <p class="bm-article__dek">{{ $post->excerpt }}</p>
+            @endif
 
-/* Secondary Images */
-.post-main-image {
-    width: 100%;
-    height: 450px;
-    object-fit: cover;
-    border-radius: 12px;
-    /* object-fit: cover;
-    object-position: center; */
-}
-
-.post-gallery-image {
-    width: 100%;
-    height: 350px;
-    object-fit: cover;
-    border-radius: 12px;
-    object-position: center;
-}
-
-/* ===== MINIMAL SHARE STYLES - LIKE ALPHATIMES.NG ===== */
-.post-share-minimal {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin: 40px 0 30px;
-    padding: 15px 0;
-    border-top: 1px solid #eaeaea;
-    border-bottom: 1px solid #eaeaea;
-}
-
-.share-minimal-label {
-    color: #999;
-    font-size: 14px;
-    font-weight: 400;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.share-minimal-links {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 20px;
-}
-
-.share-minimal-link {
-    color: #666;
-    font-size: 14px;
-    text-decoration: none;
-    transition: color 0.2s ease;
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    font-family: inherit;
-    position: relative;
-}
-
-.share-minimal-link:hover {
-    color: #ff69b4;
-}
-
-/* Divider between links */
-.share-minimal-link:not(:last-child)::after {
-    content: '';
-    display: inline-block;
-    width: 1px;
-    height: 12px;
-    background-color: #ddd;
-    margin-left: 20px;
-    vertical-align: middle;
-}
-
-/* Copy link button specific */
-.copy-minimal-btn {
-    position: relative;
-}
-
-.copy-minimal-success {
-    display: none;
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #333;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    white-space: nowrap;
-    margin-bottom: 8px;
-    z-index: 10;
-}
-
-.copy-minimal-success::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid #333;
-}
-
-/* HERO IMAGE */
-.post-hero {
-    width: 100%;
-    max-height: 800px;       /* maximum height */
-    overflow: hidden;
-    border-radius: 15px;
-    position: relative;
-}
-
-.post-hero-image {
-    width: 100%;
-    height: 130%;
-    object-position: center;
-    object-fit: cover;       /* ensures it fills area without distortion */
-}
-
-/* SECONDARY / MAIN IMAGE */
-.post-main-image {
-   width: 100%;
-    height: 650px;
-    object-fit: cover;
-    object-position: center;
-    border-radius: 12px;
-}
-
-/* GALLERY IMAGES */
-.post-gallery-image {
-    width: 100%;
-    max-height: 450px;       /* limit height */
-    object-fit: cover;
-       object-position: center;
-    border-radius: 12px;
-}
-
-/* RESPONSIVE ADJUSTMENTS */
-@media (max-width: 992px) {
-    .post-hero {
-        max-height: 460px;
-    }
-    .post-main-image {
-        max-height: 350px;
-    }
-    .post-gallery-image {
-        max-height: 240px;
-    }
-}
-
-@media (max-width: 576px) {
-    .post-hero {
-        max-height: 100px;
-        height: auto;
-        min-height: 400px;
-        width: 100%;
-    }
-
-    .post-hero-image{
-        object-fit: cover;
-        object-position: center;
-    }
-    .post-main-image, .post-gallery-image {
-        display: block;
-        margin:0 auto;
-        max-width: 100%;
-    }
-
-     }
-
-
-/* Responsive */
-@media (max-width: 768px) {
-    .post-hero {
-        height: 560px;
-    }
-
-    .post-single__excerpt,
-    .post-single__body {
-        font-size: 16px;
-    }
-
-    .post-main-image {
-        height: 370px;
-    }
-
-    .post-gallery-image {
-        height: 270px;
-    }
-    
-    .post-share-minimal {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-    
-    .share-minimal-links {
-        gap: 15px;
-    }
-    
-    .share-minimal-link:not(:last-child)::after {
-        margin-left: 15px;
-    }
-}
-</style>
-
-<main class="main">
-<section class="mt-130 mb-30">
-<div class="container-fluid">
-<div class="row">
-
-<!-- ================= MAIN CONTENT ================= -->
-<div class="col-xl-9 side-content">
-<div class="theiaStickySidebar">
-<div class="post-single">
-
-<!-- HERO IMAGE -->
-<div class="post-hero mb-4">
-    <img src="{{ asset('storage/' . ($post->featured_image_1 ?? 'default.jpg')) }}" 
-         alt="{{ $post->title }}" 
-         class="post-hero-image">
-</div>
-
-<!-- POST HEADER -->
-<div class="post-single__content">
-
-    <a href="{{ route('category.page', $post->category->slug) }}" class="category">
-        {{ $post->category->name }}
-    </a>
-
-    <h2 class="post-single__title">
-        {{ $post->title }}
-    </h2>
-
-    <ul class="post-single__meta list-inline">
-        <li class="post-single__meta-item">
-            <span class="dot"></span> 
-            {{ $post->created_at->format('F d, Y') }}
-        </li>
-        <li class="post-single__meta-item">
-            <span class="dot"></span> 
-            {{ $post->reading_time ?? 5 }} min Read
-        </li>
-    </ul>
-
-    {{-- EXCERPT AFTER DATE --}}
-    @if($post->excerpt)
-        <div class="post-single__excerpt mt-3">
-            {{ $post->excerpt }}
-        </div>
-    @endif
-
-</div>
-
-<!-- IMAGE 2 -->
-@if($post->featured_image_2)
-<div class="mt-4 mb-4">
-    <img src="{{ asset('storage/' . $post->featured_image_2) }}" 
-         alt="{{ $post->title }}" 
-         class="post-main-image">
-</div>
-@endif
-
-<!-- POST BODY -->
-<div class="post-single__body">
-    {!! $post->content !!}
-</div>
-
-<!-- IMAGE 3 & 4 -->
-@if($post->featured_image_3 || $post->featured_image_4)
-<div class="post-gallery mt-5">
-    <div class="row">
-        @if($post->featured_image_3)
-        <div class="col-md-6 mb-4">
-            <img src="{{ asset('storage/' . $post->featured_image_3) }}" 
-                 alt="{{ $post->title }}" 
-                 class="post-gallery-image">
-        </div>
-        @endif
-
-        @if($post->featured_image_4)
-        <div class="col-md-6 mb-4">
-            <img src="{{ asset('storage/' . $post->featured_image_4) }}" 
-                 alt="{{ $post->title }}" 
-                 class="post-gallery-image">
-        </div>
-        @endif
-    </div>
-</div>
-@endif
-
-<!-- ========== MINIMAL SHARE SECTION - LIKE ALPHATIMES.NG ========== -->
-<div class="post-share-minimal">
-    <span class="share-minimal-label">Share:</span>
-    <div class="share-minimal-links">
-        <!-- Facebook -->
-        <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode($postUrl) }}" 
-           target="_blank" 
-           class="share-minimal-link">
-            Facebook
-        </a>
-        
-        <!-- X (Twitter) -->
-        <a href="https://twitter.com/intent/tweet?url={{ urlencode($postUrl) }}&text={{ urlencode($postTitle) }}" 
-           target="_blank" 
-           class="share-minimal-link">
-            X
-        </a>
-        
-        <!-- LinkedIn -->
-        <a href="https://www.linkedin.com/sharing/share-offsite?url={{ urlencode($postUrl) }}" 
-           target="_blank" 
-           class="share-minimal-link">
-            LinkedIn
-        </a>
-        
-        <!-- WhatsApp -->
-        <a href="https://wa.me/?text={{ urlencode($postTitle . ' ' . $postUrl) }}" 
-           target="_blank" 
-           class="share-minimal-link">
-            WhatsApp
-        </a>
-        
-        <!-- Copy Link Button -->
-        <button class="share-minimal-link copy-minimal-btn" onclick="copyPostLinkMinimal()">
-            Copy link
-            <span id="copy-minimal-success" class="copy-minimal-success">Copied!</span>
-        </button>
-    </div>
-</div>
-
-<!-- ========== COMMENTS SECTION ========== -->
-<div class="widget mt-5">
-    <h5 class="widget__title">
-        Comments ({{ $post->comments_count }})
-    </h5>
-
-    @auth
-    <form class="widget__form mt-4" 
-          action="{{ route('posts.comment', $post) }}" 
-          method="POST">
-        @csrf
-        <h5 class="widget__form-title">Leave a Reply</h5>
-        <textarea name="content" 
-                  class="form-control widget__form-input mb-3" 
-                  rows="5" 
-                  placeholder="Message*" 
-                  required></textarea>
-        <button type="submit" class="btn-custom">
-            Send Comment
-        </button>
-    </form>
-    @else
-    <p class="mt-4">
-        Please <a href="{{ route('login') }}">login</a> to comment.
-    </p>
-    @endauth
-
-    <div class="comments mt-4">
-        @foreach($post->comments as $comment)
-        <div class="comment mb-3" 
-             style="border-bottom:1px solid #ddd; padding-bottom:10px;">
-            <strong>{{ $comment->user->name }}</strong>
-            <p>{{ $comment->content }}</p>
-            <small>{{ $comment->created_at->diffForHumans() }}</small>
-
-            @auth
-            <form action="{{ route('posts.comment', $post) }}" 
-                  method="POST" 
-                  style="margin-left:20px; margin-top:5px;">
-                @csrf
-                <input type="hidden" 
-                       name="parent_id" 
-                       value="{{ $comment->id }}">
-                <textarea name="content" 
-                          class="form-control mb-2" 
-                          rows="2" 
-                          placeholder="Reply..." 
-                          required></textarea>
-                <button type="submit" 
-                        class="btn-custom btn-sm">
-                    Reply
-                </button>
-            </form>
-            @endauth
-
-            @foreach($comment->replies as $reply)
-            <div class="reply" 
-                 style="margin-left:40px; margin-top:5px;">
-                <strong>{{ $reply->user->name }}</strong>
-                <p>{{ $reply->content }}</p>
-                <small>{{ $reply->created_at->diffForHumans() }}</small>
+            <div class="bm-meta">
+                <span class="bm-byline">
+                    <img class="bm-byline__avatar" src="{{ $authorPhoto }}" alt="{{ $authorName }}"
+                         onerror="this.onerror=null;this.src='{{ $authorFallbackPhoto }}'">
+                    <span>Posted by <strong>{{ $authorName }}</strong></span>
+                </span>
+                <span>{{ $post->created_at->format('F j, Y') }}</span>
+                <span><i class="bi bi-clock"></i> {{ $post->reading_time }}</span>
+                <span><i class="bi bi-eye"></i> {{ number_format($post->views ?? 0) }} views</span>
             </div>
-            @endforeach
+        </header>
+
+        <!-- ================= HERO IMAGE ================= -->
+        <figure class="bm-article__hero">
+            <img src="{{ $post->featured_image_1 ? asset('storage/' . $post->featured_image_1) : $placeholderImage }}"
+                 alt="{{ $post->title }}"
+                 onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
+        </figure>
+
+        <!-- ================= BODY ================= -->
+        <div class="bm-article-layout">
+
+            <!-- Engagement rail -->
+            <aside class="bm-rail" aria-label="Post actions">
+                <span class="bm-rail__label">Share</span>
+                @include('snippets.site.like', ['post' => $post, 'class' => 'bm-icon-btn'])
+                <a href="#comments" class="bm-icon-btn" aria-label="Jump to comments"><i class="bi bi-chat"></i></a>
+                <span class="bm-rail__count">{{ $post->comments_count }}</span>
+                @include('snippets.site.share', ['post' => $post, 'trigger' => 'bm-icon-btn', 'down' => true])
+            </aside>
+
+            <article>
+                @if($post->featured_image_2)
+                    <figure class="bm-figure" style="margin-top: 0;">
+                        <img src="{{ asset('storage/' . $post->featured_image_2) }}" alt="{{ $post->title }}" loading="lazy"
+                             onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
+                    </figure>
+                @endif
+
+                <div class="bm-prose">
+                    {!! $post->content !!}
+                </div>
+
+                @if($extraImages->isNotEmpty())
+                    <div class="bm-gallery {{ $extraImages->count() === 1 ? 'bm-gallery--single' : '' }}">
+                        @foreach($extraImages as $extraImage)
+                            <img src="{{ asset('storage/' . $extraImage) }}" alt="{{ $post->title }}" loading="lazy"
+                                 onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
+                        @endforeach
+                    </div>
+                @endif
+
+                <!-- Share bar -->
+                <div class="bm-share-bar">
+                    <span class="bm-share-bar__label">Enjoyed this story? Share it.</span>
+                    <div class="bm-share-bar__links">
+                        <a class="bm-btn bm-btn--ghost bm-btn--sm" target="_blank" rel="noopener"
+                           href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode($postUrl) }}"><i class="bi bi-facebook"></i> Facebook</a>
+                        <a class="bm-btn bm-btn--ghost bm-btn--sm" target="_blank" rel="noopener"
+                           href="https://twitter.com/intent/tweet?url={{ urlencode($postUrl) }}&text={{ urlencode($postTitle) }}"><i class="bi bi-twitter-x"></i> X</a>
+                        <a class="bm-btn bm-btn--ghost bm-btn--sm" target="_blank" rel="noopener"
+                           href="https://www.linkedin.com/sharing/share-offsite?url={{ urlencode($postUrl) }}"><i class="bi bi-linkedin"></i> LinkedIn</a>
+                        <a class="bm-btn bm-btn--ghost bm-btn--sm" target="_blank" rel="noopener"
+                           href="https://wa.me/?text={{ urlencode($postTitle . ' ' . $postUrl) }}"><i class="bi bi-whatsapp"></i> WhatsApp</a>
+                        <button type="button" class="bm-btn bm-btn--primary bm-btn--sm" data-copy-link="{{ $postUrl }}"><i class="bi bi-link-45deg"></i> Copy link</button>
+                    </div>
+                </div>
+
+                <!-- ================= COMMENTS ================= -->
+                <section class="bm-comments" id="comments">
+                    <h2 class="bm-comments__title">Comments <span>({{ $post->comments_count }})</span></h2>
+
+                    @auth
+                        <form class="bm-comment-form" action="{{ route('posts.comment', $post) }}" method="POST">
+                            @csrf
+                            <label for="comment-content" class="bm-visually-hidden">Your comment</label>
+                            <textarea id="comment-content" name="content" placeholder="Share your thoughts…" maxlength="2000" required>{{ old('content') }}</textarea>
+                            @error('content')
+                                <span class="bm-error">{{ $message }}</span>
+                            @enderror
+                            <div class="bm-comment-form__foot">
+                                <small>Commenting as <strong>{{ auth()->user()->name }}</strong></small>
+                                <button type="submit" class="bm-btn bm-btn--primary bm-btn--sm">Post comment</button>
+                            </div>
+                        </form>
+                    @else
+                        <div class="bm-comment-form bm-login-prompt">
+                            <span>Join the conversation. Log in to leave a comment.</span>
+                            <a href="{{ route('login') }}" class="bm-btn bm-btn--primary bm-btn--sm">Log in to comment</a>
+                        </div>
+                    @endauth
+
+                    @forelse($post->comments as $comment)
+                        <div class="bm-comment">
+                            <span class="bm-comment__avatar">{{ strtoupper(substr(optional($comment->user)->name ?? 'G', 0, 1)) }}</span>
+                            <div>
+                                <div class="bm-comment__head">
+                                    <span class="bm-comment__name">{{ optional($comment->user)->name ?? 'Guest' }}</span>
+                                    <span class="bm-comment__time">{{ $comment->created_at->diffForHumans() }}</span>
+                                </div>
+                                <p class="bm-comment__text">{{ $comment->content }}</p>
+
+                                @auth
+                                    <details class="bm-reply">
+                                        <summary><i class="bi bi-reply"></i> Reply</summary>
+                                        <form action="{{ route('posts.comment', $post) }}" method="POST">
+                                            @csrf
+                                            <input type="hidden" name="parent_id" value="{{ $comment->id }}">
+                                            <textarea name="content" class="bm-textarea" placeholder="Write a reply…" maxlength="2000" required></textarea>
+                                            <div class="bm-comment-form__foot">
+                                                <span></span>
+                                                <button type="submit" class="bm-btn bm-btn--primary bm-btn--sm">Reply</button>
+                                            </div>
+                                        </form>
+                                    </details>
+                                @endauth
+
+                                @if($comment->replies->isNotEmpty())
+                                    <div class="bm-comment__replies">
+                                        @foreach($comment->replies as $reply)
+                                            <div class="bm-comment">
+                                                <span class="bm-comment__avatar">{{ strtoupper(substr(optional($reply->user)->name ?? 'G', 0, 1)) }}</span>
+                                                <div>
+                                                    <div class="bm-comment__head">
+                                                        <span class="bm-comment__name">{{ optional($reply->user)->name ?? 'Guest' }}</span>
+                                                        <span class="bm-comment__time">{{ $reply->created_at->diffForHumans() }}</span>
+                                                    </div>
+                                                    <p class="bm-comment__text">{{ $reply->content }}</p>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @empty
+                        <p class="bm-meta" style="padding: 8px 0;">No comments yet. Be the first to share your thoughts.</p>
+                    @endforelse
+                </section>
+            </article>
+
+            <!-- ================= SIDEBAR ================= -->
+            <aside class="bm-sidebar">
+                <div class="bm-widget">
+                    <h5 class="bm-widget__title"><i class="bi bi-lightning-charge-fill"></i> Latest posts</h5>
+                    <ul class="bm-mini-list">
+                        @forelse ($latestPosts->take(5) as $latestPost)
+                            <li class="bm-mini">
+                                <a href="{{ route('posts.show', $latestPost) }}">
+                                    <img class="bm-mini__img" loading="lazy" alt="{{ $latestPost->title }}"
+                                         src="{{ $latestPost->featured_image_1 ? asset('storage/' . $latestPost->featured_image_1) : $placeholderImage }}"
+                                         onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
+                                </a>
+                                <div>
+                                    <p class="bm-mini__title"><a href="{{ route('posts.show', $latestPost) }}">{{ $latestPost->title }}</a></p>
+                                    <div class="bm-meta">
+                                        <span>{{ $latestPost->created_at->format('M j, Y') }}</span>
+                                        @if($latestPost->created_at->diffInDays(now()) < 7)
+                                            <span class="bm-badge-new">New</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </li>
+                        @empty
+                            <li class="bm-meta">No latest posts available</li>
+                        @endforelse
+                    </ul>
+                </div>
+            </aside>
         </div>
-        @endforeach
-    </div>
-</div>
 
-</div>
-</div>
-</div>
-
-<!-- ================= SIDEBAR ================= -->
-<div class="col-xl-3 max-width side-sidebar">
-<div class="theiaStickySidebar">
-
-                 <!-- Latest Posts Widget -->
-                       <div class="widget mt-4">
-    <h5 class="widget__title">Latest Posts</h5>
-    <ul class="widget__latest-posts">
-        @php
-            // Take only 5 latest posts
-            $filteredLatest = $latestPosts->take(5);
-        @endphp
-        
-        @forelse ($filteredLatest as $i => $post)
-            <li class="widget__latest-posts__item">
-                <div class="widget__latest-posts-image">
-                    <a href="{{ route('posts.show', $post) }}" class="widget__latest-posts-link"> 
-                        <img src="{{ asset('storage/' . ($post->featured_image_1 ?? 'default.jpg')) }}" alt="{{ $post->title }}" class="widget__latest-posts-img">
-                    </a>
+        <!-- ================= RELATED ================= -->
+        @if(isset($relatedPosts) && $relatedPosts->isNotEmpty())
+            <section class="bm-related">
+                <div class="bm-section__head">
+                    <div>
+                        <span class="bm-section__eyebrow">Keep reading</span>
+                        <h2 class="bm-section__title">More in {{ optional($post->category)->name ?? 'this section' }}</h2>
+                    </div>
+                    @if($post->category)
+                        <a href="{{ route('category.page', $post->category->slug) }}" class="bm-link-arrow">View all <i class="bi bi-arrow-right"></i></a>
+                    @endif
                 </div>
-                <div class="widget__latest-posts-count">{{ $i + 1 }}</div>
-                <div class="widget__latest-posts__content">
-                    <p class="widget__latest-posts-title">
-                        <a href="{{ route('posts.show', $post) }}" class="widget__latest-posts-link">{{ $post->title }}</a>
-                    </p>
-                    <small class="widget__latest-posts-date">
-                        <i class="bi bi-clock-fill widget__latest-posts-icon"></i>{{ $post->created_at->format('F d, Y') }}
-                        
-                        {{-- Optional: Show time ago for newer posts --}}
-                        @if($post->created_at->diffInDays(now()) < 7)
-                            <span class="badge bg-danger ms-2">New</span>
-                        @endif
-                    </small>
+                <div class="bm-grid bm-grid--3">
+                    @foreach($relatedPosts->take(3) as $relatedPost)
+                        <div class="bm-reveal">
+                            @include('snippets.site.post-card', [
+                                'post' => $relatedPost,
+                                'variant' => 'default',
+                                'categoryName' => optional($post->category)->name,
+                                'categorySlug' => optional($post->category)->slug,
+                            ])
+                        </div>
+                    @endforeach
                 </div>
-            </li>
-        @empty
-            <li class="widget__latest-posts__item">
-                <div class="widget__latest-posts__content">
-                    <p class="widget__latest-posts-title text-muted">No latest posts available</p>
-                </div>
-            </li>
-        @endforelse
-        
-        {{-- Optional: Show count if less than 5 posts are available --}}
-        @if($filteredLatest->count() > 0 && $filteredLatest->count() < 5)
-            <li class="widget__latest-posts__item">
-                <small class="text-muted">
-                    Showing {{ $filteredLatest->count() }} of 5 latest posts
-                </small>
-            </li>
+            </section>
         @endif
-    </ul>
-</div>
 
-</div>
-</div>
-
-</div>
-</div>
-</section>
+    </div>
 </main>
-
-<!-- Share JavaScript -->
-<script>
-// Copy link function for minimal style
-function copyPostLinkMinimal() {
-    const url = "{{ url()->current() }}";
-    
-    navigator.clipboard.writeText(url).then(() => {
-        const successMsg = document.getElementById('copy-minimal-success');
-        successMsg.style.display = 'block';
-        
-        setTimeout(() => {
-            successMsg.style.display = 'none';
-        }, 2000);
-    }).catch(() => {
-        alert('Could not copy link. Please try again.');
-    });
-}
-
-// Close copy success message when clicking elsewhere
-document.addEventListener('click', function(event) {
-    if (!event.target.closest('.copy-minimal-btn')) {
-        const successMsg = document.getElementById('copy-minimal-success');
-        if (successMsg) {
-            successMsg.style.display = 'none';
-        }
-    }
-});
-</script>
-
-<!-- Font Awesome (if not already included) -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 @endsection

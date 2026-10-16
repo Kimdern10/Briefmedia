@@ -1,136 +1,71 @@
 @extends('layouts.admin')
 
+@section('title', 'Categories')
+
 @section('content')
-<div class="content-inner container-fluid pb-0" id="page_layout">
-    <div class="row">
-        <div class="col-sm-12">
-
-            <!-- Links -->
-            <div class="mb-3">
-                <a href="{{ route('admin.categories.trash') }}" class="btn btn-primary">View Trashed</a>
-                <a href="{{ route('admin.categories.create') }}" class="btn btn-primary">+ Add Category</a>
-            </div>
-
-            <div class="card">
-                <div class="card-header d-flex justify-content-between">
-                    <div class="header-title">
-                        <h4 class="card-title">Categories List</h4>
-                    </div>
-                </div>
-
-                <div class="card-body">
-
-                    {{-- Success Message --}}
-                    @if(session('success'))
-                        <div class="alert alert-success">
-                            {{ session('success') }}
-                        </div>
-                    @endif
-
-                    <div class="table-responsive">
-                        <table class="table table-bordered mb-0 category-table">
-                            <thead>
-                                <tr class="bg-white">
-                                    <th class="bg-primary text-white">#</th>
-                                    <th class="bg-primary text-white">Name</th>
-                                    <th class="bg-primary text-white">Description</th>
-                                    <th class="bg-primary text-white">Created</th>
-                                    <th class="bg-primary text-white">Action</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                @forelse($categories as $category)
-                                <tr>
-                                    <td>{{ $loop->iteration }}</td>
-
-                                    {{-- Name --}}
-                                    <td>{{ $category->name }}</td>
-
-                                    {{-- Description --}}
-                                    <td>{{ Str::limit($category->description, 50) ?? '—' }}</td>
-
-                                    {{-- Created Date --}}
-                                    <td>{{ $category->created_at->format('d M Y') }}</td>
-
-                                    {{-- Actions --}}
-                                    <td>
-                                        <div class="d-flex gap-2 align-items-center flex-wrap">
-
-                                            {{-- Edit --}}
-                                            <a href="{{ route('admin.categories.edit', $category->id) }}"
-                                               class="btn btn-warning btn-sm">
-                                                Edit
-                                            </a>
-
-                                            {{-- Trash --}}
-                                            <form action="{{ route('admin.categories.destroy', $category->id) }}"
-                                                  method="POST"
-                                                  onsubmit="return confirm('Move this category to trash?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit"
-                                                        class="btn btn-danger-subtle btn-sm">
-                                                    <i class="ph ph-trash"></i>
-                                                </button>
-                                            </form>
-
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                @empty
-                                <tr>
-                                    <td colspan="6" class="text-center text-danger">
-                                        No categories found
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-
-                        <!-- Pagination -->
-                        <div class="mt-3 d-flex justify-content-center">
-                            <p>{{ $categories->links() }}</p>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-
-        </div>
+<div class="ad-head">
+    <div>
+        <h1 class="ad-head__title">Categories</h1>
+        <p class="ad-head__sub">Sections that organise your stories and power the site navigation.</p>
+    </div>
+    <div class="ad-head__actions">
+        <a href="{{ route('admin.categories.trash') }}" class="ad-btn ad-btn--ghost"><i class="bi bi-trash3"></i> Trash</a>
+        <a href="{{ route('admin.categories.create') }}" class="ad-btn ad-btn--primary"><i class="bi bi-plus-lg"></i> New category</a>
     </div>
 </div>
 
-{{-- Custom Responsive CSS --}}
-<style>
-@media (max-width: 768px) {
-    .category-table th,
-    .category-table td {
-        font-size: 12px;
-        padding: 4px 6px;
-        white-space: nowrap;
-    }
+<div class="ad-card">
+    <div class="ad-card__head">
+        <label class="ad-search">
+            <i class="bi bi-search"></i>
+            <input type="search" placeholder="Filter categories…" data-table-filter="#categories-table" aria-label="Filter categories">
+        </label>
+    </div>
+    <div class="ad-table-wrap">
+        <table class="ad-table" id="categories-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th class="ad-hide-sm">Description</th>
+                    <th class="ad-hide-sm">Created</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($categories as $category)
+                    <tr data-row>
+                        <td>
+                            <div class="ad-person">
+                                <span class="ad-initial">{{ strtoupper(substr($category->name, 0, 1)) }}</span>
+                                <div>
+                                    <strong>{{ $category->name }}</strong>
+                                    <div class="ad-post-cell__sub">/category/{{ $category->slug }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="ad-hide-sm" style="color: var(--ad-muted); max-width: 420px;">{{ $category->description ? Str::limit($category->description, 80) : 'No description' }}</td>
+                        <td class="ad-hide-sm" style="white-space: nowrap;">{{ $category->created_at->format('d M Y') }}</td>
+                        <td>
+                            <div class="ad-table__actions">
+                                <a href="{{ route('category.page', $category->slug) }}" target="_blank" class="ad-btn ad-btn--ghost ad-btn--sm ad-btn--icon" title="View on site"><i class="bi bi-box-arrow-up-right"></i></a>
+                                <a href="{{ route('admin.categories.edit', $category->id) }}" class="ad-btn ad-btn--ghost ad-btn--sm ad-btn--icon" title="Edit"><i class="bi bi-pencil"></i></a>
+                                <form action="{{ route('admin.categories.destroy', $category->id) }}" method="POST"
+                                      data-confirm="“{{ $category->name }}” will be moved to the trash." data-confirm-title="Move category to trash?" data-confirm-button="Move to trash">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="ad-btn ad-btn--danger ad-btn--sm ad-btn--icon" title="Move to trash"><i class="bi bi-trash3"></i></button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                @empty
+                    <tr><td colspan="4" class="ad-table-empty"><i class="bi bi-folder2-open"></i>No categories yet</td></tr>
+                @endforelse
+                <tr data-filter-empty hidden><td colspan="4" class="ad-table-empty"><i class="bi bi-funnel"></i>No categories match this filter.</td></tr>
+            </tbody>
+        </table>
+    </div>
 
-    .category-table {
-        font-size: 12px;
-    }
-
-    .card-title {
-        font-size: 16px;
-    }
-}
-
-@media (max-width: 480px) {
-    .category-table th,
-    .category-table td {
-        font-size: 10px;
-        padding: 2px 4px;
-    }
-
-    .card-title {
-        font-size: 14px;
-    }
-}
-</style>
+    {{ $categories->links('snippets.site.pagination') }}
+</div>
 @endsection

@@ -1,99 +1,51 @@
 @extends('layouts.app')
 
+@section('title', 'Search: ' . $query . ' | ' . ($globalSeo->site_name ?? config('app.name')))
+
 @section('content')
-<main class="main">
-    <!-- Simple Header -->
-    <div class="container-fluid mt-130">
-        <div class="row">
-            <div class="col-12 mb-10">
-                <h2>Search Results for "{{ $query }}"</h2>
-                <p class="text-muted">Found {{ $posts->total() }} {{ Str::plural('post', $posts->total()) }}</p>
-                <hr>
+<main>
+    <section class="bm-page-hero">
+        <div class="bm-container">
+            <nav class="bm-breadcrumb" aria-label="Breadcrumb">
+                <a href="{{ url('/') }}">Home</a>
+                <i class="bi bi-chevron-right" style="font-size: 10px;"></i>
+                <span>Search</span>
+            </nav>
+            <h1 class="bm-page-hero__title">Results for <em>“{{ $query }}”</em></h1>
+            <div class="bm-page-hero__stats">
+                <span><strong>{{ $posts->total() }}</strong> {{ Str::plural('post', $posts->total()) }} found</span>
             </div>
+
+            <form action="{{ route('user.posts.search') }}" method="GET" class="bm-subscribe"
+                  style="max-width: 560px; margin-top: 24px; background: var(--bm-surface); border-color: var(--bm-line);">
+                <input type="search" name="query" value="{{ $query }}" placeholder="Search again…" required aria-label="Search posts"
+                       style="color: var(--bm-ink);">
+                <button type="submit" class="bm-btn bm-btn--primary"><i class="bi bi-search"></i> Search</button>
+            </form>
         </div>
-    </div>
+    </section>
 
-    <!-- Search Results Grid -->
-    <section class="blog-grid">
-        <div class="container-fluid">
-            <div class="row">
-                @forelse ($posts as $post)
-                    <div class="col-lg-4 col-md-6 mb-4">
-                        <div class="post-card post-card--default">
-                            <!-- Featured Image -->
-                            <div class="post-card__image">
-                                <a href="{{ route('posts.show', $post) }}">
-                                    <img src="{{ asset('storage/' . ($post->featured_image_1 ?? 'default.jpg')) }}" 
-                                         alt="{{ $post->title }}">
-                                </a>
-                            </div>
+    <section class="bm-section">
+        <div class="bm-container">
+            @if($posts->isNotEmpty())
+                <div class="bm-grid bm-grid--3">
+                    @foreach ($posts as $post)
+                        <div class="bm-reveal">
+                            @include('snippets.site.post-card', ['post' => $post, 'variant' => 'default'])
+                        </div>
+                    @endforeach
+                </div>
 
-                            <div class="post-card__content">
-                                <a href="{{ route('category.page', $post->category->slug) }}" class="category">{{ $post->category->name }}</a>
-                                <h4 class="post-card__title">
-                                    <a href="{{ route('posts.show', $post) }}" class="post-card__title-link">{{ $post->title }}</a>
-                                </h4>
-                                <p class="post-card__exerpt">{{ Str::limit($post->excerpt, 100) }}</p>
-                            </div>
-                        </div>
-                    </div>
-                @empty
-                    <div class="col-12">
-                        <div class="alert alert-info text-center py-5">
-                            <i class="bi bi-search display-1 d-block mb-3"></i>
-                            <h4>No posts found</h4>
-                            <p>We couldn't find any posts matching "{{ $query }}".</p>
-                            <a href="{{ url('/') }}" class="btn btn-primary mt-3">Go to Homepage</a>
-                        </div>
-                    </div>
-                @endforelse
-            </div>
-
-            <!-- Pagination -->
-            @if($posts->hasPages())
-                <div class="row mt-4">
-                    <div class="col-12">
-                        <div class="d-flex justify-content-center">
-                            {{ $posts->withQueryString()->links() }}
-                        </div>
-                    </div>
+                {{ $posts->withQueryString()->links('snippets.site.pagination') }}
+            @else
+                <div class="bm-empty">
+                    <i class="bi bi-search"></i>
+                    <h3>No posts found</h3>
+                    <p>We couldn't find anything matching “{{ $query }}”. Try a different keyword.</p>
+                    <a href="{{ url('/') }}" class="bm-btn bm-btn--primary">Go to homepage</a>
                 </div>
             @endif
         </div>
     </section>
 </main>
-
-<!-- Image styling -->
-<style>
-.post-card__image {
-    width: 100%;
-    aspect-ratio: 18/9;
-    overflow: hidden;
-    position: relative;
-}
-
-.post-card__image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
-    transition: transform 0.3s ease;
-}
-
-.post-card__image:hover img {
-    transform: scale(1.05);
-}
-
-   @media (max-width: 768px) {
-    .post-card__image {
-        height: 290px;
-    }
-}
-
-@media (max-width: 480px) {
-    .post-card__image {
-        height: 300px;
-    }
-}
-</style>
 @endsection

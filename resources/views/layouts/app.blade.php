@@ -1,46 +1,51 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
- <base href="/public">
     <!-- ================= META ================= -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6884205395656406"
-     crossorigin="anonymous"></script>
-     
-     <!-- ================= PAGE SEO OVERRIDE ================= -->
+    <!-- Apply the saved (or system) theme before paint to avoid a flash -->
+    <script>
+        (function () {
+            var theme = null;
+            try { theme = localStorage.getItem('bm-theme'); } catch (e) {}
+            if (!theme) { theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6884205395656406"
+            crossorigin="anonymous"></script>
+
+    <!-- ================= PAGE SEO OVERRIDE ================= -->
     @yield('meta_tags')
 
     @if (!View::hasSection('meta_tags'))
+        <!-- ================= TITLE ================= -->
+        <title>@hasSection('title')@yield('title')@else{{ $globalSeo->default_title ?? config('app.name') }}@endif</title>
 
-
-    <!-- ================= TITLE ================= -->
-    <title>{{ $globalSeo->default_title ?? config('app.name') }}</title>
-
- <!-- ================= BASIC SEO ================= -->
+        <!-- ================= BASIC SEO ================= -->
         <meta name="description" content="{{ $globalSeo->meta_description ?? '' }}">
         <meta name="keywords" content="{{ $globalSeo->meta_keywords ?? '' }}">
         <meta name="author" content="{{ $globalSeo->author ?? '' }}">
         <meta name="robots" content="{{ $globalSeo->robots_meta ?? 'index, follow' }}">
         <link rel="canonical" href="{{ $globalSeo->canonical_url ?? url()->current() }}">
 
-
-          <!-- ================= OPEN GRAPH ================= -->
+        <!-- ================= OPEN GRAPH ================= -->
         <meta property="og:title" content="{{ $globalSeo->og_title ?? $globalSeo->default_title ?? config('app.name') }}">
         <meta property="og:description" content="{{ $globalSeo->og_description ?? $globalSeo->meta_description ?? '' }}">
         <meta property="og:type" content="website">
         <meta property="og:url" content="{{ url()->current() }}">
 
-
-    @if(!empty($globalSeo?->og_image))
+        @if(!empty($globalSeo?->og_image))
             <meta property="og:image" content="{{ asset('storage/'.$globalSeo->og_image) }}">
             <meta property="og:image:secure_url" content="{{ asset('storage/'.$globalSeo->og_image) }}">
         @endif
 
-    <!-- ================= TWITTER CARD ================= -->
+        <!-- ================= TWITTER CARD ================= -->
         <meta name="twitter:card" content="summary_large_image">
         <meta name="twitter:title" content="{{ $globalSeo->twitter_title ?? $globalSeo->default_title ?? config('app.name') }}">
         <meta name="twitter:description" content="{{ $globalSeo->twitter_description ?? $globalSeo->meta_description ?? '' }}">
@@ -52,12 +57,9 @@
         @endif
 
         <meta name="twitter:site" content="{{ $globalSeo->twitter_site ?? '' }}">
-
     @endif
 
-    <!-- <meta name="twitter:site" content="{{ $globalSeo->twitter_site ?? '' }}"> -->
-
-     <!-- ================= FAVICON ================= -->
+    <!-- ================= FAVICON ================= -->
     @if(!empty($globalSeo?->favicon))
         <link rel="icon" type="image/png" href="{{ asset('storage/'.$globalSeo->favicon) }}">
     @endif
@@ -67,7 +69,7 @@
         <meta name="google-site-verification" content="{{ $globalSeo->google_verification }}">
     @endif
 
- <!-- ================= GOOGLE ANALYTICS ================= -->
+    <!-- ================= GOOGLE ANALYTICS ================= -->
     @if(!empty($globalSeo?->google_analytics_id))
         <script async src="https://www.googletagmanager.com/gtag/js?id={{ $globalSeo->google_analytics_id }}"></script>
         <script>
@@ -92,134 +94,51 @@
     @endif
 
     <!-- ================= STYLES ================= -->
-    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css">
-    <link rel="stylesheet" href="{{ asset('css/share-buttons.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('assets/css/font/bootstrap-icons.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/swiper-bundle.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/custom.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/bm-site.css') }}?v={{ filemtime(public_path('assets/css/bm-site.css')) }}">
+    @stack('styles')
 
-    <!-- Alpine -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-      <!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <!-- ================= PAGE LOADER STYLE ================= -->
-    <style>
-        body > .page-loader {
-            position: fixed;
-            inset: 0;
-            background: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 99999;
-            transition: opacity 0.5s ease, visibility 0.5s ease;
-        }
-
-        body > .page-loader.hidden {
-            opacity: 0;
-            visibility: hidden;
-        }
-
-        .page-loader-logo {
-            width: 240px;
-            max-width: 85vw;
-            height: auto;
-            animation: pageLoaderPulse 1.5s ease-in-out infinite;
-        }
-
-        @keyframes pageLoaderPulse {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.08); opacity: 0.75; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-    </style>
-
+    <!-- Alpine (like buttons) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 </head>
 
-<body>
+<body class="bm">
 
     <!-- ================= PAGE LOADER ================= -->
-    <div class="page-loader">
-        <img src="{{ asset('assets/img/logo/ChatGPT.png') }}" 
-             alt="Loading" 
-             class="page-loader-logo">
+    <div class="bm-loader" aria-hidden="true">
+        <span class="bm-logo">
+            <span class="bm-logo__mark">B</span>
+            <span class="bm-logo__text">Brief<b>Media</b></span>
+        </span>
     </div>
 
     <!-- ================= HEADER ================= -->
     @include('snippets.header')
 
     <!-- ================= CONTENT ================= -->
-    @yield('content')
+    <div class="bm-main">
+        @yield('content')
+    </div>
 
     <!-- ================= FOOTER ================= -->
     @include('snippets.footer')
 
     <!-- ================= SCRIPTS ================= -->
-    <script src="{{ asset('assets/js/jquery.min.js') }}"></script>
-    <script src="{{ asset('assets/js/bootstrap.bundle.min.js') }}"></script>
-    <script src="{{ asset('assets/js/swiper-bundle.min.js') }}"></script>
-    <script src="{{ asset('assets/js/masonry.min.js') }}"></script>
-    <script src="{{ asset('assets/js/theia-sticky-sidebar.min.js') }}"></script>
-    <script src="{{ asset('assets/js/ajax-contact.js') }}"></script>
-    <script src="{{ asset('assets/js/switch.js') }}"></script>
-    <script src="{{ asset('assets/js/main.js') }}"></script>
+    <script src="{{ asset('assets/js/bm-site.js') }}?v={{ filemtime(public_path('assets/js/bm-site.js')) }}"></script>
 
-    <!-- Loader Hide -->
-    <script>
-        window.addEventListener("load", function () {
-            const loader = document.querySelector(".page-loader");
-            loader.classList.add("hidden");
-            setTimeout(() => loader.remove(), 600);
-        });
-    </script>
+    <!-- Session messages (auth pages show them inline instead) -->
+    @unless (View::hasSection('auth_page'))
+        @foreach (['success', 'message', 'info', 'warning', 'error'] as $flashKey)
+            @if (session($flashKey))
+                <script>window.bmToast(@json(session($flashKey)), 4500);</script>
+                @break
+            @endif
+        @endforeach
+    @endunless
 
-   
-<!-- SweetAlert session messages -->
-@if (session('success'))
-    <script>
-        Swal.fire({
-            icon: 'success',
-            title: 'Success!',
-            text: "{{ session('success') }}",
-        });
-    </script>
-@endif
-
-@if (session('error'))
-    <script>
-        Swal.fire({
-            icon: 'error',
-            title: 'Error!',
-            text: "{{ session('error') }}",
-        });
-    </script>
-@endif
-
-@if (session('warning'))
-    <script>
-        Swal.fire({
-            icon: 'warning',
-            title: 'Warning!',
-            text: "{{ session('warning') }}",
-        });
-    </script>
-@endif
-
-@if (session('info'))
-    <script>
-        Swal.fire({
-            icon: 'info',
-            title: 'Info',
-            text: "{{ session('info') }}",
-        });
-    </script>
-@endif
-
-    <!-- Share Buttons -->
-    <script src="{{ asset('js/share-buttons.js') }}"></script>
-
+    @stack('scripts')
 </body>
 </html>

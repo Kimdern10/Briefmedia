@@ -5,10 +5,12 @@
 @section('content')
 <!-- Terms & Conditions page -->
 
-<div class="container py-5" style="margin-top: 100px;">
+<div class="bm-container">
+<article class="bm-page">
+    <span class="bm-section__eyebrow">Legal</span>
 
 
-    <h1 class="mb-12">Terms & Conditions</h1>
+    <h1>Terms &amp; Conditions</h1>
 
 
     <p>Welcome to <strong>BriefMedia</strong>. By accessing and using this website, you agree to comply with the following terms and conditions. Please read them carefully.</p>
@@ -47,5 +49,6 @@
 
     <h3>10. Contact Information</h3>
     <p>If you have any questions about these Terms & Conditions, you may <a href="{{ route('contact') }}">contact us</a>.</p>
+</article>
 </div>
 @endsection

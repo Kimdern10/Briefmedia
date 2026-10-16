@@ -1,965 +1,186 @@
-
 @extends('layouts.app')
+
 @section('content')
+@php
+    $placeholderImage = asset('assets/img/bm-placeholder.svg');
+    $imageFor = fn ($post) => $post->featured_image_1 ? asset('storage/' . $post->featured_image_1) : $placeholderImage;
 
-<main class="main">
+    // Trending: posts that have views or likes, most viewed first (max 8)
+    $filteredTrending = collect($trendingPosts ?? [])
+        ->filter(fn ($post) => $post->views > 0 || ($post->likes_count ?? 0) > 0)
+        ->sortByDesc(fn ($post) => [$post->views, $post->likes_count ?? 0])
+        ->values()
+        ->take(8);
+@endphp
 
-  <!-- ================= SLIDER ================= -->
-<div class="slider slider--two">
+<main>
 
-    <!-- Main Slider -->
-    <div class="swiper slider__top">
-        <div class="swiper-wrapper">
-            @foreach ($sliderPosts as $post)
-            <div class="swiper-slide slider__item"
-                  style="background-image: url('{{ asset('storage/' . ($post->featured_image_1 ?? 'default.jpg')) }}'); height: 900px;">
-                
-                <div class="container-fluid">
-                    <div class="row">
-                        <div class="col-xl-7 col-lg-9 col-md-12">
-                            <div class="slider__item-content">
-                                <a href="#" class="category">
-                                    {{ $post->category->name ?? 'Uncategorized' }}
-                                </a>
+    <!-- ================= FEATURED (rotating hero) ================= -->
+    @if($sliderPosts->isNotEmpty())
+        <section class="bm-hero" data-hero data-delay="6500">
+            <div class="bm-container">
+                <div class="bm-hero__grid">
 
-                                <h1 class="slider__title">
-                                    <a href="{{ route('posts.show', $post) }}" class="slider__title-link">
-                                        {{ $post->title }}
-                                    </a>
-                                </h1>
+                    <div class="bm-hero__stage" aria-roledescription="carousel" aria-label="Featured stories">
+                        @foreach($sliderPosts as $index => $post)
+                            <article class="bm-hero__slide {{ $index === 0 ? 'is-active' : '' }}" aria-roledescription="slide"
+                                     aria-label="{{ $index + 1 }} of {{ $sliderPosts->count() }}">
+                                <img class="bm-hero__img" src="{{ $imageFor($post) }}" alt="{{ $post->title }}"
+                                     @if($index > 0) loading="lazy" @endif
+                                     onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
+                                <div class="bm-hero__content">
+                                    @if($post->category)
+                                        <a href="{{ route('category.page', $post->category->slug) }}" class="bm-chip bm-chip--light">{{ $post->category->name }}</a>
+                                    @endif
+                                    <h2 class="bm-hero__title">
+                                        <a href="{{ route('posts.show', $post) }}">{{ $post->title }}</a>
+                                    </h2>
+                                    @if($post->excerpt)
+                                        <p class="bm-hero__excerpt">{{ Str::limit($post->excerpt, 180) }}</p>
+                                    @endif
+                                    <div class="bm-meta">
+                                        <span>Posted by <strong>{{ optional($post->admin)->name ?? 'BriefMedia' }}</strong></span>
+                                        <span>{{ $post->created_at->format('F j, Y') }}</span>
+                                        <span><i class="bi bi-clock"></i> {{ $post->reading_time }}</span>
+                                        <span><i class="bi bi-chat"></i> {{ $post->comments_count ?? 0 }}</span>
+                                    </div>
+                                </div>
+                            </article>
+                        @endforeach
 
-                                <p class="slider__exerpt">{{ $post->excerpt }}</p>
-
-                                <ul class="slider__meta list-inline">
-                                    <li class="slider__meta-item">
-                                        <img src="{{ asset('storage/' . ($post->featured_image_1 ?? 'default.jpg')) }}" class="slider__meta-img">
-                                    </li>
-                                    <li class="slider__meta-item">{{ $post->admin->name ?? 'Admin' }}</li>
-                                    <li class="slider__meta-item">
-                                        <span class="dot"></span>
-                                        {{ $post->created_at->format('F d, Y') }}
-                                    </li>
-                                    <li class="slider__meta-item">
-                                        <span class="dot"></span>
-                                        {{ $post->comments_count ?? 0 }} comments
-                                    </li>
-                                </ul>
-
+                        @if($sliderPosts->count() > 1)
+                            <div class="bm-hero__dots" role="tablist">
+                                @foreach($sliderPosts as $index => $post)
+                                    <button type="button" class="bm-hero__dot {{ $index === 0 ? 'is-active' : '' }}" data-hero-go="{{ $index }}"
+                                            role="tab" aria-selected="{{ $index === 0 ? 'true' : 'false' }}" aria-label="Show story {{ $index + 1 }}"></button>
+                                @endforeach
                             </div>
-                        </div>
+                        @endif
                     </div>
-                </div>
 
-            </div>
-            @endforeach
-        </div>
-
-        <!-- Navigation -->
-        <!-- <div class="swiper-button-prev"></div>
-        <div class="swiper-button-next"></div> -->
-
-        <!-- Pagination
-        <div class="swiper-pagination"></div> -->
-    </div>
-
-    <!-- Thumbnails Slider -->
-    <div class="swiper slider__bottom thumbs-slider container-fluid">
-        <div class="swiper-wrapper">
-            @foreach ($sliderPosts as $post)
-            <div class="swiper-slide">
-                <div class="post-slider">
-                    <img src="{{ asset('storage/' . ($post->featured_image_1 ?? 'default.jpg')) }}" class="post-slider__img">
-                    <div class="post-slider__content">
-                        <p class="post-slider__title"><span>{{ $post->title }}</span></p>
-                        <ul class="post-slider__meta list-inline">
-                            <li class="post-slider__meta-link">
-                                <i class="bi bi-clock-fill"></i>
-                                {{ $post->created_at->format('F d, Y') }}
-                            </li>
-                        </ul>
+                    <div class="bm-hero__list">
+                        @foreach($sliderPosts as $index => $post)
+                            <button type="button" class="bm-hero__item {{ $index === 0 ? 'is-active' : '' }}" data-hero-go="{{ $index }}">
+                                <img class="bm-hero__thumb" src="{{ $imageFor($post) }}" alt="" loading="lazy"
+                                     onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
+                                <span>
+                                    <span class="bm-hero__item-cat">{{ optional($post->category)->name ?? 'Story' }}</span>
+                                    <span class="bm-hero__item-title">{{ $post->title }}</span>
+                                    <span class="bm-posted-by">Posted by <strong>{{ optional($post->admin)->name ?? 'BriefMedia' }}</strong></span>
+                                </span>
+                                <span class="bm-hero__progress"></span>
+                            </button>
+                        @endforeach
                     </div>
+
                 </div>
             </div>
-            @endforeach
-        </div>
-    </div>
-
-    <style>
-        @media (max-width: 768px) {
-            .thumbs-slider {
-                display: none !important;
-            }
-        }
-    </style>
-
-</div>
-    <!-- ================= END SLIDER ================= -->
-
-    <!-- ================= TRENDING NEWS SECTION ================= -->
-  @if(isset($trendingPosts) && $trendingPosts->count() > 0)
-    @php
-        // Filter and sort posts by views and likes, then take 8
-        $filteredTrending = $trendingPosts
-            ->filter(function($post) {
-                // Keep posts with views > 0 OR likes > 0
-                return $post->views > 0 || ($post->likedByUsers && $post->likedByUsers->count() > 0);
-            })
-            ->sortByDesc(function($post) {
-                // Sort by views first, then by likes count
-                return $post->views;
-            })
-            ->values() // Reset keys after sorting
-            ->take(8); // Take only 8 posts
-    @endphp
-    
-    @if($filteredTrending->count() > 0)
-    <section class="trending-news mt-90">
-        <div class="container-fluid">
-            <div class="section-header d-flex justify-content-between align-items-center mb-4">
-                <h3 class="section-title">
-                    <i class="bi bi-fire" style="color: #ff69b4;"></i> 
-                    Trending Now
-                </h3>
-            
-            </div>
-            
-            <div class="row">
-                @foreach($filteredTrending as $index => $trending)
-                <div class="col-lg-3 col-md-6 mb-4">
-                    <div class="trending-card">
-                        <div class="trending-card__image">
-                            <a href="{{ route('posts.show', $trending) }}">
-                                <img src="{{ asset('storage/' . ($trending->featured_image_1 ?? 'default.jpg')) }}" 
-                                     alt="{{ $trending->title }}"
-                                     class="trending-card__img">
-                                <span class="trending-badge">{{ $index + 1 }}</span>
-                            </a>
-                        </div>
-                        <div class="trending-card__content">
-                            <a href="{{ route('posts.show', $trending) }}" class="trending-category">
-                                {{ $trending->category->name ?? 'Uncategorized' }}
-                            </a>
-                            <h5 class="trending-card__title">
-                                <a href="{{ route('posts.show', $trending) }}">{{ Str::limit($trending->title, 50) }}</a>
-                            </h5>
-                            <div class="trending-meta">
-                                <span><i class="bi bi-eye"></i> {{ $trending->views ?? 0 }}</span>
-                                <span><i class="bi bi-hand-thumbs-up"></i> {{ $trending->likedByUsers->count() ?? 0 }}</span>
-                            </div>
-                        </div>
-                    </div>
+        </section>
+    @else
+        <section class="bm-section">
+            <div class="bm-container">
+                <div class="bm-empty">
+                    <i class="bi bi-journal-text"></i>
+                    <h3>No stories yet</h3>
+                    <p>Published posts will appear here.</p>
                 </div>
-                
-                {{-- Add a clearfix after every 4 posts to maintain grid layout --}}
-                @if(($index + 1) % 4 == 0 && !$loop->last)
-                <div class="w-100 d-none d-md-block"></div>
-                @endif
-                
-                @endforeach
             </div>
-            
-            {{-- Optional: Show count if less than 8 posts are available --}}
-            @if($filteredTrending->count() < 8)
-            <div class="text-center mt-3">
-                <small class="text-muted">
-                    Showing {{ $filteredTrending->count() }} trending posts
-                </small>
-            </div>
-            @endif
-        </div>
-    </section>
+        </section>
     @endif
-@endif
-    <!-- ================= END TRENDING NEWS ================= -->
 
-<!-- Inside your post content -->
-<!-- <div class="my-4">
-    <ins class="adsbygoogle"
-         style="display:block"
-         data-ad-client="ca-pub-6884205395656406"
-         data-ad-slot="YOUR_AD_SLOT_ID"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
-    <script>
-         (adsbygoogle = window.adsbygoogle || []).push({});
-    </script>
-</div> -->
+    <!-- ================= TRENDING ================= -->
+    @if($filteredTrending->isNotEmpty())
+        <section class="bm-section">
+            <div class="bm-container">
+                <div class="bm-section__head">
+                    <div>
+                        <span class="bm-section__eyebrow"><i class="bi bi-fire"></i> Hot right now</span>
+                        <h2 class="bm-section__title">Trending</h2>
+                    </div>
+                </div>
+
+                <div class="bm-trending">
+                    @foreach($filteredTrending as $index => $trending)
+                        <article class="bm-trend bm-reveal" style="transition-delay: {{ ($index % 4) * 70 }}ms;">
+                            <a href="{{ route('posts.show', $trending) }}" class="bm-trend__media">
+                                <img src="{{ $imageFor($trending) }}" alt="{{ $trending->title }}" loading="lazy"
+                                     onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
+                                <span class="bm-trend__rank">{{ $index + 1 }}</span>
+                            </a>
+                            <div>
+                                <div class="bm-meta" style="margin-bottom: 6px;">
+                                    @if($trending->category)
+                                        <a href="{{ route('category.page', $trending->category->slug) }}" class="bm-chip">{{ $trending->category->name }}</a>
+                                    @endif
+                                </div>
+                                <h3 class="bm-trend__title">
+                                    <a href="{{ route('posts.show', $trending) }}">{{ Str::limit($trending->title, 80) }}</a>
+                                </h3>
+                                <p class="bm-posted-by" style="margin-top: 6px !important;">Posted by <strong>{{ optional($trending->admin)->name ?? 'BriefMedia' }}</strong></p>
+                                <div class="bm-meta" style="margin-top: 8px;">
+                                    <span><i class="bi bi-eye"></i> {{ number_format($trending->views ?? 0) }}</span>
+                                    <span><i class="bi bi-heart"></i> {{ $trending->likes_count ?? $trending->likedByUsers->count() }}</span>
+                                </div>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+
+                @if($filteredTrending->count() < 8)
+                    <p class="bm-trending-empty">Showing {{ $filteredTrending->count() }} trending {{ Str::plural('story', $filteredTrending->count()) }}</p>
+                @endif
+            </div>
+        </section>
+    @endif
 
     <!-- ================= CATEGORY SECTIONS ================= -->
- @foreach ($categoriesWithPosts as $category)
-    <section class="mt-90">
-        <div class="container-fluid">
+    @foreach ($categoriesWithPosts as $category)
+        @php
+            $categoryPosts = $category->posts->take(6);
+            $leadPost = $categoryPosts->first();
+            $otherPosts = $categoryPosts->slice(1);
+        @endphp
 
-            <!-- CATEGORY TITLE -->
-            <div class="row mb-3">
-                <div class="col-lg-12 d-flex justify-content-between align-items-center">
-                    <h3 class="section-title text-uppercase fw-bold mb-0">
-                       {{ $category->name }}
-                    </h3>
-                    
-                    <!-- View All Link -->
-                    <a href="{{ route('category.page', $category->slug) }}" 
-                       class="view-all-link">
-                        View All <i class="bi bi-arrow-right"></i>
+        <section class="bm-section {{ $loop->first && $filteredTrending->isEmpty() ? '' : 'bm-section--tight' }}">
+            <div class="bm-container">
+                <div class="bm-section__head">
+                    <div>
+                        <span class="bm-section__eyebrow">Section {{ str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
+                        <h2 class="bm-section__title">{{ $category->name }}</h2>
+                    </div>
+                    <a href="{{ route('category.page', $category->slug) }}" class="bm-link-arrow">
+                        View all <i class="bi bi-arrow-right"></i>
                     </a>
                 </div>
-                <div class="col-12">
-                    <hr class="mb-4">
-                </div>
-            </div>
 
-            <!-- POSTS -->
-            <div class="row">
-               @foreach ($category->posts->take(6) as $post) <!-- ✅ limit 6 per category -->
-
-                @php
-                    $postUrl = route('posts.show', $post);
-                    $postTitle = $post->title;
-                @endphp
-                <div class="col-xl-4 col-lg-6 col-md-6">
-                    <div class="post-card post-card--default">
-
-                        <div class="post-card__image">
-                            <a href="{{ route('posts.show', $post) }}">
-                                <img src="{{ asset('storage/' . ($post->featured_image_1 ?? 'default.jpg')) }}" 
-                                     alt="{{ $post->title }}">
-                            </a>
-                        </div>
-
-                        <div class="post-card__content">
-
-                            <a href="" class="category">
-                                {{ $post->category->name }}
-                            </a>
-
-                            <h5 class="post-card__title">
-                                <a href="{{ route('posts.show', $post) }}"
-                                   class="post-card__title-link">
-                                    {{ $post->title }}
-                                </a>
-                            </h5>
-
-                                                                <p class="post-card__exerpt">
-    {{ Str::limit($post->excerpt, 120) }}
-    <a href="{{ route('posts.show', $post) }}" class="read-more-inline">
-        Read More →
-    </a>
-</p>
-
-                            <!-- ================= POST META ================= -->
-                            <ul class="post-card__meta list-inline d-flex flex-wrap align-items-center" style="gap: 0.5rem; margin:0; padding:0; list-style:none;">
-                                <li class="post-card__meta-item">
-                                    Posted by 
-                                    <a href="#" class="post-card__meta-link">{{ $post->admin->name }}</a>
-                                </li>
-                                <li class="post-card__meta-item">
-                                    <span class="dot"></span> {{ $post->created_at->format('F d, Y') }}
-                                </li>
-                                <li class="post-card__meta-item">
-                                    <span class="dot"></span> {{ $post->reading_time ?? 5 }} min Read
-                                </li>
-                                <li class="post-card__meta-item">
-                                    <i class="bi bi-eye-fill"></i> {{ $post->views ?? 0 }}
-                                </li>
-                                <li class="post-card__meta-item">
-                                    <i class="bi bi-chat-left-text-fill"></i> {{ $post->comments_count ?? 0 }}
-                                </li>
-                                
-                                <!-- ================= LIKE BUTTON ================= -->
-                                <li class="post-card__meta-item" 
-                                    x-data="{ 
-                                        liked: {{ $post->likedByUsers->contains(auth()->id()) ? 'true' : 'false' }},
-                                        count: {{ $post->likedByUsers->count() }}
-                                    }">
-                                    @auth
-                                        <button @click="
-                                            fetch('{{ route('posts.like', $post) }}', {
-                                                method: 'POST',
-                                                headers: {
-                                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                                    'Accept': 'application/json'
-                                                }
-                                            })
-                                            .then(res => res.json())
-                                            .then(data => {
-                                                liked = data.liked;
-                                                count = data.likes_count;
-                                            })
-                                        " class="btn btn-link like-btn p-0 border-0 text-decoration-none">
-                                            <i :class="liked ? 'bi-hand-thumbs-up-fill text-primary' : 'bi-hand-thumbs-up'" class="bi"></i>
-                                            <span x-text="liked ? 'Unlike' : 'Like'"></span>
-                                            (<span x-text="count"></span>)
-                                        </button>
-                                    @else
-                                        <a href="{{ route('login') }}" class="text-muted text-decoration-none">
-                                            <i class="bi bi-hand-thumbs-up"></i> Like ({{ $post->likedByUsers->count() }})
-                                        </a>
-                                    @endauth
-                                </li>
-                                <!-- ================= END LIKE BUTTON ================= -->
-                                
-                                <!-- ================= SHARE BUTTON ================= -->
-                                <li class="post-card__meta-item">
-                                    <div class="share-minimal-dropdown">
-                                        <button class="share-minimal-toggle" onclick="toggleMinimalShareMenu({{ $post->id }})">
-                                            <i class="bi bi-share"></i> Share
-                                        </button>
-                                        <div id="share-minimal-menu-{{ $post->id }}" class="share-minimal-menu">
-                                            <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode($postUrl) }}" 
-                                               target="_blank" class="share-minimal-option">
-                                                Facebook
-                                            </a>
-                                            <a href="https://twitter.com/intent/tweet?url={{ urlencode($postUrl) }}&text={{ urlencode($postTitle) }}" 
-                                               target="_blank" class="share-minimal-option">
-                                                X
-                                            </a>
-                                            <a href="https://www.linkedin.com/sharing/share-offsite?url={{ urlencode($postUrl) }}" 
-                                               target="_blank" class="share-minimal-option">
-                                                LinkedIn
-                                            </a>
-                                            <a href="https://wa.me/?text={{ urlencode($postTitle . ' ' . $postUrl) }}" 
-                                               target="_blank" class="share-minimal-option">
-                                                WhatsApp
-                                            </a>
-                                            <button onclick="copyMinimalLink('{{ $postUrl }}', {{ $post->id }})" class="share-minimal-option copy-option">
-                                                Copy link
-                                                <span id="copy-minimal-success-{{ $post->id }}" class="copy-minimal-success">Copied!</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </li>
-                                <!-- ================= END SHARE BUTTON ================= -->
-                                
-                            </ul>
-                            <!-- ================= END POST META ================= -->
-
-                        </div>
+                <div class="bm-cat-grid {{ $otherPosts->isEmpty() ? 'bm-cat-grid--solo' : '' }}">
+                    <div class="bm-reveal">
+                        @include('snippets.site.post-card', [
+                            'post' => $leadPost,
+                            'variant' => 'lead',
+                            'categoryName' => $category->name,
+                            'categorySlug' => $category->slug,
+                        ])
                     </div>
+
+                    @if($otherPosts->isNotEmpty())
+                        <div class="bm-cat-grid__rest">
+                            @foreach($otherPosts as $post)
+                                <div class="bm-reveal" style="transition-delay: {{ $loop->index * 60 }}ms;">
+                                    @include('snippets.site.post-card', [
+                                        'post' => $post,
+                                        'variant' => 'compact',
+                                        'categoryName' => $category->name,
+                                        'categorySlug' => $category->slug,
+                                    ])
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
-                @endforeach
             </div>
-
-         
-
-        </div>
-    </section>
+        </section>
     @endforeach
-    <!-- ================= END CATEGORY SECTIONS ================= -->
-
-
-    <!-- ================= NEWSLETTER ================= -->
-    <!-- <section class="newslettre__section">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-lg-6 col-md-10 col-sm-11 m-auto">
-                    <div class="newslettre">
-
-                        <div class="newslettre__info">
-                            <h3 class="newslettre__title">
-                                Get The Best Blog Stories into Your inbox!
-                            </h3>
-                            <p class="newslettre__desc">
-                                Sign up for free and be the first to get notified about new posts.
-                            </p>
-                        </div>
-
-                        <form action="#" class="newslettre__form">
-                            @csrf
-                            <input type="email"
-                                   class="newslettre__form-input form-control"
-                                   placeholder="Your email address"
-                                   required>
-                            <button class="newslettre__form-submit">
-                                Subscribe
-                            </button>
-                        </form>
-
-                        <ul class="list-inline social-media social-media--layout-three">
-                            <li><a href="#"><i class="bi bi-facebook"></i>Facebook</a></li>
-                            <li><a href="#"><i class="bi bi-instagram"></i>Instagram</a></li>
-                            <li><a href="#"><i class="bi bi-twitter-x"></i>Twitter</a></li>
-                            <li><a href="#"><i class="bi bi-youtube"></i>Youtube</a></li>
-                        </ul>
-
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section> -->
 
 </main>
-
-<!-- ================= STYLES ================= -->
-<style>
-/* Trending Section Styles */
-.trending-news {
-    padding: 40px 0;
-}
-
-.section-header {
-    border-bottom: 2px solid #f0f0f0;
-    padding-bottom: 15px;
-}
-
-.section-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin: 0;
-    color: #333;
-}
-
-.section-title i {
-    margin-right: 8px;
-}
-
-.view-all-link {
-    color: #ff69b4;
-    text-decoration: none;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-
-.view-all-link:hover {
-    color: #ff4da6;
-    transform: translateX(5px);
-}
-
-.trending-card {
-    background: #fff;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    transition: all 0.3s ease;
-    height: 100%;
-}
-
-.trending-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 20px rgba(255, 105, 180, 0.15);
-}
-
-.trending-card__image {
-    position: relative;
-    overflow: hidden;
-    height: 300px;
-}
-
-.trending-card__img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.5s ease;
-}
-
-.trending-card:hover .trending-card__img {
-    transform: scale(1.05);
-}
-
-.trending-badge {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background: #ff69b4;
-    color: white;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 0.9rem;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
-.trending-card__content {
-    padding: 15px;
-}
-
-.trending-category {
-    color: #ff69b4;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    text-decoration: none;
-    display: inline-block;
-    margin-bottom: 8px;
-}
-
-.trending-card__title {
-    font-size: 1rem;
-    line-height: 1.4;
-    margin-bottom: 10px;
-}
-
-.trending-card__title a {
-    color: #333;
-    text-decoration: none;
-    transition: color 0.3s ease;
-}
-
-.trending-card__title a:hover {
-    color: #ff69b4;
-}
-
-.trending-meta {
-    display: flex;
-    gap: 15px;
-    font-size: 0.8rem;
-    color: #999;
-}
-
-.trending-meta i {
-    margin-right: 3px;
-    color: #ff69b4;
-}
-
-/* Share Button Minimal Styles */
-.share-minimal-dropdown {
-    position: relative;
-    display: inline-block;
-}
-
-.share-minimal-toggle {
-    background: none;
-    border: none;
-    color: #ff69b4;
-    font-size: 0.9rem;
-    padding: 4px 0;
-    cursor: pointer;
-    transition: color 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.share-minimal-toggle:hover {
-    color: #ff4da6;
-}
-
-.share-minimal-toggle i {
-    font-size: 1rem;
-}
-
-.share-minimal-menu {
-    display: none;
-    position: absolute;
-    bottom: 100%;
-    right: 0;
-    background-color: white;
-    border: 1px solid #eaeaea;
-    border-radius: 8px;
-    padding: 8px 0;
-    min-width: 140px;
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
-    z-index: 1000;
-    margin-bottom: 5px;
-}
-
-.share-minimal-menu.show {
-    display: block;
-}
-
-.share-minimal-option {
-    display: block;
-    padding: 8px 16px;
-    color: #333;
-    text-decoration: none;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-    width: 100%;
-    border: none;
-    background: none;
-    cursor: pointer;
-    text-align: left;
-    position: relative;
-}
-
-.share-minimal-option:hover {
-    background-color: #f5f5f5;
-    color: #ff69b4;
-    padding-left: 20px;
-}
-
-.copy-option {
-    position: relative;
-}
-
-.copy-minimal-success {
-    display: none;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    top: -30px;
-    background-color: #333;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    white-space: nowrap;
-}
-
-.share-minimal-dropdown {
-    position: relative;
-    display: inline-block;
-}
-
-.share-minimal-toggle {
-    background: none;
-    border: none;
-    color: #ff69b4;
-    font-size: 0.9rem;
-    padding: 4px 0;
-    cursor: pointer;
-    transition: color 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.share-minimal-toggle:hover {
-    color: #ff4da6;
-}
-
-.share-minimal-toggle i {
-    font-size: 1rem;
-}
-
-.share-minimal-menu {
-    display: none;
-    position: absolute;
-    bottom: 100%;
-    right: 0;
-    background-color: white;
-    border: 1px solid #eaeaea;
-    border-radius: 8px;
-    padding: 8px 0;
-    min-width: 140px;
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
-    z-index: 1000;
-    margin-bottom: 5px;
-}
-
-.share-minimal-menu.show {
-    display: block;
-}
-
-.post-card__image {
-    width: 100%;
-    aspect-ratio: 18/9; /* This creates a consistent aspect ratio */
-    overflow: hidden;
-    position: relative;
-}
-
-.post-card__image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
-}
-.share-minimal-option {
-    display: block;
-    padding: 8px 16px;
-    color: #333;
-    text-decoration: none;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-    width: 100%;
-    border: none;
-    background: none;
-    cursor: pointer;
-    text-align: left;
-    position: relative;
-}
-
-.share-minimal-option:hover {
-    background-color: #f5f5f5;
-    color: #ff69b4;
-    padding-left: 20px;
-}
-
-.copy-option {
-    position: relative;
-}
-
-.copy-minimal-success {
-    display: none;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    top: -30px;
-    background-color: #333;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    white-space: nowrap;
-}
-
-.post-card__image {
-    width: 100%;
-    height: 380px; /* Fixed height for all images */
-    overflow: hidden;
-    position: relative;
-}
-
-.post-card__image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* This ensures the image covers the area without distortion */
-    object-position: center; /* Centers the image within the container */
-    transition: transform 0.3s ease; /* Optional: smooth hover effect */
-}
-
-/* Optional: Add hover effect */
-.post-card__image:hover img {
-    transform: scale(1.05); /* Slight zoom on hover */
-}
-
-.copy-minimal-success::after {
-    content: '';
-    position: absolute;
-    bottom: -5px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid #333;
-}
-
-.copy-minimal-success::after {
-    content: '';
-    position: absolute;
-    bottom: -5px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid #333;
-}
-
-.read-more-inline{
-    margin-left:5px;
-    font-weight:600;
-    color:#ff69b4;
-    text-decoration:none;
-}
-
-.read-more-inline:hover{
-    color:#ff4da6;
-}
-
-/* Dark theme support */
-[data-theme="dark"] .section-title {
-    color: #fff;
-}
-
-[data-theme="dark"] .trending-card {
-    background: #1a1a1a;
-    border: 1px solid #333;
-}
-
-[data-theme="dark"] .trending-card__title a {
-    color: #fff;
-}
-
-[data-theme="dark"] .share-minimal-menu {
-    background-color: #222;
-    border-color: #444;
-}
-
-[data-theme="dark"] .share-minimal-option {
-    color: #ccc;
-}
-
-[data-theme="dark"] .share-minimal-option:hover {
-    background-color: #333;
-}
-
-@media (max-width: 768px) {
-    .trending-news {
-        padding: 30px 0;
-    }
-    
-    .section-header {
-        flex-direction: column;
-        align-items: flex-start !important;
-        gap: 10px;
-    }
-    
-    .trending-card__image {
-        height: 220px;
-    }
-
-    @media (max-width: 768px) {
-    .post-card__image {
-        height: 280px;
-    }
-}
-
-@media (max-width: 480px) {
-    .post-card__image {
-        height: 280px;
-    }
-}
-    
-    .share-minimal-menu {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        width: 100%;
-        margin-bottom: 0;
-        border-radius: 15px 15px 0 0;
-    }
-    
-    .share-minimal-option {
-        padding: 15px 20px;
-        text-align: center;
-    }
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .share-minimal-menu {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        width: 100%;
-        margin-bottom: 0;
-        border-radius: 15px 15px 0 0;
-        border: 1px solid #eaeaea;
-        border-bottom: none;
-        box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
-    }
-    
-    .share-minimal-menu.show {
-        display: block;
-        animation: slideUp 0.3s ease;
-    }
-    
-    .share-minimal-option {
-        padding: 15px 20px;
-        text-align: center;
-    }
-    
-    @keyframes slideUp {
-        from {
-            transform: translateY(100%);
-        }
-        to {
-            transform: translateY(0);
-        }
-    }
-/* huuceu */
-    /* ================= RESPONSIVE IMAGE & TEXT ================= */
-@media (max-width: 768px) {
-    /* Slider text adjustments */
-    .slider__item-content h1.slider__title {
-        font-size: 1.5rem;
-    }
-
-    .slider__item-content p.slider__exerpt {
-        font-size: 0.9rem;
-    }
-
-    /* Trending card adjustments */
-    .trending-card__title {
-        font-size: 0.9rem;
-    }
-
-    .trending-card__content p {
-        font-size: 0.8rem;
-    }
-
-    /* Post card adjustments */
-    .post-card__title-link {
-        font-size: 1rem;
-    }
-
-    .post-card__exerpt {
-        font-size: 0.8rem;
-    }
-
-    /* Images */
-    .post-card__image img,
-    .trending-card__img,
-    .slider__item {
-        height: auto;
-        object-fit: cover;
-    }
-}
-
-
-}
-</style>
-
-<!-- ================= JAVASCRIPT ================= -->
-<script>
-function toggleMinimalShareMenu(postId) {
-    const menu = document.getElementById(`share-minimal-menu-${postId}`);
-    menu.classList.toggle('show');
-    
-    // Close other open menus
-    document.querySelectorAll('.share-minimal-menu.show').forEach(m => {
-        if (m.id !== `share-minimal-menu-${postId}`) {
-            m.classList.remove('show');
-        }
-    });
-}
-
-function copyMinimalLink(url, postId) {
-    navigator.clipboard.writeText(url).then(() => {
-        const successMsg = document.getElementById(`copy-minimal-success-${postId}`);
-        successMsg.style.display = 'block';
-        
-        setTimeout(() => {
-            successMsg.style.display = 'none';
-        }, 2000);
-    }).catch(() => {
-        alert('Could not copy link');
-    });
-}
-
-// Close share menus when clicking outside
-document.addEventListener('click', function(event) {
-    if (!event.target.closest('.share-minimal-dropdown')) {
-        document.querySelectorAll('.share-minimal-menu.show').forEach(menu => {
-            menu.classList.remove('show');
-        });
-    }
-});
-
-document.addEventListener('DOMContentLoaded', function() {
-
-    // Thumbs slider
-    const thumbsSwiper = new Swiper('.slider__bottom', {
-        slidesPerView: 4,
-        spaceBetween: 10,
-        watchSlidesProgress: true,
-        breakpoints: {
-            0: { slidesPerView: 2 },
-            576: { slidesPerView: 3 },
-            768: { slidesPerView: 4 }
-        }
-    });
-
-    // Main slider
-    const mainSwiper = new Swiper('.slider__top', {
-        loop: true,
-        spaceBetween: 10,
-        autoplay: {
-            delay: 5000, // Slide every 5 seconds
-            disableOnInteraction: false,
-        },
-        thumbs: {
-            swiper: thumbsSwiper
-        }
-    });
-
-});
-</script>
-
 @endsection

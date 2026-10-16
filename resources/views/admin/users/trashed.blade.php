@@ -1,108 +1,65 @@
 @extends('layouts.admin')
 
+@section('title', 'Deleted users')
+
 @section('content')
-<div class="content-inner container-fluid pb-0" id="page_layout">
-    <div class="row">
-        <div class="col-sm-12">
-
-            <div class="mb-3">
-                <a href="{{ route('user.list') }}" class="btn btn-secondary">← Back to User List</a>
-            </div>
-
-            <div class="card">
-                <div class="card-header d-flex justify-content-between">
-                    <div class="header-title">
-                        <h4 class="card-title">Trashed Users</h4>
-                    </div>
-                </div>
-
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered mb-0 trashed-users-table">
-                            <thead>
-                                <tr class="bg-white">
-                                    <th class="bg-primary text-white">#</th>
-                                    <th class="bg-primary text-white">Name</th>
-                                    <th class="bg-primary text-white">Email</th>
-                                    <th class="bg-primary text-white">Deleted At</th>
-                                    <th class="bg-primary text-white">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($users as $user)
-                                <tr>
-                                    <td>{{ $loop->iteration }}</td>
-                                    <td>{{ $user->name ?? 'N/A' }}</td>
-                                    <td>{{ $user->email ?? 'N/A' }}</td>
-                                    <td>{{ $user->deleted_at ? $user->deleted_at->format('j F, Y H:i') : 'N/A' }}</td>
-                                    <td>
-                                        <div class="d-flex gap-2 align-items-center">
-                                            <!-- Restore -->
-                                            <form action="{{ route('user.restore', $user->id) }}" method="POST">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="btn btn-success btn-sm">Restore</button>
-                                            </form>
-
-                                            <!-- Permanently Delete -->
-                                            <form action="{{ route('user.forceDelete', $user->id) }}" method="POST"
-                                                onsubmit="return confirm('Are you sure you want to permanently delete this user?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-danger btn-sm">Delete Permanently</button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="5" class="text-center text-danger">No trashed users found</td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-
-                        <!-- Pagination -->
-                        <div class="mt-3 d-flex justify-content-center">
-                            {{ $users->links() }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
+<div class="ad-head">
+    <div>
+        <h1 class="ad-head__title">Deleted users</h1>
+        <p class="ad-head__sub">Restore an account or remove it permanently.</p>
+    </div>
+    <div class="ad-head__actions">
+        <a href="{{ route('user.list') }}" class="ad-btn ad-btn--ghost"><i class="bi bi-arrow-left"></i> Back to users</a>
     </div>
 </div>
 
-{{-- Custom CSS for responsiveness --}}
-<style>
-@media (max-width: 768px) {
-    .trashed-users-table th,
-    .trashed-users-table td {
-        font-size: 12px;
-        padding: 4px 6px;
-        white-space: nowrap;
-    }
+<div class="ad-card">
+    <div class="ad-table-wrap">
+        <table class="ad-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th class="ad-hide-sm">Deleted</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($users as $user)
+                    <tr>
+                        <td>
+                            <div class="ad-person">
+                                <span class="ad-initial">{{ strtoupper(substr($user->name ?? '?', 0, 1)) }}</span>
+                                <div>
+                                    <strong>{{ $user->name ?? 'N/A' }}</strong>
+                                    <div class="ad-post-cell__sub">{{ $user->email ?? 'N/A' }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="ad-hide-sm" style="white-space: nowrap;">{{ $user->deleted_at ? $user->deleted_at->format('j M Y, H:i') : 'N/A' }}</td>
+                        <td>
+                            <div class="ad-table__actions">
+                                <form action="{{ route('user.restore', $user->id) }}" method="POST">
+                                    @csrf
+                                    @method('PATCH')
+                                    <button type="submit" class="ad-btn ad-btn--success ad-btn--sm"><i class="bi bi-arrow-counterclockwise"></i> Restore</button>
+                                </form>
+                                <form action="{{ route('user.forceDelete', $user->id) }}" method="POST"
+                                      data-confirm="{{ $user->name }}'s account will be deleted permanently. This cannot be undone."
+                                      data-confirm-title="Delete forever?" data-confirm-button="Delete forever">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="ad-btn ad-btn--danger ad-btn--sm"><i class="bi bi-x-octagon"></i> <span class="ad-hide-sm">Delete forever</span></button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                @empty
+                    <tr><td colspan="3" class="ad-table-empty"><i class="bi bi-person-check"></i>No deleted users</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 
-    .trashed-users-table {
-        font-size: 12px;
-    }
-
-    .card-title {
-        font-size: 16px;
-    }
-}
-
-@media (max-width: 480px) {
-    .trashed-users-table th,
-    .trashed-users-table td {
-        font-size: 10px;
-        padding: 2px 4px;
-    }
-
-    .card-title {
-        font-size: 14px;
-    }
-}
-</style>
+    {{ $users->links('snippets.site.pagination') }}
+</div>
 @endsection

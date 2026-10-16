@@ -1,105 +1,69 @@
 @extends('layouts.app')
 
+@section('title', 'Sign up | ' . ($globalSeo->site_name ?? config('app.name')))
+@section('auth_page', true)
+
 @section('content')
+<main class="bm-auth">
+    <div class="bm-auth__card">
+        <h1 class="bm-auth__title">Create your account</h1>
+        <p class="bm-auth__sub">Join the conversation. It only takes a minute.</p>
 
-<section class="m-top mb-60">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-lg-6 m-auto">
-                <div class="widget">
-                    <h5 class="widget__title">Sign up</h5>
+        @include('snippets.site.auth-alerts')
 
-                    <form class="widget__form contact_form" method="POST" action="{{ route('create-user') }}">
-                        @csrf
+        <form method="POST" action="{{ route('create-user') }}">
+            @csrf
 
-                        <div class="form-group">
-                            <input
-                            
-                                type="text"
-                                class="form-control widget__form-input"
-                                placeholder="Full Name*"
-                                name="name"
-                                value="{{ old('name') }}"
-                            >
-                            @error('name')
-                                <small class="text-danger">{{ $message }}</small>
-                            @enderror
-                        </div>
-
-                        <div class="form-group">
-                            <input
-                                type="email"
-                                class="form-control widget__form-input"
-                                placeholder="Email Address*"
-                                name="email"
-                                value="{{ old('email') }}"
-                            >
-                            @error('email')
-                                <small class="text-danger">{{ $message }}</small>
-                            @enderror
-                        </div>
-
-                        <div class="form-group">
-                            <input
-                                type="password"
-                                class="form-control widget__form-input"
-                                placeholder="Password*"
-                                name="password"
-                            >
-                            @error('password')
-                                <small class="text-danger">{{ $message }}</small>
-                            @enderror
-                        </div>
-
-                          <div class="form-group">
-                            <input
-                                type="password"
-                                class="form-control widget__form-input"
-                                placeholder="Confirm Password*"
-                                name="confirm_password"
-                            >
-                            @error('confirm_password')
-                                <small class="text-danger">{{ $message }}</small>
-                            @enderror
-                        </div>
-
-                     <div class="widget__form-controls form-group">
-    <div class="widget__form-controls-checkbox">
-        <input
-            type="checkbox"
-            class="widget__form-controls-input"
-            id="terms"
-            name="terms"
-            required
-        >
-
-        <label class="widget__form-controls-label" for="terms">
-            Agree to our
-            <a href="{{ route('terms') }}" class="widget__form-link">Terms & Conditions and Privacy Policy</a>
-        </label>
-    </div>
-
-    @error('terms')
-        <small class="text-danger d-block">{{ $message }}</small>
-    @enderror
-</div>
-
-                        <div class="widget__form-btn">
-                            <button type="submit" class="btn-custom">Sign Up Now</button>
-                        </div>
-
-                        <p class="widget__form-text">
-                            Already have an account?
-                            <a href="{{ route('login') }}" class="widget__form-link">Login</a>
-                        </p>
-                    </form>
-                </div>
+            <div class="bm-field">
+                <label class="bm-label" for="name">Full name</label>
+                <input id="name" type="text" name="name" value="{{ old('name') }}" autocomplete="name" required
+                       class="bm-input @error('name') is-invalid @enderror" placeholder="Jane Doe">
+                @error('name')
+                    <span class="bm-error">{{ $message }}</span>
+                @enderror
             </div>
-        </div>
+
+            <div class="bm-field">
+                <label class="bm-label" for="email">Email address</label>
+                <input id="email" type="email" name="email" value="{{ old('email') }}" autocomplete="email" required
+                       class="bm-input @error('email') is-invalid @enderror" placeholder="you@example.com">
+                @error('email')
+                    <span class="bm-error">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div class="bm-field">
+                <label class="bm-label" for="password">Password</label>
+                <input id="password" type="password" name="password" autocomplete="new-password" required
+                       class="bm-input @error('password') is-invalid @enderror" placeholder="At least 5 characters">
+                @error('password')
+                    <span class="bm-error">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div class="bm-field">
+                <label class="bm-label" for="confirm_password">Confirm password</label>
+                <input id="confirm_password" type="password" name="confirm_password" autocomplete="new-password" required
+                       class="bm-input @error('confirm_password') is-invalid @enderror" placeholder="Repeat your password">
+                @error('confirm_password')
+                    <span class="bm-error">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div class="bm-field">
+                <label class="bm-check" for="terms">
+                    <input type="checkbox" id="terms" name="terms" required {{ old('terms') ? 'checked' : '' }}>
+                    <span>I agree to the <a href="{{ route('terms') }}" style="color: var(--bm-accent); font-weight: 600;">Terms &amp; Conditions</a></span>
+                </label>
+                @error('terms')
+                    <span class="bm-error">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <button type="submit" class="bm-btn bm-btn--primary bm-btn--block">Create account</button>
+        </form>
+
+        <p class="bm-auth__alt">Already have an account? <a href="{{ route('login') }}">Log in</a></p>
     </div>
-</section>
-
-<!-- newsletter -->
-
-
+</main>
 @endsection

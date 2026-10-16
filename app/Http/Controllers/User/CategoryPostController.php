@@ -93,7 +93,7 @@ class CategoryPostController extends Controller
         ->take(4)
         ->get();
 
-    $latestPosts = Post::latest()->take(5)->get();
+    $latestPosts = Post::where('status', 'published')->latest()->take(5)->get();
 
     return view('user.posts.show', compact(
         'post',

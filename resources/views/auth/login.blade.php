@@ -1,74 +1,49 @@
 @extends('layouts.app')
 
+@section('title', 'Log in | ' . ($globalSeo->site_name ?? config('app.name')))
+@section('auth_page', true)
+
 @section('content')
-   <!-- Login -->
-<section class="m-top mb-60">
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-6 m-auto">
-                <div class="widget">
-                    <h5 class="widget__title">Login</h5>
+<main class="bm-auth">
+    <div class="bm-auth__card">
+        <h1 class="bm-auth__title">Welcome back</h1>
+        <p class="bm-auth__sub">Log in to like, comment and join the conversation.</p>
 
-                    <form action="{{ route('login') }}" class="widget__form" method="POST">
-                        @csrf
+        @include('snippets.site.auth-alerts')
 
-                        <!-- Email -->
-                        <div class="form-group">
-                            <input
-                                type="email"
-                                class="form-control widget__form-input"
-                                placeholder="Email Address*"
-                                name="email"
-                                value="{{ old('email') }}"
-                            >
-                            @error('email')
-                                <small class="text-danger">{{ $message }}</small>
-                            @enderror
-                        </div>
+        <form action="{{ route('login') }}" method="POST">
+            @csrf
 
-                        <!-- Password -->
-                        <div class="form-group">
-                            <input
-                                type="password"
-                                class="form-control widget__form-input"
-                                placeholder="Password*"
-                                name="password"
-                            >
-                            @error('password')
-                                <small class="text-danger">{{ $message }}</small>
-                            @enderror
-                        </div>
-
-                       <div class="widget__form-controls form-group d-flex align-items-center">
-    <div class="widget__form-controls-checkbox">
-        <input
-            type="checkbox"
-            class="widget__form-controls-input"
-            id="rememberMe"
-            name="remember"
-            {{ old('remember') ? 'checked' : '' }}
-        >
-        <label class="widget__form-controls-label" for="rememberMe">
-            Remember Me
-        </label>
-    </div>
-
-    <a href="{{ route('forgetPassword') }}" class="widget__form-link ml-auto">
-        Forgot Password?
-    </a>
-</div>
-                        <!-- Submit -->
-                        <div class="widget__form-btn">
-                            <button type="submit" class="btn-custom">Login Now</button>
-                        </div>
-                    </form>
-                </div>
+            <div class="bm-field">
+                <label class="bm-label" for="email">Email address</label>
+                <input id="email" type="email" name="email" value="{{ old('email') }}" autocomplete="email" required autofocus
+                       class="bm-input @error('email') is-invalid @enderror" placeholder="you@example.com">
+                @error('email')
+                    <span class="bm-error">{{ $message }}</span>
+                @enderror
             </div>
-        </div>
+
+            <div class="bm-field">
+                <label class="bm-label" for="password">Password</label>
+                <input id="password" type="password" name="password" autocomplete="current-password" required
+                       class="bm-input @error('password') is-invalid @enderror" placeholder="••••••••">
+                @error('password')
+                    <span class="bm-error">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div class="bm-auth__row">
+                <label class="bm-check" for="rememberMe">
+                    <input type="checkbox" id="rememberMe" name="remember" {{ old('remember') ? 'checked' : '' }}>
+                    Remember me
+                </label>
+                <a href="{{ route('forgetPassword') }}">Forgot password?</a>
+            </div>
+
+            <button type="submit" class="bm-btn bm-btn--primary bm-btn--block">Log in</button>
+        </form>
+
+        <p class="bm-auth__alt">New to BriefMedia? <a href="{{ route('sign-up') }}">Create an account</a></p>
     </div>
-</section>
-
- <!--newslettre-->
-        
-
+</main>
 @endsection

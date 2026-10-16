@@ -1,106 +1,76 @@
 @extends('layouts.admin')
 
+@section('title', 'Subscribers')
+
 @section('content')
-<div class="content-inner container-fluid pb-0">
-    <div class="row">
-        <div class="col-sm-12">
-
-            <div class="card">
-                <div class="card-header d-flex justify-content-between">
-                    <div class="header-title">
-                        <h4 class="card-title">All Subscribers</h4>
-                    </div>
-                </div>
-  {{-- Success Message --}}
-                    @if(session('success'))
-                        <div class="alert alert-success">
-                            {{ session('success') }}
-                        </div>
-                    @endif
-
-                <div class="card-body">
-                    <div class="table-responsive">
-
-                        <table class="table table-bordered mb-0 subscribers-table">
-                            <thead>
-                                <tr class="bg-white">
-                                    <th class="bg-primary text-white">Email</th>
-                                    <th class="bg-primary text-white">Subscribed Date</th>
-                                    <th class="bg-primary text-white">Action</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                @forelse($subscribers as $subscriber)
-                                <tr>
-                                    <td>{{ $subscriber->email }}</td>
-
-                                    <td>
-                                        {{ $subscriber->created_at->format('j F, Y') }}
-                                    </td>
-
-                                    <td>
-                                        <form action="{{ route('admin.subscribers.delete', $subscriber->id) }}" method="POST" onsubmit="return confirm('Delete this subscriber?')">
-                                            @csrf
-                                            @method('DELETE')
-
-                                            <button class="btn btn-danger-subtle btn-sm">
-                                                <i class="ph ph-trash"></i>
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-
-                                @empty
-                                <tr>
-                                    <td colspan="3" class="text-center text-danger">
-                                        No subscribers found
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-
-                        </table>
-
-                        <!-- Pagination -->
-                        <div class="mt-3 d-flex justify-content-center">
-                            {{ $subscribers->links() }}
-                        </div>
-
-                    </div>
-                </div>
-
-            </div>
-
-        </div>
+<div class="ad-head">
+    <div>
+        <h1 class="ad-head__title">Subscribers</h1>
+        <p class="ad-head__sub">{{ $subscribers->total() }} {{ Str::plural('reader', $subscribers->total()) }} on the newsletter list.</p>
+    </div>
+    <div class="ad-head__actions">
+        <button type="button" class="ad-btn ad-btn--ghost" id="copy-emails"><i class="bi bi-clipboard"></i> Copy emails on this page</button>
+        <a href="{{ route('admin.send-newsletter') }}" class="ad-btn ad-btn--accent"><i class="bi bi-send"></i> Send newsletter</a>
     </div>
 </div>
 
-<style>
-@media (max-width: 768px) {
-    .subscribers-table th,
-    .subscribers-table td {
-        font-size: 12px;
-        padding: 4px 6px;
-        white-space: nowrap;
-    }
+<div class="ad-card">
+    <div class="ad-card__head">
+        <label class="ad-search">
+            <i class="bi bi-search"></i>
+            <input type="search" placeholder="Filter by email…" data-table-filter="#subscribers-table" aria-label="Filter subscribers">
+        </label>
+    </div>
+    <div class="ad-table-wrap">
+        <table class="ad-table" id="subscribers-table">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Subscribed</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($subscribers as $subscriber)
+                    <tr data-row>
+                        <td>
+                            <div class="ad-person">
+                                <span class="ad-initial"><i class="bi bi-envelope"></i></span>
+                                <strong data-email>{{ $subscriber->email }}</strong>
+                            </div>
+                        </td>
+                        <td style="white-space: nowrap;">{{ $subscriber->created_at->format('j M Y') }} <span class="ad-post-cell__sub">· {{ $subscriber->created_at->diffForHumans() }}</span></td>
+                        <td>
+                            <div class="ad-table__actions">
+                                <form action="{{ route('admin.subscribers.delete', $subscriber->id) }}" method="POST"
+                                      data-confirm="{{ $subscriber->email }} will be removed from the newsletter." data-confirm-title="Remove subscriber?" data-confirm-button="Remove">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="ad-btn ad-btn--danger ad-btn--sm ad-btn--icon" title="Remove subscriber"><i class="bi bi-trash3"></i></button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                @empty
+                    <tr><td colspan="3" class="ad-table-empty"><i class="bi bi-envelope-open"></i>No subscribers yet</td></tr>
+                @endforelse
+                <tr data-filter-empty hidden><td colspan="3" class="ad-table-empty"><i class="bi bi-funnel"></i>No subscribers match this filter.</td></tr>
+            </tbody>
+        </table>
+    </div>
 
-    .card-title {
-        font-size: 16px;
-    }
-}
-
-@media (max-width: 480px) {
-    .subscribers-table th,
-    .subscribers-table td {
-        font-size: 10px;
-        padding: 2px 4px;
-    }
-
-    .card-title {
-        font-size: 14px;
-    }
-}
-</style>
-
+    {{ $subscribers->links('snippets.site.pagination') }}
+</div>
 @endsection
+
+@push('scripts')
+<script>
+document.getElementById('copy-emails').addEventListener('click', function () {
+    const emails = Array.from(document.querySelectorAll('[data-email]')).map((el) => el.textContent.trim());
+    if (!emails.length) { window.adToast('No emails to copy', 'warning'); return; }
+    navigator.clipboard.writeText(emails.join(', '))
+        .then(() => window.adToast(emails.length + ' email(s) copied'))
+        .catch(() => window.adToast('Could not copy emails', 'error'));
+});
+</script>
+@endpush

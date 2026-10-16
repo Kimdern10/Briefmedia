@@ -1,65 +1,32 @@
 @extends('layouts.app')
 
+@section('title', 'Forgot password | ' . ($globalSeo->site_name ?? config('app.name')))
+@section('auth_page', true)
+
 @section('content')
+<main class="bm-auth">
+    <div class="bm-auth__card">
+        <h1 class="bm-auth__title">Forgot password?</h1>
+        <p class="bm-auth__sub">No worries, we'll email you a verification code to reset it.</p>
 
-<!-- Forgot Password -->
-<section class="m-top mb-60">
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-6 m-auto">
-                <div class="widget">
-                    <h5 class="widget__title">Forgot Password</h5>
+        @include('snippets.site.auth-alerts')
 
-                    <p class="widget__form-text mb-3">
-                        No worries, we’ll send a verification code to your email to reset your password.
-                    </p>
+        <form action="{{ route('forgotPassword.email') }}" method="POST">
+            @csrf
 
-                    <!-- Success message -->
-                    @if (session('status'))
-                        <div class="alert alert-success">
-                            {{ session('status') }}
-                        </div>
-                    @endif
-
-                    <form action="{{ route('forgotPassword.email') }}" class="widget__form" method="POST">
-                        @csrf
-
-                        <!-- Email -->
-                        <div class="form-group">
-                            <input
-                                type="email"
-                                class="form-control widget__form-input"
-                                placeholder="Email Address*"
-                                name="email"
-                                value="{{ old('email') }}"
-                                required
-                            >
-                            @error('email')
-                                <small class="text-danger">{{ $message }}</small>
-                            @enderror
-                        </div>
-
-                        <!-- Submit -->
-                        <div class="widget__form-btn">
-                            <button type="submit" class="btn-custom">
-                                Send Reset Code
-                            </button>
-                        </div>
-
-                        <p class="widget__form-text mt-3">
-                            Remember your password?
-                            <a href="{{ route('login') }}" class="widget__form-link">
-                                Login
-                            </a>
-                        </p>
-                    </form>
-                </div>
+            <div class="bm-field">
+                <label class="bm-label" for="email">Email address</label>
+                <input id="email" type="email" name="email" value="{{ old('email') }}" autocomplete="email" required autofocus
+                       class="bm-input @error('email') is-invalid @enderror" placeholder="you@example.com">
+                @error('email')
+                    <span class="bm-error">{{ $message }}</span>
+                @enderror
             </div>
-        </div>
+
+            <button type="submit" class="bm-btn bm-btn--primary bm-btn--block">Send reset code</button>
+        </form>
+
+        <p class="bm-auth__alt">Remember your password? <a href="{{ route('login') }}">Log in</a></p>
     </div>
-</section>
-
-<!-- Newsletter -->
-
-
+</main>
 @endsection

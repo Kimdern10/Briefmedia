@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\SeoSetting;
 use App\Models\Subscriber;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -14,24 +15,41 @@ class AppServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        // Use Bootstrap 5 pagination 
+        // Use Bootstrap 5 pagination
         Paginator::useBootstrap();
-        
-        
-             $seo = SeoSetting::first();
-        View::share('globalSeo', $seo);
 
-        View::composer('*', function ($view) {
+        // Guard against missing table before migrations have run
+        if (Schema::hasTable('seo_settings')) {
+            $seo = SeoSetting::first();
+            View::share('globalSeo', $seo);
+        }
 
-            // Slider posts (8 latest)
-            $sliderPosts = Post::with(['category', 'admin'])
+        // Navigation data for the public header and footer
+        View::composer(['snippets.header', 'snippets.footer'], function ($view) {
+            $allCategories = Category::orderBy('id')->get(['id', 'name', 'slug']);
+
+            $view->with([
+                'navCategories'  => $allCategories->take(5),
+                'moreCategories' => $allCategories->skip(5)->values(),
+                'tickerPosts'    => Post::where('status', 'published')
+                    ->latest()
+                    ->take(6)
+                    ->get(['id', 'title', 'slug']),
+            ]);
+        });
+
+        // Homepage data (only the homepage needs it)
+        View::composer('welcome', function ($view) {
+
+            // Slider posts (4 latest)
+            $sliderPosts = Post::with(['category', 'admin', 'likedByUsers'])
         ->withCount('comments')
         ->where('status', 'published')
         ->latest()
         ->take(4)
         ->get();
 
-          $trendingPosts = Post::with(['category', 'likedByUsers'])
+          $trendingPosts = Post::with(['category', 'admin', 'likedByUsers'])
     ->withCount([
         'comments',
         'likedByUsers as likes_count'
@@ -46,7 +64,8 @@ class AppServiceProvider extends ServiceProvider
 
             // Latest 6 posts for EACH category
           $categoriesWithPosts = Category::with(['posts' => function ($query) {
-    $query->where('status', 'published')
+    $query->with(['admin', 'likedByUsers'])
+          ->where('status', 'published')
           ->latest(); // do NOT use take() here
 }])
 ->whereHas('posts', function ($query) {
@@ -57,7 +76,7 @@ class AppServiceProvider extends ServiceProvider
             $view->with([
                 'sliderPosts'   => $sliderPosts,
                 'trendingPosts' => $trendingPosts,
-                'categoriesWithPosts'    => $categoriesWithPosts, 
+                'categoriesWithPosts'    => $categoriesWithPosts,
             ]);
         });
 
@@ -117,4 +136,4 @@ class AppServiceProvider extends ServiceProvider
     ]);
 });
     }
-    }
+}

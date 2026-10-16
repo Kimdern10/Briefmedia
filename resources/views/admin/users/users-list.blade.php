@@ -1,108 +1,84 @@
-@extends('layouts.admin') 
+@extends('layouts.admin')
+
+@section('title', 'Users')
 
 @section('content')
-<div class="content-inner container-fluid pb-0" id="page_layout">
-    <div class="row">
-        <div class="col-sm-12">
-
-            <!-- Link to trashed users -->
-            <div class="mb-3">
-                <a href="{{ route('users.trashed') }}" class="btn btn-primary">View Deleted Users</a>
-            </div>
-
-            <div class="card">
-                <div class="card-header d-flex justify-content-between">
-                    <div class="header-title">
-                        <h4 class="card-title">User List</h4>
-                    </div>
-                </div>
-
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered mb-0 users-table">
-                            <thead>
-                                <tr class="bg-white">
-                                    <th class="bg-primary text-white">Name</th>
-                                    <th class="bg-primary text-white">Email</th>
-                                    <th class="bg-primary text-white">Join Date</th>
-                                    <th class="bg-primary text-white">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($users as $user)
-                                <tr>
-                                    <td>{{ $user->name ?? 'N/A' }}</td>
-                                    <td>{{ $user->email ?? 'N/A' }}</td>
-                                    <td>{{ $user->created_at ? $user->created_at->format('j F, Y') : 'N/A' }}</td>
-                                    <td>
-                                        <div class="d-flex gap-2 align-items-center">
-                                            <!-- Ban/Unban -->
-                                            <form action="{{ $user->active ? route('user.ban', $user->id) : route('user.unban', $user->id) }}" method="POST">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="btn btn-primary-subtle btn-sm">
-                                                    {{ $user->active ? 'Ban' : 'Unban' }}
-                                                </button>
-                                            </form>
-
-                                            <!-- Soft Delete -->
-                                            <form action="{{ route('user.delete', $user->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this user?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-danger-subtle btn-sm">
-                                                    <i class="ph ph-trash"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="4" class="text-center text-danger">No users found</td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-
-                        <!-- Pagination -->
-                        <div class="mt-3 d-flex justify-content-center">
-                            {{ $users->links() }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
+<div class="ad-head">
+    <div>
+        <h1 class="ad-head__title">Users</h1>
+        <p class="ad-head__sub">Registered readers. Ban accounts that break the rules.</p>
+    </div>
+    <div class="ad-head__actions">
+        <a href="{{ route('users.trashed') }}" class="ad-btn ad-btn--ghost"><i class="bi bi-person-x"></i> Deleted users</a>
     </div>
 </div>
-<style>
-@media (max-width: 768px) {
-    .users-table th,
-    .users-table td {
-        font-size: 12px;
-        padding: 4px 6px;
-        white-space: nowrap;
-    }
 
-    .users-table {
-        font-size: 12px;
-    }
+<div class="ad-card">
+    <div class="ad-card__head">
+        <label class="ad-search">
+            <i class="bi bi-search"></i>
+            <input type="search" placeholder="Filter by name or email…" data-table-filter="#users-table" aria-label="Filter users">
+        </label>
+    </div>
+    <div class="ad-table-wrap">
+        <table class="ad-table" id="users-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Status</th>
+                    <th class="ad-hide-sm">Joined</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($users as $user)
+                    <tr data-row>
+                        <td>
+                            <div class="ad-person">
+                                <span class="ad-initial">{{ strtoupper(substr($user->name ?? '?', 0, 1)) }}</span>
+                                <div>
+                                    <strong>{{ $user->name ?? 'N/A' }}</strong>
+                                    <div class="ad-post-cell__sub">{{ $user->email ?? 'N/A' }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            @if($user->active)
+                                <span class="ad-pill ad-pill--green">Active</span>
+                            @else
+                                <span class="ad-pill ad-pill--red">Banned</span>
+                            @endif
+                        </td>
+                        <td class="ad-hide-sm" style="white-space: nowrap;">{{ $user->created_at ? $user->created_at->format('j M Y') : 'N/A' }}</td>
+                        <td>
+                            <div class="ad-table__actions">
+                                <form action="{{ $user->active ? route('user.ban', $user->id) : route('user.unban', $user->id) }}" method="POST"
+                                      @if($user->active) data-confirm="{{ $user->name }} won't be able to log in until you unban them." data-confirm-title="Ban this user?" data-confirm-button="Ban user" @endif>
+                                    @csrf
+                                    @method('PATCH')
+                                    @if($user->active)
+                                        <button type="submit" class="ad-btn ad-btn--ghost ad-btn--sm"><i class="bi bi-slash-circle"></i> Ban</button>
+                                    @else
+                                        <button type="submit" class="ad-btn ad-btn--success ad-btn--sm"><i class="bi bi-check-circle"></i> Unban</button>
+                                    @endif
+                                </form>
+                                <form action="{{ route('user.delete', $user->id) }}" method="POST"
+                                      data-confirm="{{ $user->name }} will be moved to deleted users. You can restore them later." data-confirm-title="Delete this user?" data-confirm-button="Delete user">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="ad-btn ad-btn--danger ad-btn--sm ad-btn--icon" title="Delete user"><i class="bi bi-trash3"></i></button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                @empty
+                    <tr><td colspan="4" class="ad-table-empty"><i class="bi bi-people"></i>No users found</td></tr>
+                @endforelse
+                <tr data-filter-empty hidden><td colspan="4" class="ad-table-empty"><i class="bi bi-funnel"></i>No users match this filter.</td></tr>
+            </tbody>
+        </table>
+    </div>
 
-    .card-title {
-        font-size: 16px;
-    }
-}
-
-@media (max-width: 480px) {
-    .users-table th,
-    .users-table td {
-        font-size: 10px;
-        padding: 2px 4px;
-    }
-
-    .card-title {
-        font-size: 14px;
-    }
-}
-</style>
+    {{ $users->links('snippets.site.pagination') }}
+</div>
 @endsection

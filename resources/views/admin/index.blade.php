@@ -1,223 +1,203 @@
 @extends('layouts.admin')
 
+@section('title', 'Dashboard')
+
 @section('content')
+@php
+    $monthNames = [1 => 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    $postsPerMonthLabels = collect($postsPerMonth->keys())->sort()->map(fn ($month) => $monthNames[(int) $month] ?? $month)->values();
+    $postsPerMonthValues = collect($postsPerMonth->toArray())->sortKeys()->values();
+    $maxViews = max(1, (int) $mostViewedPosts->max('views'));
+    $placeholderImage = asset('assets/img/bm-placeholder.svg');
+    $publishedPosts = max(0, $totalPosts - $draftPosts);
 
-<div class="content-inner container-fluid pb-0" id="page_layout">
-    <div id="content-page" class="content-page">
-        <div class="container-fluid">
+    $stats = [
+        ['label' => 'Total posts', 'value' => $totalPosts, 'icon' => 'bi-newspaper', 'tone' => 'tone-pink'],
+        ['label' => 'Published', 'value' => $publishedPosts, 'icon' => 'bi-check2-circle', 'tone' => 'tone-green'],
+        ['label' => 'Drafts', 'value' => $draftPosts, 'icon' => 'bi-pencil', 'tone' => 'tone-amber'],
+        ['label' => 'Total views', 'value' => $views, 'icon' => 'bi-eye', 'tone' => 'tone-blue'],
+        ['label' => 'Likes · Subscribers', 'value' => number_format($likes) . ' · ' . number_format($subscribers), 'icon' => 'bi-heart', 'tone' => 'tone-violet'],
+    ];
+@endphp
 
-            <div class="row">
-
-                {{-- Success message --}}
-                @if(session('success'))
-                <div class="col-12 mb-3">
-                    <div class="alert alert-success">
-                        {{ session('success') }}
-                    </div>
-                </div>
-                @endif
-
-                {{-- Send Newsletter Button --}}
-                <div class="col-12 mb-4">
-                    <a href="{{ route('admin.send-newsletter') }}" class="btn btn-primary">
-                        Send Newsletter Now
-                    </a>
-                </div>
-
-                {{-- Dashboard Stats --}}
-<div class="row g-3 justify-content-center">
-
-    <div class="col-md-2">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5>Total Posts</h5>
-                <h3>{{ $totalPosts }}</h3>
-            </div>
-        </div>
+<div class="ad-head">
+    <div>
+        <h1 class="ad-head__title">Good {{ now()->hour < 12 ? 'morning' : (now()->hour < 17 ? 'afternoon' : 'evening') }}, {{ Str::before(auth()->user()->name, ' ') }} 👋</h1>
+        <p class="ad-head__sub">Here's what's happening across BriefMedia today.</p>
     </div>
-
-    <div class="col-md-2">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5>Draft Posts</h5>
-                <h3>{{ $draftPosts }}</h3>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-2">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5>Subscribers</h5>
-                <h3>{{ $subscribers }}</h3>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-2">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5>Total Likes</h5>
-                <h3>{{ $likes }}</h3>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-2">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5>Total Views</h5>
-                <h3>{{ $views }}</h3>
-            </div>
-        </div>
-    </div>
-
-</div> {{-- end row stats --}}
-
-                {{-- Analytics Charts --}}
-                <div class="row mt-4 g-4">
-
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5>Posts Per Month</h5>
-                            </div>
-                            <div class="card-body">
-                                <canvas id="postsChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5>Views Per Day</h5>
-                            </div>
-                            <div class="card-body">
-                                <canvas id="viewsChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5>Subscriber Growth</h5>
-                            </div>
-                            <div class="card-body">
-                                <canvas id="subscriberChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-
-                </div> {{-- end row charts --}}
-
-                {{-- Latest Posts --}}
-                <div class="col-12 mt-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4>Latest Posts</h4>
-                        </div>
-                        <div class="card-body">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Title</th>
-                                        <th>Category</th>
-                                        <th>Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($latestPosts as $post)
-                                    <tr>
-                                        <td>{{ $post->title }}</td>
-                                        <td>{{ $post->category->name ?? 'N/A' }}</td>
-                                        <td>{{ $post->created_at->format('d M Y') }}</td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Most Viewed Posts --}}
-                <div class="col-12 mt-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4>Most Viewed Posts</h4>
-                        </div>
-                        <div class="card-body">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Title</th>
-                                        <th>Views</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($mostViewedPosts as $post)
-                                    <tr>
-                                        <td>{{ $post->title }}</td>
-                                        <td>{{ $post->views }}</td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-            </div> {{-- end main row --}}
-
-        </div>
+    <div class="ad-head__actions">
+        <a href="{{ route('admin.news.headlines') }}" class="ad-btn ad-btn--ghost"><i class="bi bi-broadcast"></i> Headlines</a>
+        <a href="{{ route('admin.send-newsletter') }}" class="ad-btn ad-btn--accent"><i class="bi bi-send"></i> Send newsletter</a>
     </div>
 </div>
 
-{{-- Chart.js --}}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-new Chart(document.getElementById('postsChart'), {
-    type: 'bar',
-    data: {
-        labels: {!! json_encode(array_keys($postsPerMonth->toArray())) !!},
-        datasets: [{
-            label: 'Posts Per Month',
-            data: {!! json_encode(array_values($postsPerMonth->toArray())) !!},
-            backgroundColor: 'rgba(54, 162, 235, 0.6)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 1
-        }]
-    }
-});
+<!-- ================= STATS ================= -->
+<div class="ad-grid ad-grid--stats">
+    @foreach($stats as $stat)
+        <div class="ad-card ad-stat">
+            <div class="ad-stat__icon {{ $stat['tone'] }}"><i class="bi {{ $stat['icon'] }}"></i></div>
+            <div class="ad-stat__label">{{ $stat['label'] }}</div>
+            <div class="ad-stat__value">{{ is_numeric($stat['value']) ? number_format($stat['value']) : $stat['value'] }}</div>
+        </div>
+    @endforeach
+</div>
 
-new Chart(document.getElementById('viewsChart'), {
-    type: 'line',
-    data: {
-        labels: {!! json_encode($viewsPerDay->pluck('date')) !!},
-        datasets: [{
-            label: 'Views Per Day',
-            data: {!! json_encode($viewsPerDay->pluck('total')) !!},
-            borderColor: 'rgba(255, 99, 132, 1)',
-            fill: false,
-            tension: 0.1
-        }]
-    }
-});
+<!-- ================= CHARTS ================= -->
+<div class="ad-grid ad-grid--3" style="margin-top: 18px;">
+    <div class="ad-card">
+        <div class="ad-card__head"><h3 class="ad-card__title"><i class="bi bi-bar-chart"></i> Posts per month</h3></div>
+        <div class="ad-card__body"><div class="ad-chart"><canvas id="postsChart"></canvas></div></div>
+    </div>
+    <div class="ad-card">
+        <div class="ad-card__head"><h3 class="ad-card__title"><i class="bi bi-graph-up"></i> Views by publish date</h3></div>
+        <div class="ad-card__body"><div class="ad-chart"><canvas id="viewsChart"></canvas></div></div>
+    </div>
+    <div class="ad-card">
+        <div class="ad-card__head"><h3 class="ad-card__title"><i class="bi bi-people"></i> Subscriber growth</h3></div>
+        <div class="ad-card__body"><div class="ad-chart"><canvas id="subscriberChart"></canvas></div></div>
+    </div>
+</div>
 
-new Chart(document.getElementById('subscriberChart'), {
-    type: 'line',
-    data: {
-        labels: {!! json_encode($subscriberGrowth->pluck('date')) !!},
-        datasets: [{
-            label: 'Subscriber Growth',
-            data: {!! json_encode($subscriberGrowth->pluck('total')) !!},
-            borderColor: 'rgba(75, 192, 192, 1)',
-            fill: false,
-            tension: 0.1
-        }]
-    }
-});
-</script>
+<!-- ================= TABLES ================= -->
+<div class="ad-grid ad-grid--main" style="margin-top: 18px;">
+    <div class="ad-card">
+        <div class="ad-card__head">
+            <h3 class="ad-card__title"><i class="bi bi-clock-history"></i> Latest posts</h3>
+            <a href="{{ route('admin.posts.index') }}" class="ad-btn ad-btn--ghost ad-btn--sm">View all <i class="bi bi-arrow-right"></i></a>
+        </div>
+        <div class="ad-table-wrap">
+            <table class="ad-table">
+                <thead>
+                    <tr>
+                        <th>Post</th>
+                        <th>Status</th>
+                        <th class="ad-hide-sm">Date</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($latestPosts as $post)
+                        <tr>
+                            <td>
+                                <div class="ad-post-cell">
+                                    <img class="ad-thumb" alt="" loading="lazy"
+                                         src="{{ $post->featured_image_1 ? asset('storage/' . $post->featured_image_1) : $placeholderImage }}"
+                                         onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
+                                    <div>
+                                        <div class="ad-post-cell__title">{{ $post->title }}</div>
+                                        <div class="ad-post-cell__sub">{{ $post->category->name ?? 'Uncategorized' }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                @if($post->status === 'published')
+                                    <span class="ad-pill ad-pill--green">Published</span>
+                                @else
+                                    <span class="ad-pill ad-pill--gray">Draft</span>
+                                @endif
+                            </td>
+                            <td class="ad-hide-sm">{{ $post->created_at->format('d M Y') }}</td>
+                            <td>
+                                <div class="ad-table__actions">
+                                    <a href="{{ route('admin.posts.edit', $post->id) }}" class="ad-btn ad-btn--ghost ad-btn--sm ad-btn--icon" title="Edit"><i class="bi bi-pencil"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="4" class="ad-table-empty"><i class="bi bi-journal"></i>No posts yet</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
 
+    <div class="ad-stack">
+        <div class="ad-card">
+            <div class="ad-card__head"><h3 class="ad-card__title"><i class="bi bi-fire"></i> Most viewed</h3></div>
+            <ul class="ad-list">
+                @forelse($mostViewedPosts as $post)
+                    <li>
+                        <span class="ad-rank">{{ $loop->iteration }}</span>
+                        <div style="flex: 1; min-width: 0;">
+                            <div class="ad-post-cell__title" style="font-size: 13px;">{{ $post->title }}</div>
+                            <div class="ad-bar"><span style="width: {{ round(($post->views / $maxViews) * 100) }}%;"></span></div>
+                        </div>
+                        <strong style="font-variant-numeric: tabular-nums;">{{ number_format($post->views) }}</strong>
+                    </li>
+                @empty
+                    <li class="ad-post-cell__sub">No views yet</li>
+                @endforelse
+            </ul>
+        </div>
+
+        <div class="ad-card">
+            <div class="ad-card__head"><h3 class="ad-card__title"><i class="bi bi-lightning"></i> Quick actions</h3></div>
+            <div class="ad-card__body">
+                <div class="ad-quick">
+                    <a href="{{ route('admin.posts.create') }}"><i class="bi bi-pencil-square tone-pink"></i> Write a post</a>
+                    <a href="{{ route('admin.categories.create') }}"><i class="bi bi-folder-plus tone-blue"></i> Add category</a>
+                    <a href="{{ route('admin.comments') }}"><i class="bi bi-chat-square-text tone-green"></i> Moderate comments</a>
+                    <a href="{{ route('admin.seo.edit') }}"><i class="bi bi-search-heart tone-violet"></i> SEO settings</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+    const styles = getComputedStyle(document.documentElement);
+    const accent = styles.getPropertyValue('--ad-accent').trim() || '#e4407f';
+    const muted = styles.getPropertyValue('--ad-muted').trim() || '#7a7a88';
+    const line = styles.getPropertyValue('--ad-line').trim() || '#e7e7ec';
+
+    Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+    Chart.defaults.color = muted;
+    Chart.defaults.plugins.legend.display = false;
+
+    const scales = {
+        x: { grid: { display: false }, border: { display: false } },
+        y: { beginAtZero: true, grid: { color: line }, border: { display: false }, ticks: { precision: 0 } }
+    };
+
+    const fill = (ctx) => {
+        const { chart } = ctx;
+        if (!chart.chartArea) { return 'transparent'; }
+        const gradient = chart.ctx.createLinearGradient(0, chart.chartArea.top, 0, chart.chartArea.bottom);
+        gradient.addColorStop(0, accent + '55');
+        gradient.addColorStop(1, accent + '00');
+        return gradient;
+    };
+
+    new Chart(document.getElementById('postsChart'), {
+        type: 'bar',
+        data: {
+            labels: @json($postsPerMonthLabels),
+            datasets: [{ label: 'Posts', data: @json($postsPerMonthValues), backgroundColor: accent, borderRadius: 6, maxBarThickness: 28 }]
+        },
+        options: { maintainAspectRatio: false, scales }
+    });
+
+    new Chart(document.getElementById('viewsChart'), {
+        type: 'line',
+        data: {
+            labels: @json($viewsPerDay->pluck('date')),
+            datasets: [{ label: 'Views', data: @json($viewsPerDay->pluck('total')), borderColor: accent, backgroundColor: fill, fill: true, tension: .35, pointRadius: 3, pointBackgroundColor: accent }]
+        },
+        options: { maintainAspectRatio: false, scales }
+    });
+
+    new Chart(document.getElementById('subscriberChart'), {
+        type: 'line',
+        data: {
+            labels: @json($subscriberGrowth->pluck('date')),
+            datasets: [{ label: 'New subscribers', data: @json($subscriberGrowth->pluck('total')), borderColor: '#3b6ef5', backgroundColor: 'rgba(59,110,245,.12)', fill: true, tension: .35, pointRadius: 3, pointBackgroundColor: '#3b6ef5' }]
+        },
+        options: { maintainAspectRatio: false, scales }
+    });
+})();
+</script>
+@endpush

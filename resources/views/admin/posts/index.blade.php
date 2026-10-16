@@ -1,197 +1,126 @@
 @extends('layouts.admin')
 
+@section('title', 'Posts')
+
 @section('content')
-<div class="content-inner container-fluid pb-0" id="page_layout">
-    <div class="row">
-        <div class="col-sm-12">
+@php $placeholderImage = asset('assets/img/bm-placeholder.svg'); @endphp
 
-            <!-- Links -->
-            <div class="mb-3">
-                <a href="{{ route('admin.posts.trash') }}" class="btn btn-primary">View Trashed</a>
-                <a href="{{ route('admin.posts.create') }}" class="btn btn-primary">+ Add Post</a>
-            </div>
-
-            <div class="card">
-                <div class="card-header d-flex justify-content-between">
-                    <div class="header-title">
-                        <h4 class="card-title">Posts List</h4>
-                    </div>
-                </div>
-
-                <div class="card-body">
-
-                  
-                    <div class="table-responsive">
-                        <table class="table table-bordered mb-0 post-table">
-                            <thead>
-                                <tr class="bg-white">
-                                    <th class="bg-primary text-white">#</th>
-                                    <th class="bg-primary text-white">Title</th>
-                                    <th class="bg-primary text-white">Category</th>
-                                    <th class="bg-primary text-white">Status</th>
-                                    <th class="bg-primary text-white">Image</th>
-                                    <th class="bg-primary text-white">Created</th>
-                                    <th class="bg-primary text-white">Action</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                @forelse($posts as $post)
-                                <tr>
-                                    <td>{{ $loop->iteration }}</td>
-
-                                    {{-- Title --}}
-                                    <td>{{ $post->title }}</td>
-
-                                    {{-- Category --}}
-                                    <td>{{ $post->category->name ?? '—' }}</td>
-
-                                    {{-- Status --}}
-                                    <td>
-                                        @if($post->trashed())
-                                            <span class="badge bg-danger">Trashed</span>
-                                        @else
-                                            @if($post->status === 'published')
-                                                <span class="badge bg-success">Published</span>
-                                            @else
-                                                <span class="badge bg-secondary">Draft</span>
-                                            @endif
-                                        @endif
-                                    </td>
-
-                                    {{-- Image --}}
-                                    <td>
-                                        @if(!empty($post->images) && count($post->images) > 0)
-                                            <img src="{{ asset('storage/' . $post->images[0]) }}"
-                                                 width="80"
-                                                 class="rounded">
-                                        @else
-                                            —
-                                        @endif
-                                    </td>
-
-                                    {{-- Created Date --}}
-                                    <td>{{ $post->created_at->format('d M Y') }}</td>
-
-                                    {{-- Actions --}}
-                                    <td>
-                                        <div class="d-flex gap-2 align-items-center flex-wrap">
-
-                                            @if(!$post->trashed())
-
-                                                {{-- Publish / Unpublish --}}
-                                                <form action="{{ route('admin.posts.toggle-status', $post->id) }}" method="POST">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    @if($post->status === 'published')
-                                                        <button class="btn btn-sm btn-secondary">
-                                                            Unpublish
-                                                        </button>
-                                                    @else
-                                                        <button class="btn btn-sm btn-success">
-                                                            Publish
-                                                        </button>
-                                                    @endif
-                                                </form>
-
-                                                {{-- Edit --}}
-                                                <a href="{{ route('admin.posts.edit', $post->id) }}"
-                                                   class="btn btn-warning btn-sm">
-                                                    Edit
-                                                </a>
-
-                                                {{-- Trash --}}
-                                                <form action="{{ route('admin.posts.destroy', $post->id) }}"
-                                                      method="POST"
-                                                      onsubmit="return confirm('Move this post to trash?');">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit"
-                                                            class="btn btn-danger-subtle btn-sm">
-                                                        <i class="ph ph-trash"></i>
-                                                    </button>
-                                                </form>
-
-                                            @else
-
-                                                {{-- Restore --}}
-                                                <form action="{{ route('admin.posts.restore', $post->id) }}" method="POST">
-                                                    @csrf
-                                                    <button type="submit"
-                                                            class="btn btn-sm btn-success">
-                                                        Restore
-                                                    </button>
-                                                </form>
-
-                                                {{-- Force Delete --}}
-                                                <form action="{{ route('admin.posts.forceDelete', $post->id) }}"
-                                                      method="POST">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit"
-                                                            class="btn btn-sm btn-dark"
-                                                            onclick="return confirm('Delete permanently?')">
-                                                        Delete Permanently
-                                                    </button>
-                                                </form>
-
-                                            @endif
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                @empty
-                                <tr>
-                                    <td colspan="7" class="text-center text-danger">
-                                        No posts found
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-
-                        <!-- Pagination -->
-                        <div class="mt-3 d-flex justify-content-center">
-                            {{ $posts->links() }}
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-
-        </div>
+<div class="ad-head">
+    <div>
+        <h1 class="ad-head__title">Posts</h1>
+        <p class="ad-head__sub">{{ $posts->total() }} {{ Str::plural('post', $posts->total()) }} · publish, edit and organise your stories.</p>
+    </div>
+    <div class="ad-head__actions">
+        <a href="{{ route('admin.posts.trash') }}" class="ad-btn ad-btn--ghost"><i class="bi bi-trash3"></i> Trash</a>
+        <a href="{{ route('admin.posts.create') }}" class="ad-btn ad-btn--primary"><i class="bi bi-plus-lg"></i> New post</a>
     </div>
 </div>
 
-{{-- Custom Responsive CSS --}}
-<style>
-@media (max-width: 768px) {
-    .post-table th,
-    .post-table td {
-        font-size: 12px;
-        padding: 4px 6px;
-        white-space: nowrap;
-    }
+<div class="ad-card">
+    <div class="ad-card__head">
+        <div class="ad-toolbar" style="width: 100%;">
+            <label class="ad-search">
+                <i class="bi bi-search"></i>
+                <input type="search" placeholder="Filter this page…" data-table-filter="#posts-table" aria-label="Filter posts">
+            </label>
+            <div class="ad-segment" role="group" aria-label="Status filter">
+                <button type="button" class="is-active" data-status="all">All</button>
+                <button type="button" data-status="published">Published</button>
+                <button type="button" data-status="draft">Drafts</button>
+            </div>
+        </div>
+    </div>
 
-    .post-table {
-        font-size: 12px;
-    }
+    <div class="ad-table-wrap">
+        <table class="ad-table" id="posts-table">
+            <thead>
+                <tr>
+                    <th>Post</th>
+                    <th>Status</th>
+                    <th class="ad-num ad-hide-sm">Views</th>
+                    <th class="ad-hide-sm">Created</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($posts as $post)
+                    <tr data-row data-status="{{ $post->trashed() ? 'trashed' : $post->status }}">
+                        <td>
+                            <div class="ad-post-cell">
+                                <img class="ad-thumb" alt="" loading="lazy"
+                                     src="{{ !empty($post->images) ? asset('storage/' . array_values($post->images)[0]) : $placeholderImage }}"
+                                     onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
+                                <div>
+                                    <div class="ad-post-cell__title">{{ $post->title }}</div>
+                                    <div class="ad-post-cell__sub">{{ $post->category->name ?? 'Uncategorized' }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            @if($post->trashed())
+                                <span class="ad-pill ad-pill--red">Trashed</span>
+                            @elseif($post->status === 'published')
+                                <span class="ad-pill ad-pill--green">Published</span>
+                            @else
+                                <span class="ad-pill ad-pill--gray">Draft</span>
+                            @endif
+                        </td>
+                        <td class="ad-num ad-hide-sm">{{ number_format($post->views ?? 0) }}</td>
+                        <td class="ad-hide-sm" style="white-space: nowrap;">{{ $post->created_at->format('d M Y') }}</td>
+                        <td>
+                            <div class="ad-table__actions">
+                                @if(!$post->trashed())
+                                    <form action="{{ route('admin.posts.toggle-status', $post->id) }}" method="POST">
+                                        @csrf
+                                        @method('PATCH')
+                                        @if($post->status === 'published')
+                                            <button class="ad-btn ad-btn--ghost ad-btn--sm" title="Move back to drafts"><i class="bi bi-eye-slash"></i> <span class="ad-hide-sm">Unpublish</span></button>
+                                        @else
+                                            <button class="ad-btn ad-btn--success ad-btn--sm" title="Publish now"><i class="bi bi-send"></i> <span class="ad-hide-sm">Publish</span></button>
+                                        @endif
+                                    </form>
 
-    .card-title {
-        font-size: 16px;
-    }
-}
+                                    @if($post->status === 'published')
+                                        <a href="{{ route('posts.show', $post) }}" target="_blank" class="ad-btn ad-btn--ghost ad-btn--sm ad-btn--icon" title="View on site"><i class="bi bi-box-arrow-up-right"></i></a>
+                                    @endif
 
-@media (max-width: 480px) {
-    .post-table th,
-    .post-table td {
-        font-size: 10px;
-        padding: 2px 4px;
-    }
+                                    <a href="{{ route('admin.posts.edit', $post->id) }}" class="ad-btn ad-btn--ghost ad-btn--sm ad-btn--icon" title="Edit"><i class="bi bi-pencil"></i></a>
 
-    .card-title {
-        font-size: 14px;
-    }
-}
-</style>
+                                    <form action="{{ route('admin.posts.destroy', $post->id) }}" method="POST"
+                                          data-confirm="“{{ Str::limit($post->title, 60) }}” will be moved to the trash. You can restore it later."
+                                          data-confirm-title="Move post to trash?" data-confirm-button="Move to trash">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="ad-btn ad-btn--danger ad-btn--sm ad-btn--icon" title="Move to trash"><i class="bi bi-trash3"></i></button>
+                                    </form>
+                                @else
+                                    <form action="{{ route('admin.posts.restore', $post->id) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="ad-btn ad-btn--success ad-btn--sm">Restore</button>
+                                    </form>
+                                    <form action="{{ route('admin.posts.forceDelete', $post->id) }}" method="POST"
+                                          data-confirm="This permanently deletes the post. This cannot be undone." data-confirm-button="Delete forever">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="ad-btn ad-btn--danger ad-btn--sm">Delete</button>
+                                    </form>
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="5" class="ad-table-empty">
+                            <i class="bi bi-journal-plus"></i>
+                            No posts yet. <a href="{{ route('admin.posts.create') }}" style="color: var(--ad-accent); font-weight: 600;">Write your first post</a>
+                        </td>
+                    </tr>
+                @endforelse
+                <tr data-filter-empty hidden><td colspan="5" class="ad-table-empty"><i class="bi bi-funnel"></i>No posts match this filter on this page.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    {{ $posts->links('snippets.site.pagination') }}
+</div>
 @endsection

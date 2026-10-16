@@ -1,164 +1,55 @@
-<aside class="sidebar sidebar-base" id="first-tour"
-    data-toggle="main-sidebar"
-    data-sidebar="responsive"
-    style="height: 100vh; overflow-y: auto; padding-bottom: 120px;">
+@php
+    $draftCount = \App\Models\Post::where('status', 'draft')->count();
 
-    <div class="sidebar-header d-flex align-items-center justify-content-start position-relative">
-        <div class="logo pull-left">
-            <a href="/" class="img-responsive">
-                <img src="{{ asset('assets/img/logo/ChatGPT.png') }}"
-                     alt="BriefMedia Logo"
-                     style="width: 180px; height: auto;">
-            </a>
-        </div>
+    $adminNav = [
+        'Overview' => [
+            ['route' => 'admin.dashboard', 'match' => 'admin.dashboard', 'icon' => 'bi-grid-1x2', 'label' => 'Dashboard'],
+        ],
+        'Content' => [
+            ['route' => 'admin.posts.index', 'match' => ['admin.posts.index', 'admin.posts.edit', 'admin.posts.trash'], 'icon' => 'bi-newspaper', 'label' => 'Posts', 'badge' => $draftCount ? $draftCount . ' draft' . ($draftCount > 1 ? 's' : '') : null],
+            ['route' => 'admin.posts.create', 'match' => 'admin.posts.create', 'icon' => 'bi-pencil-square', 'label' => 'New post'],
+            ['route' => 'admin.categories.index', 'match' => 'admin.categories.*', 'icon' => 'bi-folder2', 'label' => 'Categories'],
+            ['route' => 'admin.news.headlines', 'match' => 'admin.news.headlines', 'icon' => 'bi-broadcast', 'label' => 'Headlines'],
+        ],
+        'Audience' => [
+            ['route' => 'admin.comments', 'match' => 'admin.comments', 'icon' => 'bi-chat-square-text', 'label' => 'Comments'],
+            ['route' => 'admin.subscribers', 'match' => 'admin.subscribers', 'icon' => 'bi-envelope-paper', 'label' => 'Subscribers'],
+            ['route' => 'user.list', 'match' => ['user.list', 'users.trashed'], 'icon' => 'bi-people', 'label' => 'Users'],
+        ],
+        'Settings' => [
+            ['route' => 'admin.seo.edit', 'match' => 'admin.seo.edit', 'icon' => 'bi-search-heart', 'label' => 'SEO settings'],
+        ],
+    ];
+@endphp
 
-        <div class="sidebar-toggle" data-toggle="sidebar" data-active="true">
-            <i class="icon">
-                <svg width="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M15.5 19L8.5 12L15.5 5"
-                          stroke="currentColor"
-                          stroke-width="1.5"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"></path>
-                </svg>
-            </i>
-        </div>
-    </div>
-
-    <div class="sidebar-body pt-0 pb-2">
-        <div class="sidebar-list">
-            <ul class="navbar-nav iq-main-menu">
-
-                <!-- MAIN -->
-                <li class="nav-item static-item mb-1">
-                    <a class="nav-link static-item disabled">
-                        <span class="default-icon">Main</span>
-                    </a>
-                </li>
-
-                <li class="nav-item mb-1">
-                    <a class="nav-link" href="/">
-                        <i class="ph-duotone ph-house"></i>
-                        <span class="item-name">Visit Website</span>
-                    </a>
-                </li>
-
-                <!-- ADMIN -->
-                <li class="nav-item static-item mt-1 mb-1">
-                    <a class="nav-link static-item disabled">
-                        <span class="default-icon">Blog Admin</span>
-                    </a>
-                </li>
-
-                <li class="nav-item mb-1">
-                    <a class="nav-link" href="{{ route('admin.dashboard') }}">
-                        <i class="ph-duotone ph-gauge"></i>
-                        <span class="item-name">Dashboard</span>
-                    </a>
-                </li>
-
-                <li class="nav-item mb-1">
-                    <a class="nav-link" href="{{ route('user.list') }}">
-                        <i class="ph-duotone ph-users"></i>
-                        <span class="item-name">Users</span>
-                    </a>
-                </li>
-
-                <!-- CATEGORIES -->
-                <li class="nav-item static-item mt-1 mb-1">
-                    <a class="nav-link static-item disabled">
-                        <span class="default-icon">Categories</span>
-                    </a>
-                </li>
-
-                <li class="nav-item mb-1">
-                    <a class="nav-link" href="{{ route('admin.categories.index') }}">
-                        <i class="ph-duotone ph-folders"></i>
-                        <span class="item-name">All Categories</span>
-                    </a>
-                </li>
-
-                <li class="nav-item mb-1">
-                    <a class="nav-link" href="{{ route('admin.categories.create') }}">
-                        <i class="ph-duotone ph-plus-circle"></i>
-                        <span class="item-name">Add Category</span>
-                    </a>
-                </li>
-
-                <!-- POSTS -->
-                <li class="nav-item static-item mt-1 mb-1">
-                    <a class="nav-link static-item disabled">
-                        <span class="default-icon">Posts</span>
-                    </a>
-                </li>
-
-                <li class="nav-item mb-1">
-                    <a class="nav-link" href="{{ route('admin.posts.index') }}">
-                        <i class="ph-duotone ph-newspaper"></i>
-                        <span class="item-name">All Posts</span>
-                    </a>
-                </li>
-
-                <li class="nav-item mb-1">
-                    <a class="nav-link" href="{{ route('admin.posts.create') }}">
-                        <i class="ph-duotone ph-note-pencil"></i>
-                        <span class="item-name">Create Post</span>
-                    </a>
-                </li>
-
-                <li class="nav-item mb-1">
-    <a class="nav-link" href="{{ route('admin.news.headlines') }}">
-        <i class="ph-duotone ph-share-network"></i>
-        <span class="item-name">Generate Headlines</span>
+<aside class="ad-side" aria-label="Admin navigation">
+    <a href="{{ route('admin.dashboard') }}" class="ad-side__brand">
+        <span class="ad-side__mark">B</span>
+        <span>Brief<b>Media</b></span>
+        <small>Admin</small>
     </a>
-</li>
 
-                <!-- NEWSLETTER -->
-                <li class="nav-item static-item mt-1 mb-1">
-                    <a class="nav-link static-item disabled">
-                        <span class="default-icon">Newsletter</span>
-                    </a>
-                </li>
+    @foreach($adminNav as $section => $links)
+        <div class="ad-side__label">{{ $section }}</div>
+        @foreach($links as $link)
+            <a href="{{ route($link['route']) }}" class="ad-side__link {{ request()->routeIs(...(array) $link['match']) ? 'is-active' : '' }}">
+                <i class="bi {{ $link['icon'] }}"></i>
+                <span>{{ $link['label'] }}</span>
+                @if(!empty($link['badge']))
+                    <span class="ad-side__badge">{{ $link['badge'] }}</span>
+                @endif
+            </a>
+        @endforeach
+    @endforeach
 
-                <li class="nav-item mb-1">
-                    <a class="nav-link" href="{{ route('admin.subscribers') }}">
-                        <i class="ph-duotone ph-envelope-simple"></i>
-                        <span class="item-name">Subscribers</span>
-                    </a>
-                </li>
-
-                <!-- COMMENTS -->
-                <li class="nav-item static-item mt-1 mb-1">
-                    <a class="nav-link static-item disabled">
-                        <span class="default-icon">Comments</span>
-                    </a>
-                </li>
-
-                <li class="nav-item mb-1">
-                    <a class="nav-link" href="{{ route('admin.comments') }}">
-                        <i class="ph-duotone ph-chat-text"></i>
-                        <span class="item-name">Comments</span>
-                    </a>
-                </li>
-
-                <!-- SETTINGS -->
-                <li class="nav-item static-item mt-1 mb-1">
-                    <a class="nav-link static-item disabled">
-                        <span class="default-icon">Settings</span>
-                    </a>
-                </li>
-
-                <li class="nav-item mb-1" style="margin-bottom: 80px;">
-                    <a class="nav-link" href="{{ route('admin.seo.edit') }}">
-                        <i class="ph-duotone ph-gear"></i>
-                        <span class="item-name">SEO Settings</span>
-                    </a>
-                </li>
-
-             
-
-            </ul>
+    <div class="ad-side__foot">
+        <div class="ad-side__cta">
+            <strong>Write something great</strong>
+            <p>Draft, preview SEO and publish in one place.</p>
+            <a href="{{ route('admin.posts.create') }}" class="ad-btn ad-btn--accent ad-btn--sm" style="width: 100%;"><i class="bi bi-plus-lg"></i> New post</a>
         </div>
+        <a href="{{ url('/') }}" target="_blank" class="ad-side__link" style="margin-top: 10px;">
+            <i class="bi bi-box-arrow-up-right"></i> <span>View website</span>
+        </a>
     </div>
-
 </aside>
