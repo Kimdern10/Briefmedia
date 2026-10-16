@@ -8,7 +8,13 @@
 <div class="ad-head">
     <div>
         <h1 class="ad-head__title">Posts</h1>
-        <p class="ad-head__sub">{{ $posts->total() }} {{ Str::plural('post', $posts->total()) }} · publish, edit and organise your stories.</p>
+        <p class="ad-head__sub">
+            @if($search !== '')
+                {{ $posts->total() }} {{ Str::plural('result', $posts->total()) }} for “{{ $search }}”
+            @else
+                {{ $statusCounts['all'] }} {{ Str::plural('post', $statusCounts['all']) }} · publish, edit and organise your stories.
+            @endif
+        </p>
     </div>
     <div class="ad-head__actions">
         <a href="{{ route('admin.posts.trash') }}" class="ad-btn ad-btn--ghost"><i class="bi bi-trash3"></i> Trash</a>
@@ -18,17 +24,29 @@
 
 <div class="ad-card">
     <div class="ad-card__head">
-        <div class="ad-toolbar" style="width: 100%;">
+        <form method="GET" action="{{ route('admin.posts.index') }}" class="ad-toolbar" style="width: 100%;" role="search">
+            @if($status !== 'all')
+                <input type="hidden" name="status" value="{{ $status }}">
+            @endif
             <label class="ad-search">
                 <i class="bi bi-search"></i>
-                <input type="search" placeholder="Filter this page…" data-table-filter="#posts-table" aria-label="Filter posts">
+                <input type="search" name="q" value="{{ $search }}" placeholder="Search all posts by title, excerpt or category…" aria-label="Search posts">
             </label>
-            <div class="ad-segment" role="group" aria-label="Status filter">
-                <button type="button" class="is-active" data-status="all">All</button>
-                <button type="button" data-status="published">Published</button>
-                <button type="button" data-status="draft">Drafts</button>
-            </div>
-        </div>
+            <button type="submit" class="ad-btn ad-btn--primary">Search</button>
+            @if($search !== '')
+                <a href="{{ route('admin.posts.index', array_filter(['status' => $status !== 'all' ? $status : null])) }}" class="ad-btn ad-btn--ghost">Clear</a>
+            @endif
+
+            <nav class="ad-segment" aria-label="Status filter" style="margin-left: auto;">
+                @foreach(['all' => 'All', 'published' => 'Published', 'draft' => 'Drafts'] as $statusKey => $statusLabel)
+                    <a href="{{ route('admin.posts.index', array_filter(['q' => $search ?: null, 'status' => $statusKey !== 'all' ? $statusKey : null])) }}"
+                       class="{{ $status === $statusKey ? 'is-active' : '' }}"
+                       @if($status === $statusKey) aria-current="page" @endif>
+                        {{ $statusLabel }} <span class="ad-segment__count">{{ $statusCounts[$statusKey] }}</span>
+                    </a>
+                @endforeach
+            </nav>
+        </form>
     </div>
 
     <div class="ad-table-wrap">
@@ -111,12 +129,18 @@
                 @empty
                     <tr>
                         <td colspan="5" class="ad-table-empty">
-                            <i class="bi bi-journal-plus"></i>
-                            No posts yet. <a href="{{ route('admin.posts.create') }}" style="color: var(--ad-accent); font-weight: 600;">Write your first post</a>
+                            @if($search !== '' || $status !== 'all')
+                                <i class="bi bi-funnel"></i>
+                                No {{ $status === 'all' ? '' : ($status === 'draft' ? 'draft' : 'published') }} posts
+                                @if($search !== '') match “{{ $search }}”@endif.
+                                <a href="{{ route('admin.posts.index') }}" style="color: var(--ad-accent); font-weight: 600;">Show all posts</a>
+                            @else
+                                <i class="bi bi-journal-plus"></i>
+                                No posts yet. <a href="{{ route('admin.posts.create') }}" style="color: var(--ad-accent); font-weight: 600;">Write your first post</a>
+                            @endif
                         </td>
                     </tr>
                 @endforelse
-                <tr data-filter-empty hidden><td colspan="5" class="ad-table-empty"><i class="bi bi-funnel"></i>No posts match this filter on this page.</td></tr>
             </tbody>
         </table>
     </div>

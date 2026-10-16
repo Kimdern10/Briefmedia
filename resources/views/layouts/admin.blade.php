@@ -16,9 +16,7 @@
         })();
     </script>
 
-    @if(!empty($globalSeo?->favicon))
-        <link rel="icon" type="image/png" href="{{ asset('storage/' . $globalSeo->favicon) }}">
-    @endif
+    @include('snippets.site.favicon')
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

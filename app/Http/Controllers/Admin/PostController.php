@@ -17,13 +17,36 @@ class PostController extends Controller
     /* ===============================
         ACTIVE POSTS LIST
     =============================== */
-    public function index()
+    public function index(Request $request)
     {
-        $posts = Post::with(['category', 'admin'])
-            ->latest()
-            ->paginate(10);
+        $search = trim((string) $request->query('q', ''));
+        $status = in_array($request->query('status'), ['draft', 'published'], true)
+            ? $request->query('status')
+            : 'all';
 
-        return view('admin.posts.index', compact('posts'));
+        $matchingSearch = Post::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('title', 'LIKE', "%{$search}%")
+                        ->orWhere('excerpt', 'LIKE', "%{$search}%")
+                        ->orWhereHas('category', fn ($category) => $category->where('name', 'LIKE', "%{$search}%"));
+                });
+            });
+
+        $statusCounts = [
+            'all' => (clone $matchingSearch)->count(),
+            'published' => (clone $matchingSearch)->where('status', 'published')->count(),
+            'draft' => (clone $matchingSearch)->where('status', 'draft')->count(),
+        ];
+
+        $posts = $matchingSearch
+            ->with(['category', 'admin'])
+            ->when($status !== 'all', fn ($query) => $query->where('status', $status))
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('admin.posts.index', compact('posts', 'search', 'status', 'statusCounts'));
     }
 
     /* ===============================

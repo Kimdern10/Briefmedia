@@ -569,3 +569,11 @@ body.ad {
     object-position: 50% 25%;
     background-position: 50% 25%;
 }
+
+/* Status filter links (server-side filtering on the posts list) */
+.ad-segment a { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 8px; color: var(--ad-muted); font-weight: 600; font-size: 12.5px; }
+.ad-segment a:hover { color: var(--ad-ink); }
+.ad-segment a.is-active { background: var(--ad-surface); color: var(--ad-ink); box-shadow: var(--ad-shadow); }
+.ad-segment__count { min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--ad-line); color: var(--ad-ink-2); font-size: 11px; text-align: center; }
+.ad-segment a.is-active .ad-segment__count { background: var(--ad-accent); color: #fff; }
+@media (max-width: 720px) { .ad-toolbar nav.ad-segment { margin-left: 0 !important; } }

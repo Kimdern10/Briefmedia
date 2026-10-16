@@ -60,9 +60,7 @@
     @endif
 
     <!-- ================= FAVICON ================= -->
-    @if(!empty($globalSeo?->favicon))
-        <link rel="icon" type="image/png" href="{{ asset('storage/'.$globalSeo->favicon) }}">
-    @endif
+    @include('snippets.site.favicon')
 
     <!-- ================= GOOGLE VERIFICATION ================= -->
     @if(!empty($globalSeo?->google_verification))

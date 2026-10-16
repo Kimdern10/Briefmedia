@@ -128,7 +128,7 @@
                 <div class="ad-card__head"><h3 class="ad-card__title"><i class="bi bi-gear"></i> Brand &amp; tracking</h3></div>
                 <div class="ad-card__body">
                     <div class="ad-field">
-                        <label class="ad-label">Favicon</label>
+                        <label class="ad-label">Favicon <small>Square PNG, 512 × 512</small></label>
                         @if(!empty($seo?->favicon))
                             <div class="ad-current-img"><img src="{{ asset('storage/' . $seo->favicon) }}" alt="" style="width: 32px; height: 32px;"><span class="ad-post-cell__sub">Current favicon</span></div>
                         @endif

@@ -160,6 +160,16 @@ class BlogTemplateTest extends TestCase
         }
     }
 
+    public function test_site_and_admin_pages_include_a_tab_icon(): void
+    {
+        $this->get(url('/'))->assertOk()->assertSee('rel="icon"', false);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('rel="icon"', false);
+    }
+
     public function test_regular_users_cannot_open_the_admin_area(): void
     {
         $reader = User::factory()->create(['password' => 'password']);
