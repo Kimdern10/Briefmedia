@@ -30,7 +30,7 @@ class OtpMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'OTP email_verification',
+            subject: 'Your BriefMedia verification code',
         );
     }
 

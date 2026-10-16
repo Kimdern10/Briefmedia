@@ -23,7 +23,7 @@ class NewsletterMail extends Mailable
 
     public function build()
     {
-        return $this->subject('🔥 BriefMedia Weekly Newsletter')
+        return $this->subject('🔥 This week on BriefMedia')
             ->view('emails.newsletter');
     }
 }

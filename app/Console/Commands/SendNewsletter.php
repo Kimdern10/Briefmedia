@@ -2,10 +2,10 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\Subscriber;
-use App\Models\Post;
 use App\Mail\NewsletterMail;
+use App\Models\Post;
+use App\Models\Subscriber;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 
 class SendNewsletter extends Command
@@ -17,12 +17,24 @@ class SendNewsletter extends Command
 
     public function handle()
     {
-        // Fetch latest 5 posts
-        $posts = Post::latest()->take(5)->get();
+        // Latest 5 published posts (drafts must never go out by email)
+        $posts = Post::with('category')
+            ->where('status', 'published')
+            ->latest()
+            ->take(5)
+            ->get();
+
+        // Most viewed published posts from the last 30 days
+        $trendingPosts = Post::where('status', 'published')
+            ->where('created_at', '>=', now()->subDays(30))
+            ->orderByDesc('views')
+            ->take(5)
+            ->get();
 
         // Stop if no posts
         if ($posts->isEmpty()) {
             $this->info('No posts available to send.');
+
             return 0;
         }
 
@@ -31,6 +43,7 @@ class SendNewsletter extends Command
 
         if ($subscribers->isEmpty()) {
             $this->info('No active subscribers found.');
+
             return 0;
         }
 
@@ -38,14 +51,15 @@ class SendNewsletter extends Command
         foreach ($subscribers as $subscriber) {
             try {
                 Mail::to($subscriber->email)
-                    ->send(new NewsletterMail($posts, $subscriber));
+                    ->send(new NewsletterMail($posts, $trendingPosts, $subscriber));
             } catch (\Exception $e) {
                 // Log any errors instead of breaking the loop
                 \Log::error("Failed to send newsletter to {$subscriber->email}: {$e->getMessage()}");
             }
         }
 
-        $this->info('Newsletter sent to ' . $subscribers->count() . ' subscribers.');
+        $this->info('Newsletter sent to '.$subscribers->count().' subscribers.');
+
         return 0;
     }
 }

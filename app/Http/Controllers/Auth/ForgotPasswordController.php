@@ -29,7 +29,7 @@ class ForgotPasswordController extends Controller
 
         try {
             Mail::send($view, $data, function ($message) use ($email) {
-                $message->to($email, ' Blog')->subject('Blog  Reset Password');
+                $message->to($email)->subject('Your BriefMedia password reset code');
                 // $message->from('omnisanahospital@gmail.com', 'Omnisana Hospital support');
             });
         } catch (\Exception $e) {

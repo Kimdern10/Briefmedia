@@ -19,7 +19,7 @@ class PasswordResetMail extends Mailable
 
     public function build()
     {
-        return $this->subject('Blog Password Reset Code')
+        return $this->subject('Your BriefMedia password reset code')
             ->view('emails.password_reset') // your password reset blade
             ->with([
                 'code' => $this->code,

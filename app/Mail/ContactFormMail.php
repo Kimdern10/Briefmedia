@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
@@ -18,7 +19,14 @@ class ContactFormMail extends Mailable
 
     public function build()
     {
-        return $this->subject('New Contact Form Submission')
-                    ->view('emails.contact');
+        $mail = $this->subject('New message: '.($this->data['subject'] ?? 'Contact form'))
+            ->view('emails.contact');
+
+        // Hitting "Reply" in the inbox goes straight to the visitor
+        if (! empty($this->data['email']) && filter_var($this->data['email'], FILTER_VALIDATE_EMAIL)) {
+            $mail->replyTo($this->data['email'], $this->data['name'] ?? null);
+        }
+
+        return $mail;
     }
 }
