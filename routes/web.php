@@ -29,6 +29,11 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Design files served from the project folder (see ThemeAssetController)
+Route::get('/theme/{type}/{file}', \App\Http\Controllers\ThemeAssetController::class)
+    ->where(['type' => 'css|js|img', 'file' => 'bm-[a-z0-9-]+\.(css|js|svg|png)'])
+    ->name('theme.asset');
+
 Route::view('/terms', 'pages.terms')->name('terms');
 Route::view('/privacy', 'pages.privacy')->name('privacy');
 // register view

@@ -5,7 +5,7 @@
     $postTitle = $post->title;
     $postDescription = Str::limit(strip_tags($post->content ?? $post->excerpt), 160);
     $postImage = asset('storage/' . ($post->featured_image_1 ?? 'default.jpg'));
-    $placeholderImage = asset('assets/img/bm-placeholder.svg');
+    $placeholderImage = route('theme.asset', ['img', 'bm-placeholder.svg']);
     $authorName = optional($post->admin)->name ?? 'BriefMedia';
     $authorFallbackPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($authorName) . '&background=e4407f&color=fff&size=120';
     $authorProfilePicture = optional(optional($post->admin)->Userprofile)->profile_picture;

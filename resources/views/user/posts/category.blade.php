@@ -4,7 +4,7 @@
 
 @section('content')
 @php
-    $placeholderImage = asset('assets/img/bm-placeholder.svg');
+    $placeholderImage = route('theme.asset', ['img', 'bm-placeholder.svg']);
     $sidebarCategories = $allCategories ?? collect();
     $sidebarLatest = ($latestPosts ?? collect())->take(5);
     $sidebarTrending = ($trendingPosts ?? collect())

@@ -12,9 +12,9 @@
 
 <article class="bm-card bm-card--{{ $cardVariant }}">
     <a href="{{ route('posts.show', $post) }}" class="bm-card__media" aria-hidden="true" tabindex="-1">
-        <img src="{{ $post->featured_image_1 ? asset('storage/' . $post->featured_image_1) : asset('assets/img/bm-placeholder.svg') }}"
+        <img src="{{ $post->featured_image_1 ? asset('storage/' . $post->featured_image_1) : route('theme.asset', ['img', 'bm-placeholder.svg']) }}"
              alt="{{ $post->title }}" loading="lazy"
-             onerror="this.onerror=null;this.src='{{ asset('assets/img/bm-placeholder.svg') }}'">
+             onerror="this.onerror=null;this.src='{{ route('theme.asset', ['img', 'bm-placeholder.svg']) }}'">
     </a>
 
     <div class="bm-card__body">

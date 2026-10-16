@@ -22,7 +22,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('assets/css/font/bootstrap-icons.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/bm-admin.css') }}?v={{ filemtime(public_path('assets/css/bm-admin.css')) }}">
+    <link rel="stylesheet" href="{{ route('theme.asset', ['css', 'bm-admin.css']) }}?v={{ filemtime(public_path('assets/css/bm-admin.css')) }}">
     @stack('styles')
 </head>
 
@@ -66,7 +66,7 @@
         </div>
     </dialog>
 
-    <script src="{{ asset('assets/js/bm-admin.js') }}?v={{ filemtime(public_path('assets/js/bm-admin.js')) }}"></script>
+    <script src="{{ route('theme.asset', ['js', 'bm-admin.js']) }}?v={{ filemtime(public_path('assets/js/bm-admin.js')) }}"></script>
 
     @foreach (['success' => 'success', 'message' => 'success', 'info' => 'info', 'warning' => 'warning', 'error' => 'error'] as $flashKey => $flashTone)
         @if (session()->has($flashKey))

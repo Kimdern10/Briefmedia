@@ -2,7 +2,7 @@
 
 @section('content')
 @php
-    $placeholderImage = asset('assets/img/bm-placeholder.svg');
+    $placeholderImage = route('theme.asset', ['img', 'bm-placeholder.svg']);
     $imageFor = fn ($post) => $post->featured_image_1 ? asset('storage/' . $post->featured_image_1) : $placeholderImage;
 
     // Trending: posts that have views or likes, most viewed first (max 8)

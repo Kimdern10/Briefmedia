@@ -3,7 +3,7 @@
 @section('title', 'Trashed posts')
 
 @section('content')
-@php $placeholderImage = asset('assets/img/bm-placeholder.svg'); @endphp
+@php $placeholderImage = route('theme.asset', ['img', 'bm-placeholder.svg']); @endphp
 
 <div class="ad-head">
     <div>

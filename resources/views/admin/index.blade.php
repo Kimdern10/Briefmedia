@@ -8,7 +8,7 @@
     $postsPerMonthLabels = collect($postsPerMonth->keys())->sort()->map(fn ($month) => $monthNames[(int) $month] ?? $month)->values();
     $postsPerMonthValues = collect($postsPerMonth->toArray())->sortKeys()->values();
     $maxViews = max(1, (int) $mostViewedPosts->max('views'));
-    $placeholderImage = asset('assets/img/bm-placeholder.svg');
+    $placeholderImage = route('theme.asset', ['img', 'bm-placeholder.svg']);
     $publishedPosts = max(0, $totalPosts - $draftPosts);
 
     $stats = [

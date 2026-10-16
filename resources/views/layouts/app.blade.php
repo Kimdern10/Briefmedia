@@ -96,7 +96,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('assets/css/font/bootstrap-icons.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/bm-site.css') }}?v={{ filemtime(public_path('assets/css/bm-site.css')) }}">
+    <link rel="stylesheet" href="{{ route('theme.asset', ['css', 'bm-site.css']) }}?v={{ filemtime(public_path('assets/css/bm-site.css')) }}">
     @stack('styles')
 
     <!-- Alpine (like buttons) -->
@@ -125,7 +125,7 @@
     @include('snippets.footer')
 
     <!-- ================= SCRIPTS ================= -->
-    <script src="{{ asset('assets/js/bm-site.js') }}?v={{ filemtime(public_path('assets/js/bm-site.js')) }}"></script>
+    <script src="{{ route('theme.asset', ['js', 'bm-site.js']) }}?v={{ filemtime(public_path('assets/js/bm-site.js')) }}"></script>
 
     <!-- Session messages (auth pages show them inline instead) -->
     @unless (View::hasSection('auth_page'))

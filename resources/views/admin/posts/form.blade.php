@@ -81,7 +81,7 @@
                                 <label class="ad-upload__box {{ $current ? 'has-image' : '' }} @error($field) is-invalid @enderror">
                                     @if($current)
                                         <img src="{{ asset('storage/' . $current) }}" alt=""
-                                             onerror="this.onerror=null;this.src='{{ asset('assets/img/bm-placeholder.svg') }}'">
+                                             onerror="this.onerror=null;this.src='{{ route('theme.asset', ['img', 'bm-placeholder.svg']) }}'">
                                     @endif
                                     <span><i class="bi bi-cloud-arrow-up"></i>{{ $current ? 'Replace' : 'Upload' }}</span>
                                     <input type="file" name="{{ $field }}" accept="image/*" {{ $slot === 1 && !$editing ? 'required' : '' }}>
