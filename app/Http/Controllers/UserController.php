@@ -18,7 +18,7 @@ class UserController extends Controller
     //
     public function signUp()
     {
-        return view ('auth.registeyfugtrr');
+        return view ('auth.register');
     }
 
     public function createUser(Request $request)
