@@ -470,6 +470,16 @@
 
                     @if($editing)
                         <div class="ad-field">
+                            <div class="ad-help" style="margin: 0;">
+                                <span>
+                                    <a href="#live-coverage"><i class="bi bi-broadcast-pin"></i> Live coverage</a> and
+                                    <a href="#election-results"><i class="bi bi-check2-square"></i> Election results</a>
+                                    are at the bottom of this page.
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="ad-field">
                             <label class="ad-label" for="correction_note">Correction note <small>Optional</small></label>
                             <textarea name="correction_note" id="correction_note" rows="2" maxlength="1000"
                                       class="ad-textarea @error('correction_note') is-invalid @enderror" style="min-height: 64px;"

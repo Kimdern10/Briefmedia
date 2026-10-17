@@ -158,6 +158,12 @@ class Post extends Model
         return $this->hasOne(Poll::class);
     }
 
+    // Election results board shown inside the story
+    public function election()
+    {
+        return $this->hasOne(Election::class);
+    }
+
     // Readers who saved this post for later
     public function bookmarkedBy()
     {

@@ -643,3 +643,12 @@ body.ad {
 
 /* ---------- Ads page ---------- */
 .ad-ads__code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+
+/* ---------- Election results panel (post edit page) ---------- */
+.ad-badge--red { background: var(--ad-red); color: #fff; }
+.ad-badge--green { background: var(--ad-green-soft); color: var(--ad-green); }
+.ad-election__summary { display: grid; gap: 8px; margin-bottom: 14px; padding: 12px 14px; border-radius: 12px; background: var(--ad-surface-2); }
+.ad-election__totals { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--ad-ink-2); }
+.ad-election__totals i, .ad-election__swatch { display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 2px; }
+.ad-election__table td, .ad-election__table th { white-space: nowrap; }
+.ad-election__vote { width: 104px; min-width: 84px; height: 36px; padding: 0 8px; text-align: right; font-variant-numeric: tabular-nums; }

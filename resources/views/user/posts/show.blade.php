@@ -158,6 +158,10 @@
                     </figure>
                 @endif
 
+                @if($post->election)
+                    <livewire:election-results :election="$post->election" />
+                @endif
+
                 @if($hasLiveCoverage)
                     <livewire:live-updates :post="$post" />
                 @endif
