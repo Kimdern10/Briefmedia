@@ -7,11 +7,7 @@
                     <h3 class="bm-cta__title">The day's best stories, in your inbox.</h3>
                     <p class="bm-cta__text">Join our readers and be the first to know when new posts drop. No spam. Unsubscribe anytime.</p>
                 </div>
-                <form action="{{ route('newsletter.subscribe') }}" method="POST" class="bm-subscribe">
-                    @csrf
-                    <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address">
-                    <button class="bm-btn bm-btn--accent" type="submit">Subscribe <i class="bi bi-arrow-right"></i></button>
-                </form>
+                <livewire:newsletter-signup />
             </div>
         </div>
     </section>

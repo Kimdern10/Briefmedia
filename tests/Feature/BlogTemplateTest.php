@@ -65,7 +65,7 @@ class BlogTemplateTest extends TestCase
             ->assertSee('Zz Template Test Category')
             ->assertSee($this->publishedPost->title)
             ->assertDontSee($this->draftPost->title)
-            ->assertSee(route('newsletter.subscribe'), false);
+            ->assertSee('wire:submit="subscribe"', false);
     }
 
     public function test_post_page_shows_article_comments_and_share_links(): void
@@ -94,7 +94,7 @@ class BlogTemplateTest extends TestCase
             ->get(route('posts.show', $this->publishedPost))
             ->assertOk()
             ->assertSee(route('posts.like', $this->publishedPost), false)
-            ->assertSee(route('posts.comment', $this->publishedPost), false);
+            ->assertSee('wire:submit="postComment"', false);
     }
 
     public function test_category_page_lists_its_published_posts(): void
