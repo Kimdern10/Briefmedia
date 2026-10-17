@@ -8,10 +8,12 @@ use App\Livewire\BookmarkButton;
 use App\Livewire\LiveUpdates;
 use App\Livewire\PostPoll;
 use App\Livewire\SavedPosts;
+use App\Mail\NewsletterMail;
 use App\Models\AdSlot;
 use App\Models\Category;
 use App\Models\Poll;
 use App\Models\Post;
+use App\Models\Subscriber;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\Client\Request as HttpRequest;
@@ -490,5 +492,34 @@ class NewsroomFeaturesTest extends TestCase
         $this->get('/OneSignalSDKWorker.js')->assertOk()
             ->assertHeader('Content-Type', 'application/javascript; charset=utf-8')
             ->assertSee('OneSignalSDK.sw.js');
+    }
+    /* ---------- Images in emails and link previews ---------- */
+
+    public function test_newsletter_images_use_full_web_addresses(): void
+    {
+        Storage::disk('public')->put('posts/featured/zz-cover.webp', 'x');
+        Storage::disk('public')->put('posts/featured/zz-cover.jpg', 'x');
+        $post = $this->makePost(['title' => 'Zz Email Story', 'featured_image_1' => 'posts/featured/zz-cover.webp']);
+        $subscriber = Subscriber::create(['email' => 'zz-img@example.com', 'is_active' => true, 'unsubscribe_token' => 'zz-img-token']);
+
+        $html = (new NewsletterMail(collect([$post]), collect(), $subscriber))->render();
+
+        $this->assertStringContainsString('src="'.url('storage/posts/featured/zz-cover.jpg').'"', $html, 'JPEG copy, full address');
+        $this->assertStringNotContainsString('src="/storage/', $html);
+    }
+
+    public function test_story_page_tells_facebook_the_image_size(): void
+    {
+        $this->actingAs($this->admin)
+            ->post(route('admin.posts.store'), $this->postForm(['title' => 'Zz Sized Photo', 'featured_image_1' => UploadedFile::fake()->image('wide.jpg', 1800, 945)]))
+            ->assertSessionHasNoErrors();
+
+        $post = Post::where('title', 'Zz Sized Photo')->firstOrFail();
+
+        auth()->logout();
+        $this->get(route('posts.show', $post))->assertOk()
+            ->assertSee('<meta property="og:image" content="'.url('storage/'.preg_replace('/\.webp$/', '.jpg', $post->featured_image_1)).'">', false)
+            ->assertSee('<meta property="og:image:width" content="1200">', false)
+            ->assertSee('<meta property="og:image:height" content="630">', false);
     }
 }

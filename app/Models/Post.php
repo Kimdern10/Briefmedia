@@ -621,6 +621,39 @@ class Post extends Model
     }
 
     /**
+     * Width and height of the link-preview image. Facebook only shows the photo on the very
+     * first share when the page states its size.
+     *
+     * @return array{0: int, 1: int}|null
+     */
+    public function shareImageSize(): ?array
+    {
+        if (! $this->featured_image_1) {
+            return null;
+        }
+
+        $disk = Storage::disk('public');
+        $jpegCopy = preg_replace('/\.webp$/i', '.jpg', $this->featured_image_1);
+        $path = $disk->exists($jpegCopy) ? $jpegCopy : $this->featured_image_1;
+
+        if (! $disk->exists($path)) {
+            return null;
+        }
+
+        $size = @getimagesize($disk->path($path));
+
+        return $size ? [(int) $size[0], (int) $size[1]] : null;
+    }
+
+    /**
+     * Cover photo for emails (full web address, JPEG copy when there is one), or null.
+     */
+    public function emailImageUrl(): ?string
+    {
+        return $this->featured_image_1 ? $this->shareImageUrl() : null;
+    }
+
+    /**
      * Schema markup an admin typed in the SEO tab, or null. The post form used to save the
      * automatic BlogPosting schema back into the post; those copies are ignored so every
      * story gets the newer NewsArticle schema.

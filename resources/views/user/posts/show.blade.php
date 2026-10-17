@@ -42,6 +42,11 @@
 <meta property="og:image" content="{{ $postImage }}">
 <meta property="og:image:secure_url" content="{{ $postImage }}">
 <meta property="og:image:type" content="{{ $postImageType }}">
+@if($postImageSize = $post->shareImageSize())
+<meta property="og:image:width" content="{{ $postImageSize[0] }}">
+<meta property="og:image:height" content="{{ $postImageSize[1] }}">
+@endif
+<meta property="og:image:alt" content="{{ $postTitle }}">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{ $postTitle }}">

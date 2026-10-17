@@ -5,7 +5,8 @@
     $trendingPosts = collect($trendingPosts ?? []);
     $leadStory = $latestPosts->first();
     $moreStories = $latestPosts->slice(1);
-    $imageFor = fn ($post) => $post->featured_image_1 ? asset('storage/' . $post->featured_image_1) : null;
+    // Full web addresses: email apps can't load /storage/... links
+    $imageFor = fn ($post) => $post->emailImageUrl();
     $summaryFor = fn ($post) => \Illuminate\Support\Str::limit(trim(strip_tags($post->excerpt ?: $post->content)), 150);
 @endphp
 
