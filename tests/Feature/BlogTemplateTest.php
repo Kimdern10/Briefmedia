@@ -76,6 +76,7 @@ class BlogTemplateTest extends TestCase
             'post_id' => $this->publishedPost->id,
             'user_id' => $commenter->id,
             'content' => 'Great read, thanks!',
+            'approved_at' => now(),
         ]);
 
         $this->get(route('posts.show', $this->publishedPost))
