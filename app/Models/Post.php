@@ -704,62 +704,35 @@ class Post extends Model
     }
 
     /**
-     * Trending stories used by the homepage, category sidebar and newsletter.
+     * Trending stories used by the homepage, category sidebar, admin dashboard and newsletter.
      *
-     * 1. Posts an admin marked as trending (🔥 Trend button) come first, newest pick first,
-     *    for PINNED_TRENDING_DAYS days.
-     * 2. The remaining spots go to the highest automatic scores:
-     *    views + likes x 2 + comments x 3, over published posts from the last 7 days.
-     *    If fewer than $minimum stories qualify, the window widens to 30 days.
+     * Only posts an admin marked with the 🔥 Trend button show, for PINNED_TRENDING_DAYS
+     * days, newest pick first. Nothing trends automatically.
      *
-     * Likes come from post_user_likes (what the like button saves). Each post gets
-     * `trend_likes`, `trend_comments`, `trend_score` and `trend_pinned` attributes.
+     * Each post gets `trend_likes`, `trend_comments`, `trend_score`
+     * (views + likes x 2 + comments x 3) and `trend_pinned` attributes.
      *
      * @return Collection<int, self>
      */
-    public static function trendingNow(int $limit = 8, int $minimum = 4): Collection
+    public static function trendingNow(int $limit = 8): Collection
     {
-        $withStats = fn () => static::query()
+        return static::query()
             ->with(['category', 'admin'])
             ->withCount([
                 'likedByUsers as trend_likes',
                 'comments as trend_comments',
             ])
-            ->where('status', 'published');
-
-        $score = function (self $post): void {
-            $post->trend_score = (int) $post->views
-                + ((int) $post->trend_likes * 2)
-                + ((int) $post->trend_comments * 3);
-        };
-
-        $pinned = $withStats()
+            ->where('status', 'published')
             ->where('trending_until', '>', now())
             ->orderByDesc('trending_until')
             ->take($limit)
             ->get()
-            ->each($score)
-            ->each(fn (self $post) => $post->trend_pinned = true);
-
-        $automatic = collect();
-
-        foreach ([7, 30] as $days) {
-            $automatic = $withStats()
-                ->where('created_at', '>=', now()->subDays($days))
-                ->whereNotIn('id', $pinned->pluck('id'))
-                ->get()
-                ->each($score)
-                ->each(fn (self $post) => $post->trend_pinned = false)
-                ->filter(fn (self $post) => $post->trend_score > 0)
-                ->sortByDesc(fn (self $post) => [$post->trend_score, $post->created_at->timestamp])
-                ->values();
-
-            if ($pinned->count() + $automatic->count() >= $minimum) {
-                break;
-            }
-        }
-
-        return $pinned->concat($automatic)->take($limit)->values();
+            ->each(function (self $post): void {
+                $post->trend_pinned = true;
+                $post->trend_score = (int) $post->views
+                    + ((int) $post->trend_likes * 2)
+                    + ((int) $post->trend_comments * 3);
+            });
     }
 
     public function scopeByCategory($query, $categoryId)

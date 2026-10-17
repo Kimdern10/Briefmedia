@@ -10,6 +10,10 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
+/**
+ * Trending only shows posts an admin marked with the 🔥 Trend button.
+ * (Picking, expiry and the admin tab are covered in PinnedTrendingTest.)
+ */
 class TrendingTest extends TestCase
 {
     use DatabaseTransactions;
@@ -46,6 +50,13 @@ class TrendingTest extends TestCase
         return $post;
     }
 
+    private function pick(Post $post): Post
+    {
+        $post->forceFill(['trending_until' => now()->addDays(Post::PINNED_TRENDING_DAYS)])->save();
+
+        return $post;
+    }
+
     private function addLikes(Post $post, int $count): void
     {
         foreach (range(1, $count) as $i) {
@@ -53,96 +64,76 @@ class TrendingTest extends TestCase
         }
     }
 
-    public function test_likes_and_comments_count_towards_the_score(): void
+    public function test_popular_posts_do_not_trend_unless_an_admin_picks_them(): void
     {
-        $mostViewed = $this->makePost('Zz Most Viewed', 10, 1);
-        $mostLoved = $this->makePost('Zz Most Loved', 4, 1);
-        $this->addLikes($mostLoved, 2);                                   // 4 + 2x2 = 8
-        Comment::create(['post_id' => $mostLoved->id, 'user_id' => $this->admin->id, 'content' => 'Nice', 'approved_at' => now()]); // + 3 = 11
-        $this->makePost('Zz Quiet One', 1, 1);
-        $this->makePost('Zz Fourth', 2, 1);
+        $popular = $this->makePost('Zz Most Viewed', 5000, 1);
+        $this->addLikes($popular, 3);
+        Comment::create(['post_id' => $popular->id, 'user_id' => $this->admin->id, 'content' => 'Nice', 'approved_at' => now()]);
 
-        $trending = Post::trendingNow(8);
+        $this->assertCount(0, Post::trendingNow(8));
 
-        $this->assertSame(['Zz Most Loved', 'Zz Most Viewed', 'Zz Fourth', 'Zz Quiet One'], $trending->pluck('title')->all());
-        $this->assertSame(2, (int) $trending->first()->trend_likes);
-        $this->assertSame(1, (int) $trending->first()->trend_comments);
-        $this->assertSame(11, $trending->first()->trend_score);
+        $this->pick($popular);
+
+        $this->assertSame(['Zz Most Viewed'], Post::trendingNow(8)->pluck('title')->all());
     }
 
-    public function test_only_the_last_7_days_count_when_there_are_enough_stories(): void
+    public function test_picked_posts_carry_their_stats(): void
     {
-        foreach (range(1, 4) as $i) {
-            $this->makePost("Zz Fresh {$i}", $i, 2);
-        }
-        $this->makePost('Zz Old But Popular', 999, 20);
-
-        $titles = Post::trendingNow(8)->pluck('title');
-
-        $this->assertNotContains('Zz Old But Popular', $titles);
-        $this->assertCount(4, $titles);
-    }
-
-    public function test_window_widens_to_30_days_when_the_week_is_quiet(): void
-    {
-        $this->makePost('Zz This Week', 5, 1);
-        $this->makePost('Zz Two Weeks Ago', 50, 14);
-        $this->makePost('Zz Too Old', 500, 45);
-
-        $titles = Post::trendingNow(8)->pluck('title')->all();
-
-        $this->assertSame(['Zz Two Weeks Ago', 'Zz This Week'], $titles);
-    }
-
-    public function test_drafts_and_posts_without_activity_never_trend(): void
-    {
-        $this->makePost('Zz Draft Hit', 100, 1, 'draft');
-        $this->makePost('Zz No Activity', 0, 1);
-
-        $titles = Post::trendingNow(8)->pluck('title');
-
-        $this->assertNotContains('Zz Draft Hit', $titles);
-        $this->assertNotContains('Zz No Activity', $titles);
-    }
-
-    public function test_homepage_shows_trending_with_real_like_counts(): void
-    {
-        $post = $this->makePost('Zz Homepage Trending Story', 3, 1);
+        $post = $this->pick($this->makePost('Zz Picked Story', 4, 1));
         $this->addLikes($post, 2);
+        Comment::create(['post_id' => $post->id, 'user_id' => $this->admin->id, 'content' => 'Nice', 'approved_at' => now()]);
+
+        $trending = Post::trendingNow(8)->first();
+
+        $this->assertSame(2, (int) $trending->trend_likes);
+        $this->assertSame(1, (int) $trending->trend_comments);
+        $this->assertSame(4 + 2 * 2 + 3, $trending->trend_score);
+    }
+
+    public function test_picked_drafts_never_trend(): void
+    {
+        $this->pick($this->makePost('Zz Draft Hit', 100, 1, 'draft'));
+
+        $this->assertNotContains('Zz Draft Hit', Post::trendingNow(8)->pluck('title'));
+    }
+
+    public function test_homepage_hides_trending_until_a_post_is_picked(): void
+    {
+        $post = $this->makePost('Zz Homepage Story', 900, 1);
+
+        $this->get(url('/'))->assertOk()->assertViewHas('trendingPosts', fn ($posts) => $posts->isEmpty());
+
+        $this->pick($post);
 
         $this->get(url('/'))
             ->assertOk()
             ->assertSee('Trending')
-            ->assertSee('Zz Homepage Trending Story');
+            ->assertSee('Zz Homepage Story');
     }
 
-    public function test_admin_dashboard_uses_the_trending_rule_not_all_time_views(): void
+    public function test_admin_dashboard_lists_only_picked_posts(): void
     {
         $this->admin->forceFill(['role_as' => 1])->save();
         $this->makePost('Zz Old Views Giant', 5000, 90);
-        $this->makePost('Zz Old Views Draft', 9000, 1, 'draft');
-        $talkedAbout = $this->makePost('Zz Talked About Now', 2, 1);
-        $this->addLikes($talkedAbout, 2);
+        $this->pick($this->makePost('Zz Picked Now', 2, 1));
 
         $this->actingAs($this->admin)
             ->get(route('admin.dashboard'))
             ->assertOk()
             ->assertSee('Trending now')
             ->assertDontSee('Most viewed')
-            ->assertSee('Zz Talked About Now')
+            ->assertSee('Zz Picked Now')
             ->assertDontSee('Zz Old Views Giant')
-            // The draft is still listed under "Latest posts", so check the trending list itself
-            ->assertViewHas('trendingPosts', fn ($posts) => $posts->pluck('title')->all() === ['Zz Talked About Now']);
+            ->assertViewHas('trendingPosts', fn ($posts) => $posts->pluck('title')->all() === ['Zz Picked Now']);
     }
 
-    public function test_category_sidebar_keeps_trending_stories_with_no_views(): void
+    public function test_category_sidebar_shows_picked_posts_even_with_no_views(): void
     {
-        $liked = $this->makePost('Zz Liked No Views', 0, 1);
-        $this->addLikes($liked, 1);
+        $picked = $this->pick($this->makePost('Zz Picked No Views', 0, 1));
 
         $this->get(route('category.page', $this->category->slug))
             ->assertOk()
-            ->assertViewHas('trendingPosts', fn ($posts) => $posts->contains('id', $liked->id))
-            ->assertSee('Zz Liked No Views');
+            ->assertViewHas('trendingPosts', fn ($posts) => $posts->pluck('id')->all() === [$picked->id])
+            ->assertSee('Zz Picked No Views');
     }
 }

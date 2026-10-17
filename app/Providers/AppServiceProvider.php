@@ -67,7 +67,7 @@ class AppServiceProvider extends ServiceProvider
                     ->get()
             )->values();
 
-            // Trending: shared rule in Post::trendingNow() (7 days, widening to 30)
+            // Trending: only posts an admin marked with the Trend button (Post::trendingNow)
             $trendingPosts = Post::trendingNow(8);
 
             // Latest 6 posts for EACH category
@@ -123,7 +123,7 @@ class AppServiceProvider extends ServiceProvider
                 ->take(7)
                 ->get();
 
-            // Trending now: same rule as the homepage (Post::trendingNow)
+            // Trending now: posts an admin marked with the Trend button (Post::trendingNow)
             $trendingPosts = Post::trendingNow(5);
 
             // Share all with admin dashboard view

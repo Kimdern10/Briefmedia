@@ -119,12 +119,7 @@
                     <li>
                         <span class="ad-rank">{{ $loop->iteration }}</span>
                         <div style="flex: 1; min-width: 0;">
-                            <div class="ad-post-cell__title" style="font-size: 13px;">
-                                {{ $post->title }}
-                                @if($post->trend_pinned)
-                                    <span class="ad-badge" title="Marked as trending by an admin">🔥 Pinned</span>
-                                @endif
-                            </div>
+                            <div class="ad-post-cell__title" style="font-size: 13px;">{{ $post->title }}</div>
                             <div class="ad-bar"><span style="width: {{ round(($post->trend_score / $maxTrendScore) * 100) }}%;"></span></div>
                             <div class="ad-post-cell__sub">
                                 <i class="bi bi-eye"></i> {{ number_format($post->views) }}
@@ -135,7 +130,7 @@
                         <strong style="font-variant-numeric: tabular-nums;" title="Trend score">{{ number_format($post->trend_score) }}</strong>
                     </li>
                 @empty
-                    <li class="ad-post-cell__sub">Nothing trending yet</li>
+                    <li class="ad-post-cell__sub">Nothing trending. Click 🔥 Trend on a post in <a href="{{ route('admin.posts.index') }}">Posts</a> to feature it for 2 days.</li>
                 @endforelse
             </ul>
         </div>

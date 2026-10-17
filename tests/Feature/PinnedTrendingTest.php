@@ -63,19 +63,19 @@ class PinnedTrendingTest extends TestCase
         $this->assertTrue($post->trending_until->equalTo(now()->addDays(2)));
     }
 
-    public function test_pinned_post_comes_first_even_with_fewer_views(): void
+    public function test_only_picked_posts_trend_newest_pick_first(): void
     {
         $this->makePost('Zz Popular Story', 500);
         $this->makePost('Zz Second Story', 300);
         $quiet = $this->makePost('Zz Quiet But Picked', 0, 'published', 20);
         $quiet->forceFill(['trending_until' => now()->addDays(2)])->save();
+        $earlier = $this->makePost('Zz Picked Yesterday', 10);
+        $earlier->forceFill(['trending_until' => now()->addDay()])->save();
 
         $trending = Post::trendingNow(8);
 
-        $this->assertSame('Zz Quiet But Picked', $trending->first()->title);
+        $this->assertSame(['Zz Quiet But Picked', 'Zz Picked Yesterday'], $trending->pluck('title')->all());
         $this->assertTrue($trending->first()->trend_pinned);
-        $this->assertFalse($trending->get(1)->trend_pinned);
-        $this->assertSame(['Zz Quiet But Picked', 'Zz Popular Story', 'Zz Second Story'], $trending->pluck('title')->take(3)->all());
     }
 
     public function test_pick_expires_after_two_days(): void

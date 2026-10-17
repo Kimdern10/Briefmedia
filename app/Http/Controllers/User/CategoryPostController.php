@@ -37,7 +37,7 @@ class CategoryPostController extends Controller
             ->take(5)
             ->get();
 
-        $trendingPosts = Post::trendingNow(5, 3);
+        $trendingPosts = Post::trendingNow(5);
 
         return view('user.posts.category', compact(
             'category',

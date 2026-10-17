@@ -5,7 +5,7 @@
     $placeholderImage = route('theme.asset', ['img', 'bm-placeholder.svg']);
     $imageFor = fn ($post) => $post->featured_image_1 ? asset('storage/' . $post->featured_image_1) : $placeholderImage;
 
-    // Trending: already ranked by Post::trendingNow() (views + likes x2 + comments x3)
+    // Trending: posts an admin marked with the Trend button (Post::trendingNow)
     $filteredTrending = collect($trendingPosts ?? [])->take(8);
     $mostReadToday = \App\Models\Post::mostReadToday(5);
 @endphp
