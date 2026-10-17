@@ -103,6 +103,7 @@
                             <a class="bm-dropdown__item" href="{{ route('admin.dashboard') }}"><i class="bi bi-speedometer2"></i> Admin dashboard</a>
                         @endif
                         <a class="bm-dropdown__item" href="{{ route('profile') }}"><i class="bi bi-person"></i> My profile</a>
+                        <a class="bm-dropdown__item" href="{{ route('profile') }}#saved"><i class="bi bi-bookmark"></i> Saved stories</a>
                         <div class="bm-dropdown__divider"></div>
                         <form action="{{ route('logout') }}" method="POST">
                             @csrf
@@ -156,6 +157,7 @@
                     <a href="{{ route('admin.dashboard') }}">Admin dashboard <i class="bi bi-speedometer2"></i></a>
                 @endif
                 <a href="{{ route('profile') }}">My profile <i class="bi bi-person"></i></a>
+                <a href="{{ route('profile') }}#saved">Saved stories <i class="bi bi-bookmark"></i></a>
                 <form action="{{ route('logout') }}" method="POST">
                     @csrf
                     <button type="submit" class="bm-btn bm-btn--ghost bm-btn--block" style="margin-top: 8px;">Log out</button>

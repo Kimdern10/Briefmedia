@@ -27,5 +27,12 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <!-- Never post to real Facebook/Telegram/OneSignal from tests -->
+        <env name="FACEBOOK_PAGE_ID" value=""/>
+        <env name="FACEBOOK_PAGE_ACCESS_TOKEN" value=""/>
+        <env name="TELEGRAM_BOT_TOKEN" value=""/>
+        <env name="TELEGRAM_CHANNEL_ID" value=""/>
+        <env name="ONESIGNAL_APP_ID" value=""/>
+        <env name="ONESIGNAL_REST_API_KEY" value=""/>
     </php>
 </phpunit>

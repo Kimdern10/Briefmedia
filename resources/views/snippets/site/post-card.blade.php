@@ -22,6 +22,9 @@
 
     <div class="bm-card__body">
         <div class="bm-meta">
+            @if($post->isLive())
+                <span class="bm-chip bm-chip--live"><span class="bm-live__dot"></span> Live</span>
+            @endif
             @if($post->isBreaking())
                 <span class="bm-chip bm-chip--breaking">Breaking</span>
             @endif

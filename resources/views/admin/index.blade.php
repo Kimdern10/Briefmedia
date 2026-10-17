@@ -49,7 +49,7 @@
         <div class="ad-card__body"><div class="ad-chart"><canvas id="postsChart"></canvas></div></div>
     </div>
     <div class="ad-card">
-        <div class="ad-card__head"><h3 class="ad-card__title"><i class="bi bi-graph-up"></i> Views by publish date</h3></div>
+        <div class="ad-card__head"><h3 class="ad-card__title"><i class="bi bi-graph-up"></i> Reads, last 7 days</h3></div>
         <div class="ad-card__body"><div class="ad-chart"><canvas id="viewsChart"></canvas></div></div>
     </div>
     <div class="ad-card">
@@ -190,7 +190,7 @@
         type: 'line',
         data: {
             labels: @json($viewsPerDay->pluck('date')),
-            datasets: [{ label: 'Views', data: @json($viewsPerDay->pluck('total')), borderColor: accent, backgroundColor: fill, fill: true, tension: .35, pointRadius: 3, pointBackgroundColor: accent }]
+            datasets: [{ label: 'Reads', data: @json($viewsPerDay->pluck('total')), borderColor: accent, backgroundColor: fill, fill: true, tension: .35, pointRadius: 3, pointBackgroundColor: accent }]
         },
         options: { maintainAspectRatio: false, scales }
     });

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Post;
 use App\Models\SeoSetting;
+use App\Models\Tag;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 
@@ -28,7 +29,9 @@ class SitemapController extends Controller
 
             $categories = Category::query()->get(['slug', 'updated_at']);
 
-            return view('sitemaps.index', compact('posts', 'categories'))->render();
+            $tags = Tag::whereHas('posts', fn ($query) => $query->where('status', 'published'))->get(['slug']);
+
+            return view('sitemaps.index', compact('posts', 'categories', 'tags'))->render();
         });
 
         return $this->xml($xml);

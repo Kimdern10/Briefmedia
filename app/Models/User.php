@@ -74,6 +74,16 @@ class User extends Authenticatable
         )->withTimestamps();
     }
 
+    /**
+     * Stories this reader saved for later, most recently saved first.
+     */
+    public function bookmarks()
+    {
+        return $this->belongsToMany(Post::class, 'post_bookmarks')
+            ->withTimestamps()
+            ->orderByPivot('created_at', 'desc');
+    }
+
     public function likes()
     {
         return $this->hasMany(Like::class);

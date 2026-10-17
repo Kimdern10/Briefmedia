@@ -4,7 +4,8 @@
     $postUrl = url()->current();
     $postTitle = $post->title;
     $postDescription = Str::limit(strip_tags($post->content ?? $post->excerpt), 160);
-    $postImage = asset('storage/' . ($post->featured_image_1 ?? 'default.jpg'));
+    $postImage = $post->shareImageUrl();
+    $postImageType = str_ends_with(strtolower($postImage), '.png') ? 'image/png' : (str_ends_with(strtolower($postImage), '.webp') ? 'image/webp' : 'image/jpeg');
     $placeholderImage = route('theme.asset', ['img', 'bm-placeholder.svg']);
     $authorName = $post->authorDisplayName();
     $authorFallbackPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($authorName) . '&background=e4407f&color=fff&size=120';
@@ -14,6 +15,14 @@
         : (optional(optional($post->admin)->Userprofile)->photoUrl() ?? $authorFallbackPhoto);
     $videoEmbedUrl = $post->videoEmbedUrl();
     $extraImages = collect([$post->featured_image_3, $post->featured_image_4])->filter();
+    $poll = $post->poll;
+    $hasLiveCoverage = $post->isLive() || $post->liveUpdates()->exists();
+
+    // Article body, with the "in the middle" ad after the 3rd paragraph when one is switched on
+    $articleBody = $post->formattedContent();
+    if ($middleAd = trim(view('snippets.site.ad-slot', ['placement' => 'article_middle'])->render())) {
+        $articleBody = \App\Models\AdSlot::insertAfterParagraph($articleBody, $middleAd);
+    }
 @endphp
 
 @section('meta_tags')
@@ -32,9 +41,7 @@
 
 <meta property="og:image" content="{{ $postImage }}">
 <meta property="og:image:secure_url" content="{{ $postImage }}">
-<meta property="og:image:type" content="image/jpeg">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="{{ $postImageType }}">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{ $postTitle }}">
@@ -42,7 +49,13 @@
 <meta name="twitter:image" content="{{ $postImage }}">
 
 <meta property="article:published_time" content="{{ $post->created_at->toIso8601String() }}">
-<meta property="article:modified_time" content="{{ $post->updated_at->toIso8601String() }}">
+<meta property="article:modified_time" content="{{ $post->lastModifiedAt()->toIso8601String() }}">
+@foreach($post->tags as $metaTag)
+<meta property="article:tag" content="{{ $metaTag->name }}">
+@endforeach
+
+{{-- Google News: NewsArticle (or LiveBlogPosting) structured data. A custom schema saved on the post wins. --}}
+<script type="application/ld+json">{!! $post->customSchemaMarkup() ?: json_encode($post->newsArticleSchema(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
 
 @endsection
 
@@ -61,6 +74,9 @@
             </nav>
 
             @if($post->category)
+                @if($post->isLive())
+                    <a href="#live-updates" class="bm-chip bm-chip--live"><span class="bm-live__dot"></span> Live</a>
+                @endif
                 @if($post->isBreaking())
                     <span class="bm-chip bm-chip--breaking">Breaking</span>
                 @endif
@@ -83,6 +99,11 @@
                     <span>Posted by <a href="{{ $post->authorUrl() }}" class="bm-author-link"><strong>{{ $authorName }}</strong></a></span>
                 </span>
                 <span>{{ $post->created_at->format('F j, Y') }}</span>
+                @if($post->wasUpdated())
+                    <span class="bm-updated" title="{{ $post->content_updated_at->format('F j, Y g:i A') }}">
+                        <i class="bi bi-arrow-repeat"></i> Updated {{ $post->content_updated_at->diffForHumans() }}
+                    </span>
+                @endif
                 <span><i class="bi bi-clock"></i> {{ $post->reading_time }}</span>
                 <span><i class="bi bi-eye"></i> {{ number_format($post->views ?? 0) }} views</span>
             </div>
@@ -101,6 +122,8 @@
             </p>
         @endif
 
+        @include('snippets.site.ad-slot', ['placement' => 'article_top'])
+
         <!-- ================= BODY ================= -->
         <div class="bm-article-layout">
 
@@ -108,6 +131,7 @@
             <aside class="bm-rail" aria-label="Post actions">
                 <span class="bm-rail__label">Share</span>
                 @include('snippets.site.like', ['post' => $post, 'class' => 'bm-icon-btn'])
+                <livewire:bookmark-button :post="$post" />
                 <a href="#comments" class="bm-icon-btn" aria-label="Jump to comments"><i class="bi bi-chat"></i></a>
                 <span class="bm-rail__count">{{ $post->comments_count }}</span>
                 @include('snippets.site.share', ['post' => $post, 'trigger' => 'bm-icon-btn', 'down' => true])
@@ -129,9 +153,32 @@
                     </figure>
                 @endif
 
+                @if($hasLiveCoverage)
+                    <livewire:live-updates :post="$post" />
+                @endif
+
                 <div class="bm-prose">
-                    {!! $post->formattedContent() !!}
+                    {!! $articleBody !!}
                 </div>
+
+                @if($poll)
+                    <livewire:post-poll :poll="$poll" />
+                @endif
+
+                @if($post->correction_note)
+                    <aside class="bm-correction">
+                        <strong><i class="bi bi-pencil-square"></i> Correction</strong>
+                        <p>{{ $post->correction_note }}</p>
+                    </aside>
+                @endif
+
+                @if($post->tags->isNotEmpty())
+                    <nav class="bm-tags" aria-label="Topics">
+                        @foreach($post->tags as $postTag)
+                            <a href="{{ route('tag.show', $postTag) }}" class="bm-tag">#{{ $postTag->name }}</a>
+                        @endforeach
+                    </nav>
+                @endif
 
                 @if($extraImages->isNotEmpty())
                     <div class="bm-gallery {{ $extraImages->count() === 1 ? 'bm-gallery--single' : '' }}">
@@ -155,8 +202,11 @@
                         <a class="bm-btn bm-btn--ghost bm-btn--sm" target="_blank" rel="noopener"
                            href="https://wa.me/?text={{ urlencode($postTitle . ' ' . $postUrl) }}"><i class="bi bi-whatsapp"></i> WhatsApp</a>
                         <button type="button" class="bm-btn bm-btn--primary bm-btn--sm" data-copy-link="{{ $postUrl }}"><i class="bi bi-link-45deg"></i> Copy link</button>
+                        <livewire:bookmark-button :post="$post" variant="pill" />
                     </div>
                 </div>
+
+                @include('snippets.site.ad-slot', ['placement' => 'article_bottom'])
 
                 <!-- ================= COMMENTS ================= -->
                 <livewire:post-comments :post="$post" />
@@ -164,6 +214,8 @@
 
             <!-- ================= SIDEBAR ================= -->
             <aside class="bm-sidebar">
+                @include('snippets.site.ad-slot', ['placement' => 'sidebar'])
+
                 @php $sidebarMostRead = \App\Models\Post::mostReadToday(5)->reject(fn ($p) => $p->id === $post->id); @endphp
                 @if($sidebarMostRead->isNotEmpty())
                     <div class="bm-widget">

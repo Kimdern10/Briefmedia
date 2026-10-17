@@ -26,6 +26,9 @@
                                      @if($index > 0) loading="lazy" @endif
                                      onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
                                 <div class="bm-hero__content">
+                                    @if($post->isLive())
+                                        <span class="bm-chip bm-chip--live"><span class="bm-live__dot"></span> Live</span>
+                                    @endif
                                     @if($post->isBreaking())
                                         <span class="bm-chip bm-chip--breaking">Breaking</span>
                                     @elseif($post->isHeadline())
@@ -216,6 +219,10 @@
                 </div>
             </div>
         </section>
+
+        @if($loop->iteration === 2)
+            <div class="bm-container">@include('snippets.site.ad-slot', ['placement' => 'home_between'])</div>
+        @endif
     @endforeach
 
 </main>

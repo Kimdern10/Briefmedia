@@ -20,6 +20,7 @@
         'Settings' => [
             ['route' => 'admin.profile', 'match' => 'admin.profile', 'icon' => 'bi-person-circle', 'label' => 'My profile'],
             ['route' => 'admin.seo.edit', 'match' => 'admin.seo.edit', 'icon' => 'bi-search-heart', 'label' => 'SEO settings'],
+            ['route' => 'admin.ads', 'match' => 'admin.ads', 'icon' => 'bi-badge-ad', 'label' => 'Ads'],
         ],
     ];
 @endphp

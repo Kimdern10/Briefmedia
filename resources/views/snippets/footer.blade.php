@@ -6,6 +6,11 @@
                     <span class="bm-section__eyebrow" style="color: var(--bm-accent);"><i class="bi bi-envelope-paper-heart"></i> Newsletter</span>
                     <h3 class="bm-cta__title">The day's best stories, in your inbox.</h3>
                     <p class="bm-cta__text">Join our readers and be the first to know when new posts drop. No spam. Unsubscribe anytime.</p>
+                    @if (config('services.onesignal.app_id'))
+                        <button type="button" class="bm-push-optin" data-push-optin hidden>
+                            <i class="bi bi-bell"></i> <span>Get breaking news alerts</span>
+                        </button>
+                    @endif
                 </div>
                 <livewire:newsletter-signup />
             </div>

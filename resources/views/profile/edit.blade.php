@@ -13,7 +13,8 @@
     .bm-account__name { font-family: var(--bm-serif); font-size: 22px; font-weight: 600; }
     .bm-account__facts { display: grid; gap: 8px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--bm-line); text-align: left; color: var(--bm-ink-2); font-size: 14px; }
     .bm-account__facts i { width: 20px; color: var(--bm-muted); }
-    .bm-tabs { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 18px; border-radius: 999px; background: var(--bm-surface); border: 1px solid var(--bm-line); }
+    .bm-tabs { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 18px; border-radius: 999px; background: var(--bm-surface); border: 1px solid var(--bm-line); max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+    .bm-tab { white-space: nowrap; flex-shrink: 0; }
     .bm-tab { height: 38px; padding: 0 18px; border: 0; border-radius: 999px; background: transparent; color: var(--bm-muted); font-weight: 600; font-size: 14px; cursor: pointer; }
     .bm-tab.is-active { background: var(--bm-ink); color: var(--bm-bg); }
     .bm-tab-pane { display: none; }
@@ -78,6 +79,9 @@
                     <button type="button" class="bm-tab {{ $showSecurityTab ? 'is-active' : '' }}" data-tab="security" role="tab">
                         <i class="bi bi-shield-lock"></i> Security
                     </button>
+                    <button type="button" class="bm-tab" data-tab="saved" role="tab">
+                        <i class="bi bi-bookmark"></i> Saved stories
+                    </button>
                 </div>
 
                 <!-- Profile tab -->
@@ -88,6 +92,11 @@
                 <!-- Security tab -->
                 <div class="bm-tab-pane bm-widget {{ $showSecurityTab ? 'is-active' : '' }}" id="security-tab" role="tabpanel">
                     <livewire:change-password />
+                </div>
+
+                <!-- Saved stories tab -->
+                <div class="bm-tab-pane bm-widget" id="saved-tab" role="tabpanel">
+                    <livewire:saved-posts />
                 </div>
             </div>
         </div>
@@ -106,5 +115,9 @@ document.querySelectorAll('.bm-tab').forEach((button) => {
     });
 });
 
+// /user/profile#saved opens the Saved stories tab
+if (location.hash === '#saved') {
+    document.querySelector('.bm-tab[data-tab="saved"]')?.click();
+}
 </script>
 @endpush

@@ -140,6 +140,37 @@
     @endunless
 
     @livewireScripts
+
+    {{-- Breaking news push alerts (OneSignal). Only loads once ONESIGNAL_APP_ID is set in .env --}}
+    @if (config('services.onesignal.app_id'))
+        <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+        <script>
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
+            OneSignalDeferred.push(async (OneSignal) => {
+                await OneSignal.init({
+                    appId: @json(config('services.onesignal.app_id')),
+                    serviceWorkerPath: 'OneSignalSDKWorker.js',
+                    notifyButton: { enable: false },
+                });
+
+                const updateButtons = () => document.querySelectorAll('[data-push-optin]').forEach((button) => {
+                    const subscribed = OneSignal.User.PushSubscription.optedIn;
+                    button.hidden = false;
+                    button.disabled = subscribed;
+                    button.querySelector('span').textContent = subscribed ? 'Breaking news alerts are on' : 'Get breaking news alerts';
+                });
+                updateButtons();
+                OneSignal.User.PushSubscription.addEventListener('change', updateButtons);
+
+                document.querySelectorAll('[data-push-optin]').forEach((button) => button.addEventListener('click', async () => {
+                    await OneSignal.Notifications.requestPermission();
+                    await OneSignal.User.PushSubscription.optIn();
+                    updateButtons();
+                }));
+            });
+        </script>
+    @endif
+
     @stack('scripts')
 </body>
 </html>

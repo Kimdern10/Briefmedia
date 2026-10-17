@@ -62,6 +62,8 @@
 
             <!-- ================= SIDEBAR ================= -->
             <aside class="bm-sidebar">
+                @include('snippets.site.ad-slot', ['placement' => 'sidebar'])
+
                 @if($sidebarCategories->isNotEmpty())
                     <div class="bm-widget">
                         <h5 class="bm-widget__title"><i class="bi bi-grid"></i> Categories</h5>

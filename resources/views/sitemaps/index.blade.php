@@ -13,6 +13,13 @@
         <priority>0.7</priority>
     </url>
 @endforeach
+@foreach($tags as $tag)
+    <url>
+        <loc>{{ route('tag.show', $tag->slug) }}</loc>
+        <changefreq>daily</changefreq>
+        <priority>0.6</priority>
+    </url>
+@endforeach
 @foreach($posts as $post)
     <url>
         <loc>{{ route('posts.show', $post->slug) }}</loc>

@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Services\PostAnnouncer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 // Make sure to import the Like model
@@ -53,6 +56,9 @@ class Post extends Model
         'publish_at',
         'image_caption',
         'image_credit',
+        'is_live',
+        'correction_note',
+        'content_updated_at',
     ];
 
     protected $casts = [
@@ -68,6 +74,10 @@ class Post extends Model
         'headline_until' => 'datetime',
         'breaking_until' => 'datetime',
         'publish_at' => 'datetime',
+        'is_live' => 'boolean',
+        'content_updated_at' => 'datetime',
+        'announced_at' => 'datetime',
+        'push_sent_at' => 'datetime',
     ];
 
     protected $appends = [
@@ -128,6 +138,30 @@ class Post extends Model
     public function likes()
     {
         return $this->hasMany(Like::class);
+    }
+
+    // Topics ("Soludo", "ASUU"), each with a page at /tag/{slug}
+    public function tags()
+    {
+        return $this->belongsToMany(Tag::class)->orderBy('name');
+    }
+
+    // Timestamped updates on a live coverage post, newest first
+    public function liveUpdates()
+    {
+        return $this->hasMany(LiveUpdate::class)->latest()->latest('id');
+    }
+
+    // Reader poll shown inside the article
+    public function poll()
+    {
+        return $this->hasOne(Poll::class);
+    }
+
+    // Readers who saved this post for later
+    public function bookmarkedBy()
+    {
+        return $this->belongsToMany(User::class, 'post_bookmarks')->withTimestamps();
     }
 
     /* ==========================
@@ -518,6 +552,151 @@ class Post extends Model
     }
 
     /**
+     * Live coverage post: shows a LIVE badge and its timestamped updates refresh by themselves.
+     */
+    public function isLive(): bool
+    {
+        return $this->status === 'published' && (bool) $this->is_live;
+    }
+
+    /**
+     * Whether the story was edited after it went live (shows "Updated …" on the article).
+     */
+    public function wasUpdated(): bool
+    {
+        return $this->content_updated_at !== null
+            && $this->created_at !== null
+            && $this->content_updated_at->greaterThan($this->created_at->copy()->addMinutes(5));
+    }
+
+    /**
+     * When the story last really changed: its edit time, the newest live update, or when it went live.
+     */
+    public function lastModifiedAt(): Carbon
+    {
+        $times = collect([$this->created_at, $this->content_updated_at]);
+
+        if ($this->is_live) {
+            $times->push($this->liveUpdates()->value('created_at'));
+        }
+
+        return Carbon::parse($times->filter()->max());
+    }
+
+    /**
+     * Replace the post's tags with the ones typed in the form ("Soludo, ASUU").
+     */
+    public function syncTags(?string $list): void
+    {
+        $this->tags()->sync(Tag::fromList($list)->pluck('id'));
+    }
+
+    /**
+     * The post's tags as the comma-separated text shown in the form.
+     */
+    public function tagList(): string
+    {
+        return $this->tags->pluck('name')->implode(', ');
+    }
+
+    /**
+     * Image for Facebook/WhatsApp/X link previews. Uploaded cover photos are saved as WebP for
+     * speed, with a JPEG copy next to them because some apps don't preview WebP.
+     */
+    public function shareImageUrl(): string
+    {
+        $path = $this->featured_image_1;
+
+        if (! $path) {
+            return url('images/default-social-image.jpg');
+        }
+
+        $jpegCopy = preg_replace('/\.webp$/i', '.jpg', $path);
+
+        if ($jpegCopy !== $path && Storage::disk('public')->exists($jpegCopy)) {
+            return url('storage/'.$jpegCopy);
+        }
+
+        return url('storage/'.$path);
+    }
+
+    /**
+     * Schema markup an admin typed in the SEO tab, or null. The post form used to save the
+     * automatic BlogPosting schema back into the post; those copies are ignored so every
+     * story gets the newer NewsArticle schema.
+     */
+    public function customSchemaMarkup(): ?string
+    {
+        $stored = trim((string) $this->getRawOriginal('schema_markup'));
+
+        if ($stored === '' || (json_decode($stored, true)['@type'] ?? null) === 'BlogPosting') {
+            return null;
+        }
+
+        return $stored;
+    }
+
+    /**
+     * Google News structured data: NewsArticle, or LiveBlogPosting for live coverage.
+     *
+     * @return array<string, mixed>
+     */
+    public function newsArticleSchema(): array
+    {
+        $images = collect([$this->featured_image_1, $this->featured_image_2, $this->featured_image_3])
+            ->filter()
+            ->map(fn (string $path) => url('storage/'.$path))
+            ->values()
+            ->all();
+
+        $siteName = optional(SeoSetting::first())->site_name ?: config('app.name', 'BriefMedia');
+        $logo = optional(SeoSetting::first())->site_logo;
+
+        $schema = [
+            '@context' => 'https://schema.org',
+            '@type' => $this->isLive() ? 'LiveBlogPosting' : 'NewsArticle',
+            'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => route('posts.show', $this)],
+            'headline' => Str::limit($this->title, 110, ''),
+            'description' => Str::limit(trim(preg_replace('/\s+/', ' ', strip_tags($this->excerpt ?: $this->content))), 200),
+            'image' => $images ?: [url('images/default-social-image.jpg')],
+            'datePublished' => $this->created_at?->toIso8601String(),
+            'dateModified' => $this->lastModifiedAt()->toIso8601String(),
+            'author' => [[
+                '@type' => 'Person',
+                'name' => $this->authorDisplayName(),
+                'url' => $this->authorUrl(),
+            ]],
+            'publisher' => array_filter([
+                '@type' => 'NewsMediaOrganization',
+                'name' => $siteName,
+                'url' => url('/'),
+                'logo' => $logo ? ['@type' => 'ImageObject', 'url' => url('storage/'.$logo)] : null,
+            ]),
+            'isAccessibleForFree' => true,
+        ];
+
+        if ($this->category) {
+            $schema['articleSection'] = $this->category->name;
+        }
+
+        if ($this->tags->isNotEmpty()) {
+            $schema['keywords'] = $this->tags->pluck('name')->all();
+        }
+
+        if ($this->isLive()) {
+            $schema['coverageStartTime'] = $this->created_at?->toIso8601String();
+            $schema['liveBlogUpdate'] = $this->liveUpdates()->take(10)->get()->map(fn (LiveUpdate $update) => [
+                '@type' => 'BlogPosting',
+                'headline' => Str::limit($update->title ?: strip_tags($update->body), 110, ''),
+                'datePublished' => $update->created_at->toIso8601String(),
+                'articleBody' => Str::limit(strip_tags($update->body), 500),
+            ])->all();
+        }
+
+        return $schema;
+    }
+
+    /**
      * Article body with even paragraph spacing: plain text is split into
      * paragraphs, and the empty paragraphs and double line breaks editors
      * leave behind (which show as big gaps) are removed.
@@ -779,6 +958,14 @@ class Post extends Model
             if ($post->isDirty('title') && empty($post->slug)) {
                 $post->slug = Str::slug($post->title);
             }
+
+            // "Updated" label: an already-published story whose words changed
+            if ($post->getOriginal('status') === 'published' && $post->isDirty(['title', 'excerpt', 'content'])) {
+                $post->content_updated_at = now();
+            }
         });
+
+        // Share newly published posts to Facebook/Telegram, and send breaking news push alerts
+        static::saved(fn (self $post) => PostAnnouncer::handle($post));
     }
 }

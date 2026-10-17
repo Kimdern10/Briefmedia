@@ -266,7 +266,8 @@
                         </div>
                         <div class="ad-field">
                             <label class="ad-label" for="schema_markup">Schema markup <small>JSON-LD</small></label>
-                            <textarea name="schema_markup" id="schema_markup" rows="6" class="ad-textarea" style="font-family: ui-monospace, Consolas, monospace; font-size: 12.5px;">{{ old('schema_markup', $editing ? $post->schema_markup : '') }}</textarea>
+                            <textarea name="schema_markup" id="schema_markup" rows="6" class="ad-textarea" style="font-family: ui-monospace, Consolas, monospace; font-size: 12.5px;">{{ old('schema_markup', $editing ? $post->customSchemaMarkup() : '') }}</textarea>
+                            <div class="ad-help"><span>Leave empty: Google News (NewsArticle) data is added to every story automatically.</span></div>
                             @error('schema_markup') <span class="ad-error">{{ $message }}</span> @enderror
                         </div>
                         <div class="ad-field">
@@ -353,6 +354,21 @@
                         @error('category_id') <span class="ad-error">{{ $message }}</span> @enderror
                     </div>
 
+                    <div class="ad-field">
+                        <label class="ad-label" for="tags">Tags <small>Optional</small></label>
+                        <input type="text" name="tags" id="tags" maxlength="500" list="tag-suggestions" autocomplete="off"
+                               class="ad-input @error('tags') is-invalid @enderror"
+                               value="{{ old('tags', $editing ? $post->tagList() : '') }}"
+                               placeholder="Soludo, ASUU, Super Eagles">
+                        <datalist id="tag-suggestions">
+                            @foreach(\App\Models\Tag::orderBy('name')->limit(200)->pluck('name') as $tagName)
+                                <option value="{{ $tagName }}">
+                            @endforeach
+                        </datalist>
+                        <div class="ad-help"><span>Separate with commas. Each tag gets its own page readers can browse.</span></div>
+                        @error('tags') <span class="ad-error">{{ $message }}</span> @enderror
+                    </div>
+
                     @if($editing)
                         <div class="ad-help" style="margin: -4px 0 16px;">
                             <span>Created {{ $post->created_at->format('d M Y') }}</span>
@@ -437,6 +453,63 @@
                                         allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                             </div>
                         @endif
+                    </div>
+
+                    @unless($editing)
+                        <div class="ad-field">
+                            <label class="ad-check" for="is_live">
+                                <input type="hidden" name="is_live" value="0">
+                                <input type="checkbox" name="is_live" id="is_live" value="1" {{ old('is_live') ? 'checked' : '' }}>
+                                <span>
+                                    <strong>Live coverage</strong>
+                                    <small>For elections, matches or budget day. After saving, post timestamped updates from the edit page.</small>
+                                </span>
+                            </label>
+                        </div>
+                    @endunless
+
+                    @if($editing)
+                        <div class="ad-field">
+                            <label class="ad-label" for="correction_note">Correction note <small>Optional</small></label>
+                            <textarea name="correction_note" id="correction_note" rows="2" maxlength="1000"
+                                      class="ad-textarea @error('correction_note') is-invalid @enderror" style="min-height: 64px;"
+                                      placeholder="An earlier version of this story gave the wrong date for the meeting.">{{ old('correction_note', $post->correction_note) }}</textarea>
+                            <div class="ad-help"><span>Shown at the end of the story. Editing a published story also shows “Updated …” under the title.</span></div>
+                            @error('correction_note') <span class="ad-error">{{ $message }}</span> @enderror
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            @php
+                $existingPoll = $editing ? $post->poll()->with('options')->first() : null;
+            @endphp
+            <div class="ad-card">
+                <div class="ad-card__head"><h3 class="ad-card__title"><i class="bi bi-bar-chart"></i> Reader poll <small class="ad-post-cell__sub" style="font-weight: 500;">Optional</small></h3></div>
+                <div class="ad-card__body">
+                    <div class="ad-field">
+                        <label class="ad-label" for="poll_question">Question</label>
+                        <input type="text" name="poll_question" id="poll_question" maxlength="200"
+                               class="ad-input @error('poll_question') is-invalid @enderror"
+                               value="{{ old('poll_question', optional($existingPoll)->question) }}"
+                               placeholder="Should the fuel subsidy come back?">
+                        @error('poll_question') <span class="ad-error">{{ $message }}</span> @enderror
+                    </div>
+                    <div class="ad-field" style="margin-bottom: 0;">
+                        <label class="ad-label" for="poll_options">Answers <small>one per line, 2 to {{ \App\Models\Poll::MAX_OPTIONS }}</small></label>
+                        <textarea name="poll_options" id="poll_options" rows="4" maxlength="1000"
+                                  class="ad-textarea @error('poll_options') is-invalid @enderror"
+                                  placeholder="Yes&#10;No&#10;Not sure">{{ old('poll_options', $existingPoll ? $existingPoll->options->pluck('label')->implode("\n") : '') }}</textarea>
+                        <div class="ad-help">
+                            <span>
+                                @if($existingPoll)
+                                    {{ number_format($existingPoll->totalVotes()) }} {{ Str::plural('vote', $existingPoll->totalVotes()) }} so far. Clear the question to remove the poll.
+                                @else
+                                    Shown inside the story. Leave empty for no poll.
+                                @endif
+                            </span>
+                        </div>
+                        @error('poll_options') <span class="ad-error">{{ $message }}</span> @enderror
                     </div>
                 </div>
             </div>

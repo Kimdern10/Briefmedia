@@ -11,6 +11,7 @@ use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfilePhotoController;
 use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\TagController;
 use App\Http\Controllers\ThemeAssetController;
 use App\Http\Controllers\User\CategoryPostController;
 use App\Http\Controllers\UserController;
@@ -47,6 +48,16 @@ Route::get('/profile-photo/{file}', ProfilePhotoController::class)
 Route::get('/writer/{slug}', [WriterController::class, 'show'])
     ->where('slug', '[a-z0-9-]+')
     ->name('writer.show');
+
+// Topic pages (#Soludo, #ASUU)
+Route::get('/tag/{tag:slug}', [TagController::class, 'show'])->name('tag.show');
+
+// Service worker for breaking news push alerts (OneSignal); must be served from the site root
+Route::get('/OneSignalSDKWorker.js', fn () => response(
+    'importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");',
+    200,
+    ['Content-Type' => 'application/javascript; charset=utf-8', 'Cache-Control' => 'public, max-age=86400']
+))->name('push.worker');
 
 Route::view('/terms', 'pages.terms')->name('terms');
 Route::view('/privacy', 'pages.privacy')->name('privacy');
@@ -104,6 +115,9 @@ Route::middleware(['auth', 'isAdmin'])->prefix('admin')->group(function () {
 
     // Admin's own profile (photo, details, password) inside the admin panel
     Route::view('profile', 'admin.profile')->name('admin.profile');
+
+    // Ad and sponsor code for each place on the site (Livewire: Admin\AdSlotsManager)
+    Route::view('ads', 'admin.ads')->name('admin.ads');
 
     Route::get('/categories', [CategoryController::class, 'index'])->name('admin.categories.index');
 

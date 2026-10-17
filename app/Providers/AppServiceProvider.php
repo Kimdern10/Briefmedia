@@ -7,6 +7,7 @@ use App\Models\Post;
 use App\Models\SeoSetting;
 use App\Models\Subscriber;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -109,12 +110,21 @@ class AppServiceProvider extends ServiceProvider
                 ->groupBy('month')
                 ->pluck('total', 'month');
 
-            // Views per Day (last 7 days)
-            $viewsPerDay = Post::selectRaw('DATE(created_at) as date, SUM(views) as total')
+            // Reads per day for the last 7 days (counted when a story is opened, see post_daily_views)
+            $dailyReads = DB::table('post_daily_views')
+                ->where('date', '>=', now()->subDays(6)->toDateString())
                 ->groupBy('date')
-                ->orderBy('date')
-                ->take(7)
-                ->get();
+                ->selectRaw('date, SUM(views) as total')
+                ->pluck('total', 'date');
+
+            $viewsPerDay = collect(range(6, 0))->map(function (int $daysAgo) use ($dailyReads) {
+                $day = now()->subDays($daysAgo);
+
+                return (object) [
+                    'date' => $day->format('D j M'),
+                    'total' => (int) ($dailyReads[$day->toDateString()] ?? 0),
+                ];
+            });
 
             // Subscriber Growth (last 7 days)
             $subscriberGrowth = Subscriber::selectRaw('DATE(created_at) as date, COUNT(*) as total')

@@ -4,13 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Poll;
 use App\Models\Post;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class PostController extends Controller
@@ -85,7 +85,7 @@ class PostController extends Controller
                     $fail('Use a YouTube, Facebook or Vimeo video link.');
                 }
             }],
-        ]);
+        ] + $this->newsroomRules());
 
         try {
             $data = $this->preparePostData($request);
@@ -99,34 +99,10 @@ class PostController extends Controller
             // Handle SEO images
             $data = $this->handleSeoImages($request, $data);
 
-            // Create the post
+            // Create the post (Post::saved shares it to Facebook/Telegram once it is published)
             $post = Post::create($data);
 
-            try {
-
-                $url = route('posts.show', $post->slug);
-
-                $response = Http::post(
-                    'https://graph.facebook.com/'.
-                    config('facebook.graph_version').'/'.
-                    config('facebook.page_id').'/feed',
-                    [
-                        'message' => $post->title,
-
-                        'link' => $url,
-
-                        'access_token' => config('facebook.access_token'),
-                    ]
-                );
-
-                Log::info('Facebook Response', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
-
-            } catch (\Exception $e) {
-                Log::error('Facebook post failed: '.$e->getMessage());
-            }
+            $this->saveExtras($request, $post);
 
             // Log the activity
             Log::info('Post created', [
@@ -204,7 +180,7 @@ class PostController extends Controller
                     $fail('Use a YouTube, Facebook or Vimeo video link.');
                 }
             }],
-        ]);
+        ] + $this->newsroomRules());
 
         try {
             $data = $this->preparePostData($request);
@@ -237,6 +213,8 @@ class PostController extends Controller
 
             // Update the post
             $post->update($data);
+
+            $this->saveExtras($request, $post);
 
             Log::info('Post updated', [
                 'post_id' => $post->id,
@@ -515,6 +493,47 @@ class PostController extends Controller
      * Prepare post data from request
      */
     /**
+     * Validation for tags, live coverage, the correction note and the reader poll.
+     *
+     * @return array<string, mixed>
+     */
+    private function newsroomRules(): array
+    {
+        return [
+            'tags' => 'nullable|string|max:500',
+            'is_live' => 'nullable|boolean',
+            'correction_note' => 'nullable|string|max:1000',
+            'poll_question' => 'nullable|string|max:200',
+            'poll_options' => ['nullable', 'string', 'max:1000', function ($attribute, $value, $fail) {
+                $count = count($this->pollOptionsFrom($value));
+                if (trim((string) request('poll_question')) !== '' && $count < 2) {
+                    $fail('Add at least 2 poll answers, one per line.');
+                }
+                if ($count > Poll::MAX_OPTIONS) {
+                    $fail('A poll can have up to '.Poll::MAX_OPTIONS.' answers.');
+                }
+            }],
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function pollOptionsFrom(?string $text): array
+    {
+        return collect(preg_split('/\R/', (string) $text))->map(fn ($line) => trim($line))->filter()->unique()->values()->all();
+    }
+
+    /**
+     * Save the post's tags and reader poll.
+     */
+    private function saveExtras(Request $request, Post $post): void
+    {
+        $post->syncTags($request->input('tags'));
+        Poll::syncFor($post, $request->input('poll_question'), $this->pollOptionsFrom($request->input('poll_options')));
+    }
+
+    /**
      * A slug for $title that no other post uses (ignoring $ignorePostId).
      */
     private function uniqueSlug(string $title, ?int $ignorePostId = null): string
@@ -578,6 +597,11 @@ class PostController extends Controller
         // News options
         $data['author_name'] = trim((string) $request->input('author_name')) ?: null;
         $data['video_url'] = trim((string) $request->input('video_url')) ?: null;
+        // Live coverage is switched in the post form on create, and in the Live coverage panel on edit
+        if ($request->has('is_live')) {
+            $data['is_live'] = $request->boolean('is_live');
+        }
+        $data['correction_note'] = trim((string) $request->input('correction_note')) ?: null;
 
         return $data;
     }
@@ -593,11 +617,11 @@ class PostController extends Controller
             if ($request->hasFile($field)) {
                 // Delete old image if updating
                 if ($post && $post->$field) {
-                    Storage::disk('public')->delete($post->$field);
+                    ImageOptimizer::delete($post->$field);
                 }
 
                 // Store new image
-                $path = $request->file($field)->store('posts/featured', 'public');
+                $path = ImageOptimizer::store($request->file($field), 'posts/featured', withJpegCopy: $i === 1);
                 $data[$field] = $path;
             } elseif ($post && $post->$field) {
                 // Keep existing image
@@ -619,11 +643,11 @@ class PostController extends Controller
             if ($request->hasFile($field)) {
                 // Delete old image if updating
                 if ($post && $post->$field) {
-                    Storage::disk('public')->delete($post->$field);
+                    ImageOptimizer::delete($post->$field);
                 }
 
                 // Store new image
-                $path = $request->file($field)->store('posts/seo', 'public');
+                $path = ImageOptimizer::store($request->file($field), 'posts/seo', format: 'jpg', maxWidth: 1200);
                 $data[$field] = $path;
             } elseif ($post && $post->$field) {
                 // Keep existing image
@@ -648,7 +672,7 @@ class PostController extends Controller
             $removeField = "remove_{$field}";
 
             if ($request->has($removeField) && $post->$field) {
-                Storage::disk('public')->delete($post->$field);
+                ImageOptimizer::delete($post->$field);
                 $post->$field = null;
                 $post->save();
             }
@@ -667,7 +691,7 @@ class PostController extends Controller
 
         foreach ($imageFields as $field) {
             if ($post->$field) {
-                Storage::disk('public')->delete($post->$field);
+                ImageOptimizer::delete($post->$field);
             }
         }
     }

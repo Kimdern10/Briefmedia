@@ -14,4 +14,9 @@
 </div>
 
 @include('admin.posts.form', ['post' => $post, 'categories' => $categories])
+
+{{-- Outside the post form: it has its own form and saves straight away --}}
+<div style="margin-top: 22px;">
+    <livewire:admin.live-updates-manager :post="$post" />
+</div>
 @endsection
