@@ -1,5 +1,6 @@
 @php
     $draftCount = \App\Models\Post::where('status', 'draft')->count();
+    $pendingComments = \App\Models\Comment::whereNull('approved_at')->count();
 
     $adminNav = [
         'Overview' => [
@@ -12,11 +13,12 @@
             ['route' => 'admin.news.headlines', 'match' => 'admin.news.headlines', 'icon' => 'bi-broadcast', 'label' => 'Headlines'],
         ],
         'Audience' => [
-            ['route' => 'admin.comments', 'match' => 'admin.comments', 'icon' => 'bi-chat-square-text', 'label' => 'Comments'],
+            ['route' => 'admin.comments', 'match' => 'admin.comments', 'icon' => 'bi-chat-square-text', 'label' => 'Comments', 'badge' => $pendingComments ? $pendingComments.' new' : null],
             ['route' => 'admin.subscribers', 'match' => 'admin.subscribers', 'icon' => 'bi-envelope-paper', 'label' => 'Subscribers'],
             ['route' => 'user.list', 'match' => ['user.list', 'users.trashed'], 'icon' => 'bi-people', 'label' => 'Users'],
         ],
         'Settings' => [
+            ['route' => 'admin.profile', 'match' => 'admin.profile', 'icon' => 'bi-person-circle', 'label' => 'My profile'],
             ['route' => 'admin.seo.edit', 'match' => 'admin.seo.edit', 'icon' => 'bi-search-heart', 'label' => 'SEO settings'],
         ],
     ];

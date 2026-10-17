@@ -577,3 +577,47 @@ body.ad {
 .ad-segment__count { min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--ad-line); color: var(--ad-ink-2); font-size: 11px; text-align: center; }
 .ad-segment a.is-active .ad-segment__count { background: var(--ad-accent); color: #fff; }
 @media (max-width: 720px) { .ad-toolbar nav.ad-segment { margin-left: 0 !important; } }
+
+/* Livewire admin tables */
+.ad button.page-link { cursor: pointer; font-family: inherit; }
+.ad [wire\:loading\.delay\.class] { transition: opacity .15s ease; }
+.ad .is-loading { opacity: .55; pointer-events: none; }
+.ad-spinner { width: 16px; height: 16px; flex-shrink: 0; border: 2px solid var(--ad-line); border-top-color: var(--ad-accent); border-radius: 50%; animation: ad-spin .7s linear infinite; }
+@keyframes ad-spin { to { transform: rotate(360deg); } }
+
+/* 🔥 Trend button (admin posts list) */
+.ad-btn--trend { border-color: var(--ad-line); }
+.ad-btn--trend:hover { border-color: var(--ad-accent); color: var(--ad-accent); }
+.ad-btn--trend.is-on { background: var(--ad-accent-soft); border-color: var(--ad-accent); color: var(--ad-accent); }
+.ad-btn--trend.is-on:hover { background: var(--ad-accent); color: #fff; }
+.ad-trend-left { margin-top: 6px; color: var(--ad-accent); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+
+/* News options in the post form */
+.ad-video-preview { position: relative; margin-top: 10px; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: #000; }
+.ad-video-preview iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.ad-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.ad-badge { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
+.ad-badge--breaking { background: var(--ad-red); color: #fff; }
+.ad-badge--headline { background: var(--ad-blue-soft); color: var(--ad-blue); }
+.ad-badge--video { background: var(--ad-surface-2); color: var(--ad-ink-2); }
+
+/* Admin profile photo */
+.ad-avatar { width: 30px; height: 30px; border-radius: 999px; object-fit: cover; object-position: 50% 25%; background: var(--ad-surface-2); }
+.ad-avatar--lg { width: 112px; height: 112px; box-shadow: 0 0 0 4px var(--ad-surface), 0 0 0 5px var(--ad-line); }
+.ad-profile-card { text-align: center; }
+.ad-profile-photo { position: relative; display: inline-block; cursor: pointer; margin-bottom: 14px; }
+.ad-profile-photo img { transition: opacity .2s ease; }
+.ad-profile-photo img.is-uploading { opacity: .45; }
+.ad-profile-photo__btn { position: absolute; right: 0; bottom: 4px; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--ad-ink); color: var(--ad-bg); border: 3px solid var(--ad-surface); font-size: 14px; }
+.ad-profile-facts { display: grid; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--ad-line); text-align: left; color: var(--ad-ink-2); font-size: 13.5px; }
+.ad-profile-facts i { width: 18px; color: var(--ad-muted); }
+.ad-photo-preview { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 12px; border: 1px solid var(--ad-line); background: var(--ad-surface-2); }
+.ad-photo-preview img { width: 64px; height: 64px; border-radius: 999px; object-fit: cover; object-position: 50% 25%; }
+.ad-photo-preview small { display: block; color: var(--ad-muted); }
+.ad-dropzone { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 12px; border: 1.5px dashed var(--ad-line); background: var(--ad-surface-2); cursor: pointer; }
+.ad-dropzone:hover { border-color: var(--ad-accent); }
+.ad-dropzone i { font-size: 22px; color: var(--ad-accent); }
+.ad-dropzone small { display: block; color: var(--ad-muted); }
+.ad-dropzone input { display: none; }
+.ad-spin { display: inline-block; animation: ad-spin .8s linear infinite; }
+.ad-newsletter-sender { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }

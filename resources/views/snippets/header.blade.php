@@ -1,26 +1,31 @@
-{{-- $navCategories, $moreCategories and $tickerPosts come from the snippets.header composer in AppServiceProvider --}}
+{{-- $navCategories, $moreCategories, $tickerPosts and $breakingPosts come from the snippets.header composer in AppServiceProvider --}}
 @php
-    $profileImage = null;
-    if (auth()->check()) {
-        $profileImage = optional(auth()->user()->Userprofile)->profile_picture
-            ? auth()->user()->Userprofile->photoUrl()
-            : 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&background=e4407f&color=fff&size=120';
-    }
+    $profileImage = auth()->check() ? auth()->user()->avatarUrl() : null;
 @endphp
 
 <!-- ================= TOP BAR ================= -->
-<div class="bm-topbar">
+@php
+    $isBreakingBar = $breakingPosts->isNotEmpty();
+    $barPosts = $isBreakingBar ? $breakingPosts : $tickerPosts;
+@endphp
+<div class="bm-topbar {{ $isBreakingBar ? 'bm-topbar--breaking' : '' }}">
     <div class="bm-container bm-topbar__inner">
         <span class="bm-topbar__date">{{ now()->format('l, F j, Y') }}</span>
 
-        @if($tickerPosts->isNotEmpty())
+        @if($barPosts->isNotEmpty())
             <div class="bm-ticker" aria-label="Latest headlines">
-                <span class="bm-ticker__label">Latest</span>
+                <span class="bm-ticker__label">
+                    @if($isBreakingBar)
+                        <span class="bm-ticker__pulse"></span> Breaking
+                    @else
+                        Latest
+                    @endif
+                </span>
                 <div class="bm-ticker__track">
                     <div class="bm-ticker__items">
                         {{-- Rendered twice so the marquee loops seamlessly --}}
                         @foreach([1, 2] as $copy)
-                            @foreach($tickerPosts as $tickerPost)
+                            @foreach($barPosts as $tickerPost)
                                 <a href="{{ route('posts.show', $tickerPost) }}" @if($copy === 2) aria-hidden="true" tabindex="-1" @endif>{{ $tickerPost->title }}</a>
                             @endforeach
                         @endforeach
@@ -88,7 +93,9 @@
             @auth
                 <div class="bm-dropdown">
                     <button type="button" class="bm-avatar" data-dropdown-toggle aria-expanded="false" aria-label="Account menu"
-                            style="background-image: url('{{ $profileImage }}'); background-size: cover; background-position: center;">
+                            x-data
+                            @profile-photo-updated.window="if ($event.detail.url) { $el.style.backgroundImage = `url('${$event.detail.url}')` }"
+                            style="background-image: url('{{ $profileImage }}'); background-size: cover; background-position: center 25%;">
                     </button>
                     <div class="bm-dropdown__menu">
                         <div class="bm-dropdown__label">{{ auth()->user()->name }}</div>

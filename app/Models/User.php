@@ -55,18 +55,27 @@ class User extends Authenticatable
         return $this->hasOne(Userprofile::class);
     }
 
-    public function likedPosts()
-{
-    return $this->belongsToMany(
-        Post::class,
-        'post_user_likes',
-        'user_id',
-        'post_id'
-    )->withTimestamps();
-}
+    /**
+     * Profile photo URL, or a coloured initial avatar when no photo has been uploaded.
+     */
+    public function avatarUrl(int $size = 120): string
+    {
+        return optional($this->Userprofile)->photoUrl()
+            ?? 'https://ui-avatars.com/api/?name='.urlencode((string) $this->name).'&background=e4407f&color=fff&size='.$size;
+    }
 
-public function likes()
-{
-    return $this->hasMany(Like::class);
-}
+    public function likedPosts()
+    {
+        return $this->belongsToMany(
+            Post::class,
+            'post_user_likes',
+            'user_id',
+            'post_id'
+        )->withTimestamps();
+    }
+
+    public function likes()
+    {
+        return $this->hasMany(Like::class);
+    }
 }

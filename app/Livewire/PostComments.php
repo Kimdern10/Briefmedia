@@ -22,6 +22,9 @@ class PostComments extends Component
 
     public string $replyContent = '';
 
+    /** Shown after posting when the comment is waiting for approval. */
+    public ?string $notice = null;
+
     public function mount(Post $post): void
     {
         $this->post = $post;
@@ -40,13 +43,15 @@ class PostComments extends Component
             ['content.required' => 'Write something before posting.'],
         );
 
-        Comment::create([
+        $comment = Comment::create([
             'post_id' => $this->post->id,
             'user_id' => auth()->id(),
             'content' => trim($this->content),
+            'approved_at' => Comment::approvedAtFor(auth()->user()),
         ]);
 
         $this->reset('content');
+        $this->notice = $comment->isApproved() ? null : 'Thanks! Your comment will appear for everyone once it is approved.';
         $this->dispatch('comment-posted');
     }
 
@@ -73,6 +78,7 @@ class PostComments extends Component
         // The parent must be a top-level comment on this same post.
         $parent = Comment::where('post_id', $this->post->id)
             ->whereNull('parent_id')
+            ->where(fn ($query) => $query->whereNotNull('approved_at')->orWhere('user_id', auth()->id()))
             ->findOrFail($this->replyingTo);
 
         Comment::create([
@@ -80,9 +86,11 @@ class PostComments extends Component
             'user_id' => auth()->id(),
             'content' => trim($this->replyContent),
             'parent_id' => $parent->id,
+            'approved_at' => Comment::approvedAtFor(auth()->user()),
         ]);
 
         $this->reset('replyingTo', 'replyContent');
+        $this->notice = (int) auth()->user()->role_as === 1 ? null : 'Thanks! Your reply will appear for everyone once it is approved.';
     }
 
     /**
@@ -90,9 +98,20 @@ class PostComments extends Component
      */
     public function comments(): Collection
     {
+        $viewerId = auth()->id();
+
+        // Approved comments, plus the viewer's own comments that are still waiting for approval
+        $visible = function ($query) use ($viewerId) {
+            $query->where(function ($query) use ($viewerId) {
+                $query->whereNotNull('approved_at')
+                    ->when($viewerId, fn ($query) => $query->orWhere('user_id', $viewerId));
+            });
+        };
+
         return Comment::where('post_id', $this->post->id)
             ->whereNull('parent_id')
-            ->with(['user:id,name', 'replies.user:id,name'])
+            ->where($visible)
+            ->with(['user:id,name', 'allReplies' => fn ($query) => $query->where($visible)->with('user:id,name')])
             ->latest()
             ->get();
     }

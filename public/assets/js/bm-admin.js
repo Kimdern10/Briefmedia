@@ -55,33 +55,7 @@
         }
     });
 
-    /* ---------- Confirm dialog for destructive forms ---------- */
-    const dialog = $('#ad-confirm');
-    let pendingForm = null;
-    document.addEventListener('submit', (event) => {
-        const form = event.target;
-        if (!form.matches('[data-confirm]') || form.dataset.confirmed === '1') { return; }
-        event.preventDefault();
-
-        if (!dialog || typeof dialog.showModal !== 'function') {
-            if (window.confirm(form.dataset.confirm)) { form.dataset.confirmed = '1'; form.submit(); }
-            return;
-        }
-
-        pendingForm = form;
-        $('.ad-dialog__title', dialog).textContent = form.dataset.confirmTitle || 'Are you sure?';
-        $('.ad-dialog__text', dialog).textContent = form.dataset.confirm;
-        $('[data-confirm-ok]', dialog).textContent = form.dataset.confirmButton || 'Confirm';
-        dialog.showModal();
-    }, true);
-
-    if (dialog) {
-        $('[data-confirm-ok]', dialog).addEventListener('click', () => {
-            dialog.close();
-            if (pendingForm) { pendingForm.dataset.confirmed = '1'; pendingForm.submit(); }
-        });
-        $('[data-confirm-cancel]', dialog).addEventListener('click', () => { dialog.close(); pendingForm = null; });
-    }
+    /* Confirm dialogs now use SweetAlert: see bm-alerts.js (bmConfirm). */
 
     /* ---------- Tabs ---------- */
     $$('[data-tabs]').forEach((group) => {

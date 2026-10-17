@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use App\Models\Category;
-use App\Models\User;
-use App\Models\Comment;
-use App\Models\Like; // Make sure to import the Like model
+
+// Make sure to import the Like model
 
 class Post extends Model
 {
@@ -44,6 +46,13 @@ class Post extends Model
         'schema_markup',
         'no_index',
         'no_follow',
+        'headline_until',
+        'breaking_until',
+        'video_url',
+        'author_name',
+        'publish_at',
+        'image_caption',
+        'image_credit',
     ];
 
     protected $casts = [
@@ -55,6 +64,10 @@ class Post extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
+        'trending_until' => 'datetime',
+        'headline_until' => 'datetime',
+        'breaking_until' => 'datetime',
+        'publish_at' => 'datetime',
     ];
 
     protected $appends = [
@@ -94,15 +107,16 @@ class Post extends Model
     public function viewedByUsers()
     {
         return $this->belongsToMany(User::class, 'post_user_views')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
     // Top-level comments
     public function comments()
     {
         return $this->hasMany(Comment::class, 'post_id')
-                    ->whereNull('parent_id')
-                    ->latest();
+            ->whereNull('parent_id')
+            ->whereNotNull('approved_at') // public counts only include approved comments
+            ->latest();
     }
 
     // All comments including replies
@@ -159,9 +173,10 @@ class Post extends Model
         for ($i = 1; $i <= 4; $i++) {
             $field = "featured_image_{$i}";
             if ($this->$field) {
-                $images[$i] = asset('storage/' . $this->$field);
+                $images[$i] = asset('storage/'.$this->$field);
             }
         }
+
         return $images;
     }
 
@@ -170,14 +185,14 @@ class Post extends Model
      */
     public function getMetaTitleAttribute($value)
     {
-        if (!empty($value)) {
+        if (! empty($value)) {
             return $value;
         }
-        
-        if ($this->enable_auto_seo && !empty($this->title)) {
+
+        if ($this->enable_auto_seo && ! empty($this->title)) {
             return Str::limit($this->title, 60, '');
         }
-        
+
         return null;
     }
 
@@ -186,17 +201,18 @@ class Post extends Model
      */
     public function getMetaDescriptionAttribute($value)
     {
-        if (!empty($value)) {
+        if (! empty($value)) {
             return $value;
         }
-        
-        if ($this->enable_auto_seo && !empty($this->content)) {
+
+        if ($this->enable_auto_seo && ! empty($this->content)) {
             $cleanContent = strip_tags($this->content);
             $cleanContent = preg_replace('/\s+/', ' ', $cleanContent);
             $cleanContent = trim($cleanContent);
+
             return Str::limit($cleanContent, 160, '...');
         }
-        
+
         return null;
     }
 
@@ -237,23 +253,23 @@ class Post extends Model
      */
     public function getSocialImageAttribute()
     {
-        if (!empty($this->og_image)) {
-            return asset('storage/' . $this->og_image);
+        if (! empty($this->og_image)) {
+            return asset('storage/'.$this->og_image);
         }
-        
-        if (!empty($this->twitter_image)) {
-            return asset('storage/' . $this->twitter_image);
+
+        if (! empty($this->twitter_image)) {
+            return asset('storage/'.$this->twitter_image);
         }
-        
-        if (!empty($this->meta_image)) {
-            return asset('storage/' . $this->meta_image);
+
+        if (! empty($this->meta_image)) {
+            return asset('storage/'.$this->meta_image);
         }
-        
+
         $images = $this->featured_images;
-        if (!empty($images)) {
+        if (! empty($images)) {
             return $images[1]; // Return first featured image
         }
-        
+
         return asset('images/default-social-image.jpg');
     }
 
@@ -264,7 +280,8 @@ class Post extends Model
     {
         $wordCount = str_word_count(strip_tags($this->content));
         $minutes = ceil($wordCount / 200); // Average reading speed
-        return $minutes . ' min read';
+
+        return $minutes.' min read';
     }
 
     /**
@@ -272,7 +289,7 @@ class Post extends Model
      */
     public function getUrlAttribute()
     {
-        return url('/posts/' . $this->slug);
+        return url('/posts/'.$this->slug);
     }
 
     /**
@@ -280,11 +297,11 @@ class Post extends Model
      */
     public function getSchemaMarkupAttribute($value)
     {
-        if (!empty($value)) {
+        if (! empty($value)) {
             return $value;
         }
 
-        if (!$this->enable_auto_seo) {
+        if (! $this->enable_auto_seo) {
             return null;
         }
 
@@ -292,39 +309,39 @@ class Post extends Model
         $imageUrl = $this->social_image;
 
         $schema = [
-            "@context" => "https://schema.org",
-            "@type" => "BlogPosting",
-            "headline" => $this->meta_title ?: $this->title,
-            "description" => $this->meta_description,
-            "datePublished" => $this->created_at?->toIso8601String(),
-            "dateModified" => $this->updated_at?->toIso8601String(),
-            "mainEntityOfPage" => [
-                "@type" => "WebPage",
-                "@id" => $this->canonical_url ?: $this->url
+            '@context' => 'https://schema.org',
+            '@type' => 'BlogPosting',
+            'headline' => $this->meta_title ?: $this->title,
+            'description' => $this->meta_description,
+            'datePublished' => $this->created_at?->toIso8601String(),
+            'dateModified' => $this->updated_at?->toIso8601String(),
+            'mainEntityOfPage' => [
+                '@type' => 'WebPage',
+                '@id' => $this->canonical_url ?: $this->url,
             ],
-            "author" => [
-                "@type" => "Person",
-                "name" => $authorName
+            'author' => [
+                '@type' => 'Person',
+                'name' => $authorName,
             ],
-            "publisher" => [
-                "@type" => "Organization",
-                "name" => "BriefMedia",
-                "logo" => [
-                    "@type" => "ImageObject",
-                    "url" => asset('images/logo.png')
-                ]
-            ]
+            'publisher' => [
+                '@type' => 'Organization',
+                'name' => 'BriefMedia',
+                'logo' => [
+                    '@type' => 'ImageObject',
+                    'url' => asset('images/logo.png'),
+                ],
+            ],
         ];
 
         if ($imageUrl) {
-            $schema["image"] = [
-                "@type" => "ImageObject",
-                "url" => $imageUrl
+            $schema['image'] = [
+                '@type' => 'ImageObject',
+                'url' => $imageUrl,
             ];
         }
 
         if ($this->category) {
-            $schema["articleSection"] = $this->category->name;
+            $schema['articleSection'] = $this->category->name;
         }
 
         return json_encode($schema, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -354,19 +371,19 @@ class Post extends Model
      */
     public function generateSeoMetadata(): void
     {
-        if (!$this->enable_auto_seo) {
+        if (! $this->enable_auto_seo) {
             return;
         }
 
-        if (empty($this->meta_keywords) && !empty($this->content)) {
+        if (empty($this->meta_keywords) && ! empty($this->content)) {
             $this->meta_keywords = $this->extractKeywords();
         }
 
-        if (empty($this->og_image) && !empty($this->meta_image)) {
+        if (empty($this->og_image) && ! empty($this->meta_image)) {
             $this->og_image = $this->meta_image;
         }
 
-        if (empty($this->twitter_image) && !empty($this->og_image)) {
+        if (empty($this->twitter_image) && ! empty($this->og_image)) {
             $this->twitter_image = $this->og_image;
         }
     }
@@ -376,32 +393,32 @@ class Post extends Model
      */
     private function extractKeywords(): ?string
     {
-        $stopWords = ['the', 'and', 'for', 'that', 'this', 'with', 'from', 'have', 'are', 'was', 
-                     'were', 'has', 'had', 'but', 'not', 'what', 'all', 'when', 'can', 'said', 
-                     'there', 'use', 'an', 'each', 'which', 'do', 'how', 'their', 'will', 'other', 
-                     'about', 'out', 'many', 'then', 'them', 'these', 'some', 'her', 'would', 
-                     'make', 'like', 'him', 'into', 'time', 'has', 'look', 'two', 'more', 'write', 
-                     'go', 'see', 'number', 'way', 'could', 'people', 'than', 'first', 'been', 
-                     'call', 'who', 'its', 'now', 'find', 'long', 'down', 'day', 'did', 'get', 
-                     'come', 'made', 'may', 'part'];
-        
-        $text = $this->title . ' ' . strip_tags($this->content);
+        $stopWords = ['the', 'and', 'for', 'that', 'this', 'with', 'from', 'have', 'are', 'was',
+            'were', 'has', 'had', 'but', 'not', 'what', 'all', 'when', 'can', 'said',
+            'there', 'use', 'an', 'each', 'which', 'do', 'how', 'their', 'will', 'other',
+            'about', 'out', 'many', 'then', 'them', 'these', 'some', 'her', 'would',
+            'make', 'like', 'him', 'into', 'time', 'has', 'look', 'two', 'more', 'write',
+            'go', 'see', 'number', 'way', 'could', 'people', 'than', 'first', 'been',
+            'call', 'who', 'its', 'now', 'find', 'long', 'down', 'day', 'did', 'get',
+            'come', 'made', 'may', 'part'];
+
+        $text = $this->title.' '.strip_tags($this->content);
         $text = strtolower($text);
         $text = preg_replace('/[^\w\s]/', ' ', $text);
         $words = str_word_count($text, 1);
-        
-        $words = array_filter($words, function($word) use ($stopWords) {
-            return strlen($word) > 3 && !in_array($word, $stopWords);
+
+        $words = array_filter($words, function ($word) use ($stopWords) {
+            return strlen($word) > 3 && ! in_array($word, $stopWords);
         });
-        
+
         if (empty($words)) {
             return null;
         }
-        
+
         $wordCounts = array_count_values($words);
         arsort($wordCounts);
         $keywords = array_slice(array_keys($wordCounts), 0, 10);
-        
+
         return implode(', ', $keywords);
     }
 
@@ -445,6 +462,285 @@ class Post extends Model
             ->orderBy('likes', 'desc');
     }
 
+    /**
+     * How long an admin's "Trend" pick lasts.
+     */
+    public const PINNED_TRENDING_DAYS = 2;
+
+    /**
+     * How long a post stays "breaking news" after the admin ticks the box.
+     */
+    public const BREAKING_HOURS = 24;
+
+    /**
+     * How long a post stays a headline after the admin ticks the box.
+     */
+    public const HEADLINE_HOURS = 24;
+
+    /**
+     * Scheduled post: saved as a draft with a publish_at time; it goes live automatically.
+     */
+    public function isScheduled(): bool
+    {
+        return $this->status === 'draft' && $this->publish_at !== null;
+    }
+
+    /**
+     * Publish every scheduled post whose time has come. Returns how many went live.
+     * Runs from the `posts:publish-scheduled` command (cron) and on page visits, so
+     * scheduling works even without a cron job.
+     */
+    public static function publishDueScheduled(): int
+    {
+        $due = static::where('status', 'draft')
+            ->whereNotNull('publish_at')
+            ->where('publish_at', '<=', now())
+            ->get();
+
+        foreach ($due as $post) {
+            $publishAt = $post->publish_at;
+
+            $post->forceFill([
+                'status' => 'published',
+                'publish_at' => null,
+                // Sort it as a fresh story from the moment it went live
+                'created_at' => $publishAt,
+            ])->save();
+
+            Log::info('Scheduled post published', ['post_id' => $post->id, 'title' => $post->title]);
+        }
+
+        return $due->count();
+    }
+
+    /**
+     * Headline news: shown first in the homepage slider until headline_until.
+     */
+    public function isHeadline(): bool
+    {
+        return $this->status === 'published'
+            && $this->headline_until !== null
+            && $this->headline_until->isFuture();
+    }
+
+    /**
+     * Breaking news: shown in the red ticker and with a red badge until breaking_until.
+     */
+    public function isBreaking(): bool
+    {
+        return $this->status === 'published'
+            && $this->breaking_until !== null
+            && $this->breaking_until->isFuture();
+    }
+
+    /**
+     * Name shown after "Posted by": the writer's name typed in the post form,
+     * otherwise the admin who posted it.
+     */
+    public function authorDisplayName(): string
+    {
+        return trim((string) $this->author_name) !== ''
+            ? trim($this->author_name)
+            : (optional($this->admin)->name ?? 'BriefMedia');
+    }
+
+    /**
+     * Address of the writer page for this post's author ("Posted by" link).
+     */
+    public function authorUrl(): string
+    {
+        return route('writer.show', Str::slug($this->authorDisplayName()) ?: 'briefmedia');
+    }
+
+    /**
+     * Published posts by the writer whose name turns into $slug, plus that writer's name.
+     * Matches the "Written by" name, or the posting admin's name when no writer was typed in.
+     *
+     * @return array{0: string, 1: Builder}|null
+     */
+    public static function byWriterSlug(string $slug): ?array
+    {
+        $typedNames = static::query()->whereNotNull('author_name')->where('author_name', '!=', '')
+            ->distinct()->pluck('author_name');
+        $adminNames = User::whereIn('id', static::query()->select('admin_id'))->pluck('name', 'id');
+
+        $name = $typedNames->concat($adminNames->values())
+            ->first(fn ($candidate) => Str::slug((string) $candidate) === $slug);
+
+        if ($name === null) {
+            return null;
+        }
+
+        $adminIds = $adminNames->filter(fn ($adminName) => $adminName === $name)->keys();
+
+        $query = static::query()
+            ->where('status', 'published')
+            ->where(function ($query) use ($name, $adminIds) {
+                $query->where('author_name', $name)
+                    ->orWhere(function ($query) use ($adminIds) {
+                        $query->where(fn ($q) => $q->whereNull('author_name')->orWhere('author_name', ''))
+                            ->whereIn('admin_id', $adminIds);
+                    });
+            });
+
+        return [$name, $query];
+    }
+
+    /**
+     * Count one view for today (for "Most read today").
+     */
+    public static function recordDailyView(int $postId): void
+    {
+        DB::table('post_daily_views')->upsert(
+            [['post_id' => $postId, 'date' => now()->toDateString(), 'views' => 1]],
+            ['post_id', 'date'],
+            ['views' => DB::raw('views + 1')]
+        );
+    }
+
+    /**
+     * Most viewed published stories today. Early in the day (fewer than $minimum with views),
+     * yesterday's views are added in so the list isn't empty.
+     *
+     * @return Collection<int, self>
+     */
+    public static function mostReadToday(int $limit = 5, int $minimum = 3): Collection
+    {
+        foreach ([[now()->toDateString()], [now()->subDay()->toDateString(), now()->toDateString()]] as $dates) {
+            $totals = DB::table('post_daily_views')
+                ->whereIn('date', $dates)
+                ->groupBy('post_id')
+                ->selectRaw('post_id, SUM(views) as total')
+                ->orderByDesc('total')
+                ->limit($limit * 2)
+                ->pluck('total', 'post_id');
+
+            $posts = static::with('category')
+                ->where('status', 'published')
+                ->whereIn('id', $totals->keys())
+                ->get()
+                ->each(fn (self $post) => $post->views_today = (int) $totals[$post->id])
+                ->sortByDesc('views_today')
+                ->values()
+                ->take($limit);
+
+            if ($posts->count() >= $minimum || count($dates) === 2) {
+                return $posts;
+            }
+        }
+
+        return collect();
+    }
+
+    /**
+     * Safe embed address for the post's video link (YouTube, Vimeo or Facebook), or null.
+     * Only the video ID is taken from the link, so arbitrary pages can't be embedded.
+     */
+    public function videoEmbedUrl(): ?string
+    {
+        return static::embedUrlFor($this->video_url);
+    }
+
+    public static function embedUrlFor(?string $url): ?string
+    {
+        $url = trim((string) $url);
+
+        if ($url === '' || ! filter_var($url, FILTER_VALIDATE_URL)) {
+            return null;
+        }
+
+        $host = strtolower(preg_replace('/^(www\.|m\.)/', '', (string) parse_url($url, PHP_URL_HOST)));
+        $path = (string) parse_url($url, PHP_URL_PATH);
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+
+        if (in_array($host, ['youtube.com', 'youtu.be', 'youtube-nocookie.com'], true)) {
+            $id = match (true) {
+                $host === 'youtu.be' => trim($path, '/'),
+                str_starts_with($path, '/shorts/'), str_starts_with($path, '/embed/'), str_starts_with($path, '/live/') => explode('/', trim($path, '/'))[1] ?? '',
+                default => $query['v'] ?? '',
+            };
+
+            return preg_match('/^[A-Za-z0-9_-]{6,20}$/', $id) ? "https://www.youtube-nocookie.com/embed/{$id}" : null;
+        }
+
+        if (in_array($host, ['vimeo.com', 'player.vimeo.com'], true) && preg_match('#/(\d{5,12})(?:$|[/?])#', $path.'/', $match)) {
+            return "https://player.vimeo.com/video/{$match[1]}";
+        }
+
+        if (in_array($host, ['facebook.com', 'fb.watch'], true)) {
+            return 'https://www.facebook.com/plugins/video.php?show_text=false&href='.rawurlencode($url);
+        }
+
+        return null;
+    }
+
+    /**
+     * Whether an admin has marked this post as trending and the pick hasn't expired.
+     */
+    public function isPinnedTrending(): bool
+    {
+        return $this->trending_until !== null && $this->trending_until->isFuture();
+    }
+
+    /**
+     * Trending stories used by the homepage, category sidebar and newsletter.
+     *
+     * 1. Posts an admin marked as trending (🔥 Trend button) come first, newest pick first,
+     *    for PINNED_TRENDING_DAYS days.
+     * 2. The remaining spots go to the highest automatic scores:
+     *    views + likes x 2 + comments x 3, over published posts from the last 7 days.
+     *    If fewer than $minimum stories qualify, the window widens to 30 days.
+     *
+     * Likes come from post_user_likes (what the like button saves). Each post gets
+     * `trend_likes`, `trend_comments`, `trend_score` and `trend_pinned` attributes.
+     *
+     * @return Collection<int, self>
+     */
+    public static function trendingNow(int $limit = 8, int $minimum = 4): Collection
+    {
+        $withStats = fn () => static::query()
+            ->with(['category', 'admin'])
+            ->withCount([
+                'likedByUsers as trend_likes',
+                'comments as trend_comments',
+            ])
+            ->where('status', 'published');
+
+        $score = function (self $post): void {
+            $post->trend_score = (int) $post->views
+                + ((int) $post->trend_likes * 2)
+                + ((int) $post->trend_comments * 3);
+        };
+
+        $pinned = $withStats()
+            ->where('trending_until', '>', now())
+            ->orderByDesc('trending_until')
+            ->take($limit)
+            ->get()
+            ->each($score)
+            ->each(fn (self $post) => $post->trend_pinned = true);
+
+        $automatic = collect();
+
+        foreach ([7, 30] as $days) {
+            $automatic = $withStats()
+                ->where('created_at', '>=', now()->subDays($days))
+                ->whereNotIn('id', $pinned->pluck('id'))
+                ->get()
+                ->each($score)
+                ->each(fn (self $post) => $post->trend_pinned = false)
+                ->filter(fn (self $post) => $post->trend_score > 0)
+                ->sortByDesc(fn (self $post) => [$post->trend_score, $post->created_at->timestamp])
+                ->values();
+
+            if ($pinned->count() + $automatic->count() >= $minimum) {
+                break;
+            }
+        }
+
+        return $pinned->concat($automatic)->take($limit)->values();
+    }
+
     public function scopePopular($query)
     {
         return $query->published()
@@ -458,10 +754,10 @@ class Post extends Model
 
     public function scopeSearch($query, $term)
     {
-        return $query->where(function($q) use ($term) {
+        return $query->where(function ($q) use ($term) {
             $q->where('title', 'LIKE', "%{$term}%")
-              ->orWhere('content', 'LIKE', "%{$term}%")
-              ->orWhere('excerpt', 'LIKE', "%{$term}%");
+                ->orWhere('content', 'LIKE', "%{$term}%")
+                ->orWhere('excerpt', 'LIKE', "%{$term}%");
         });
     }
 
@@ -475,18 +771,18 @@ class Post extends Model
             if (empty($post->slug)) {
                 $post->slug = Str::slug($post->title);
             }
-            
+
             // Ensure unique slug
-            $count = static::where('slug', 'LIKE', $post->slug . '%')->count();
+            $count = static::where('slug', 'LIKE', $post->slug.'%')->count();
             if ($count > 0) {
-                $post->slug = $post->slug . '-' . ($count + 1);
+                $post->slug = $post->slug.'-'.($count + 1);
             }
         });
 
         static::saving(function ($post) {
             $post->generateSeoMetadata();
-            
-            if (empty($post->canonical_url) && !empty($post->slug)) {
+
+            if (empty($post->canonical_url) && ! empty($post->slug)) {
                 $post->canonical_url = $post->url;
             }
         });

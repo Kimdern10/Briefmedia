@@ -1,5 +1,9 @@
 <section class="bm-comments" id="comments">
-    <h2 class="bm-comments__title">Comments <span>({{ $comments->count() }})</span></h2>
+    <h2 class="bm-comments__title">Comments <span>({{ $comments->whereNotNull('approved_at')->count() }})</span></h2>
+
+    @if($notice)
+        <div class="bm-alert bm-alert--success" role="status"><i class="bi bi-hourglass-split"></i> {{ $notice }}</div>
+    @endif
 
     @auth
         <form class="bm-comment-form" wire:submit="postComment">
@@ -30,6 +34,7 @@
                 <div class="bm-comment__head">
                     <span class="bm-comment__name">{{ optional($comment->user)->name ?? 'Guest' }}</span>
                     <span class="bm-comment__time">{{ $comment->created_at->diffForHumans() }}</span>
+                    @unless($comment->isApproved())<span class="bm-pending">Awaiting approval</span>@endunless
                 </div>
                 <p class="bm-comment__text">{{ $comment->content }}</p>
 
@@ -56,15 +61,16 @@
                     @endif
                 @endauth
 
-                @if($comment->replies->isNotEmpty())
+                @if($comment->allReplies->isNotEmpty())
                     <div class="bm-comment__replies">
-                        @foreach($comment->replies as $reply)
+                        @foreach($comment->allReplies as $reply)
                             <div class="bm-comment" wire:key="reply-{{ $reply->id }}">
                                 <span class="bm-comment__avatar">{{ strtoupper(substr(optional($reply->user)->name ?? 'G', 0, 1)) }}</span>
                                 <div>
                                     <div class="bm-comment__head">
                                         <span class="bm-comment__name">{{ optional($reply->user)->name ?? 'Guest' }}</span>
                                         <span class="bm-comment__time">{{ $reply->created_at->diffForHumans() }}</span>
+                                        @unless($reply->isApproved())<span class="bm-pending">Awaiting approval</span>@endunless
                                     </div>
                                     <p class="bm-comment__text">{{ $reply->content }}</p>
                                 </div>

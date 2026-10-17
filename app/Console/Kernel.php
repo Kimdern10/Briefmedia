@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Console\Commands\WeeklyNewsletter;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -12,7 +13,7 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         // Register your WeeklyNewsletter command
-        \App\Console\Commands\WeeklyNewsletter::class,
+        WeeklyNewsletter::class,
     ];
 
     /**
@@ -22,6 +23,9 @@ class Kernel extends ConsoleKernel
     {
         // Runs your weekly newsletter every Monday at 10:00 AM
         $schedule->command('newsletter:weekly')->weeklyOn(1, '10:00');
+
+        // Publish scheduled posts on time (needs the Laravel scheduler cron job on the server)
+        $schedule->command('posts:publish-scheduled')->everyMinute()->withoutOverlapping();
 
         // You can add more scheduled commands here if needed
         // Example:

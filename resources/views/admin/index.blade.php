@@ -27,7 +27,7 @@
     </div>
     <div class="ad-head__actions">
         <a href="{{ route('admin.news.headlines') }}" class="ad-btn ad-btn--ghost"><i class="bi bi-broadcast"></i> Headlines</a>
-        <a href="{{ route('admin.send-newsletter') }}" class="ad-btn ad-btn--accent"><i class="bi bi-send"></i> Send newsletter</a>
+        <livewire:admin.newsletter-sender />
     </div>
 </div>
 

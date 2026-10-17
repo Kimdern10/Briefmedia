@@ -24,12 +24,8 @@ class SendNewsletter extends Command
             ->take(5)
             ->get();
 
-        // Most viewed published posts from the last 30 days
-        $trendingPosts = Post::where('status', 'published')
-            ->where('created_at', '>=', now()->subDays(30))
-            ->orderByDesc('views')
-            ->take(5)
-            ->get();
+        // Same trending rule as the homepage
+        $trendingPosts = Post::trendingNow(5);
 
         // Stop if no posts
         if ($posts->isEmpty()) {

@@ -27,6 +27,13 @@
     .bm-dropzone input { display: none; }
     .bm-dropzone small { display: block; color: var(--bm-muted); }
     .bm-form-actions { display: flex; gap: 10px; margin-top: 8px; }
+    .bm-account__avatar img { transition: opacity .2s ease; }
+    .bm-account__avatar img.is-uploading { opacity: .45; }
+    .bm-account__saved { display: flex; align-items: center; justify-content: center; gap: 6px; margin: -4px 0 10px !important; color: var(--bm-success); font-size: 13px; font-weight: 600; }
+    .bm-spin { display: inline-block; animation: bm-spin .8s linear infinite; }
+    .bm-photo-preview { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 12px; border: 1px solid var(--bm-line); background: var(--bm-bg); }
+    .bm-photo-preview img { width: 72px; height: 72px; border-radius: 999px; object-fit: cover; object-position: 50% 25%; }
+    .bm-photo-preview small { display: block; color: var(--bm-muted); }
     @media (max-width: 860px) {
         .bm-account { grid-template-columns: minmax(0, 1fr); }
         .bm-account__card { position: static; }
@@ -37,9 +44,6 @@
 
 @section('content')
 @php
-    $profileImage = optional($user->Userprofile)->profile_picture
-        ? $user->Userprofile->photoUrl()
-        : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=e4407f&color=fff&size=240';
     $showSecurityTab = session('success')
         || $errors->has('current_password')
         || $errors->has('new_password')
@@ -62,33 +66,8 @@
     <section class="bm-section">
         <div class="bm-container bm-account">
 
-            <!-- Profile card -->
-            <aside class="bm-widget bm-account__card">
-                <div class="bm-account__avatar" onclick="document.getElementById('profile-upload').click();" title="Change photo">
-                    <img src="{{ $profileImage }}" alt="{{ $user->name }}"
-                         onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=e4407f&color=fff&size=240'">
-                    <span><i class="bi bi-camera"></i></span>
-                </div>
-                <form id="profile-upload-form" action="{{ route('update') }}" method="POST" enctype="multipart/form-data" style="display: none;">
-                    @csrf
-                    @method('put')
-                    <input type="hidden" name="name" value="{{ $user->name }}">
-                    <input type="file" id="profile-upload" name="profile_picture" accept="image/*" onchange="this.form.submit()">
-                </form>
-
-                <h2 class="bm-account__name">{{ $user->name }}</h2>
-                <p class="bm-meta" style="justify-content: center; margin-top: 4px;">{{ $user->email }}</p>
-
-                <div class="bm-account__facts">
-                    @if(optional($user->Userprofile)->phone)
-                        <span><i class="bi bi-telephone"></i> {{ $user->Userprofile->phone }}</span>
-                    @endif
-                    @if(optional($user->Userprofile)->address)
-                        <span><i class="bi bi-geo-alt"></i> {{ $user->Userprofile->address }}</span>
-                    @endif
-                    <span><i class="bi bi-calendar3"></i> Member since {{ $user->created_at->format('F Y') }}</span>
-                </div>
-            </aside>
+            <!-- Profile card (Livewire: tap the photo to upload) -->
+            <livewire:profile-photo />
 
             <!-- Tabs -->
             <div>
@@ -103,116 +82,12 @@
 
                 <!-- Profile tab -->
                 <div class="bm-tab-pane bm-widget {{ $showSecurityTab ? '' : 'is-active' }}" id="profile-tab" role="tabpanel">
-                    <h3 class="bm-widget__title"><i class="bi bi-person-circle"></i> Profile information</h3>
-
-                    @if(session('profile_success'))
-                        <div class="bm-alert bm-alert--success">{{ session('profile_success') }}</div>
-                    @endif
-
-                    <form action="{{ route('update') }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        @method('put')
-
-                        <div class="bm-form-grid">
-                            <div class="bm-field bm-field--full">
-                                <label class="bm-label" for="name">Full name</label>
-                                <input id="name" type="text" name="name" value="{{ old('name', $user->name) }}"
-                                       class="bm-input @error('name') is-invalid @enderror" placeholder="Enter your full name">
-                                @error('name')
-                                    <span class="bm-error">{{ $message }}</span>
-                                @enderror
-                            </div>
-
-                            <div class="bm-field">
-                                <label class="bm-label" for="email">Email address</label>
-                                <input id="email" type="email" value="{{ $user->email }}" class="bm-input" readonly>
-                            </div>
-
-                            <div class="bm-field">
-                                <label class="bm-label" for="phone">Phone number</label>
-                                <input id="phone" type="text" name="phone" value="{{ old('phone', $user->Userprofile->phone ?? '') }}"
-                                       class="bm-input @error('phone') is-invalid @enderror" placeholder="e.g. 08012345678">
-                                @error('phone')
-                                    <span class="bm-error">{{ $message }}</span>
-                                @enderror
-                            </div>
-
-                            <div class="bm-field bm-field--full">
-                                <label class="bm-label" for="address">Address</label>
-                                <input id="address" type="text" name="address" value="{{ old('address', $user->Userprofile->address ?? '') }}"
-                                       class="bm-input @error('address') is-invalid @enderror" placeholder="Enter your address">
-                                @error('address')
-                                    <span class="bm-error">{{ $message }}</span>
-                                @enderror
-                            </div>
-
-                            <div class="bm-field bm-field--full">
-                                <span class="bm-label">Profile picture</span>
-                                <label class="bm-dropzone" for="file-input">
-                                    <i class="bi bi-cloud-arrow-up"></i>
-                                    <span>
-                                        <span class="file-input-text">Click to upload a new photo</span>
-                                        <small>PNG, JPG or GIF, up to 2MB</small>
-                                    </span>
-                                    <input type="file" name="profile_picture" id="file-input" accept="image/*">
-                                </label>
-                                @error('profile_picture')
-                                    <span class="bm-error">{{ $message }}</span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="bm-form-actions">
-                            <button type="submit" class="bm-btn bm-btn--primary"><i class="bi bi-check2"></i> Save changes</button>
-                            <a href="{{ url('/') }}" class="bm-btn bm-btn--ghost">Cancel</a>
-                        </div>
-                    </form>
+                    <livewire:profile-form />
                 </div>
 
                 <!-- Security tab -->
                 <div class="bm-tab-pane bm-widget {{ $showSecurityTab ? 'is-active' : '' }}" id="security-tab" role="tabpanel">
-                    <h3 class="bm-widget__title"><i class="bi bi-key"></i> Change password</h3>
-
-                    @if(session('success'))
-                        <div class="bm-alert bm-alert--success">{{ session('success') }}</div>
-                    @endif
-
-                    <form action="{{ route('password-update') }}" method="POST">
-                        @csrf
-
-                        <div class="bm-form-grid">
-                            <div class="bm-field bm-field--full">
-                                <label class="bm-label" for="current_password">Current password</label>
-                                <input id="current_password" type="password" name="current_password" autocomplete="current-password"
-                                       class="bm-input @error('current_password') is-invalid @enderror" placeholder="Enter current password">
-                                @error('current_password')
-                                    <span class="bm-error">{{ $message }}</span>
-                                @enderror
-                            </div>
-
-                            <div class="bm-field">
-                                <label class="bm-label" for="new_password">New password</label>
-                                <input id="new_password" type="password" name="new_password" autocomplete="new-password"
-                                       class="bm-input @error('new_password') is-invalid @enderror" placeholder="At least 6 characters">
-                                @error('new_password')
-                                    <span class="bm-error">{{ $message }}</span>
-                                @enderror
-                            </div>
-
-                            <div class="bm-field">
-                                <label class="bm-label" for="new_password_confirmation">Confirm new password</label>
-                                <input id="new_password_confirmation" type="password" name="new_password_confirmation" autocomplete="new-password"
-                                       class="bm-input @error('new_password_confirmation') is-invalid @enderror" placeholder="Repeat new password">
-                                @error('new_password_confirmation')
-                                    <span class="bm-error">{{ $message }}</span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="bm-form-actions">
-                            <button type="submit" class="bm-btn bm-btn--primary"><i class="bi bi-shield-check"></i> Update password</button>
-                        </div>
-                    </form>
+                    <livewire:change-password />
                 </div>
             </div>
         </div>
@@ -231,9 +106,5 @@ document.querySelectorAll('.bm-tab').forEach((button) => {
     });
 });
 
-document.getElementById('file-input')?.addEventListener('change', function () {
-    const label = this.closest('.bm-dropzone').querySelector('.file-input-text');
-    if (this.files[0] && label) { label.textContent = this.files[0].name; }
-});
 </script>
 @endpush

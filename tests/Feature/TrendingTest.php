@@ -1,0 +1,118 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Category;
+use App\Models\Comment;
+use App\Models\Post;
+use App\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
+use Tests\TestCase;
+
+class TrendingTest extends TestCase
+{
+    use DatabaseTransactions;
+
+    private User $admin;
+
+    private Category $category;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Keep the test independent of whatever posts the local database already has.
+        DB::table('posts')->update(['views' => 0, 'trending_until' => null]);
+
+        $this->admin = User::factory()->create(['password' => 'password']);
+        $this->category = Category::firstOrCreate(['name' => 'Zz Trending Test Category']);
+    }
+
+    private function makePost(string $title, int $views, int $daysOld, string $status = 'published'): Post
+    {
+        $post = Post::create([
+            'admin_id' => $this->admin->id,
+            'category_id' => $this->category->id,
+            'title' => $title,
+            'excerpt' => 'Excerpt',
+            'content' => '<p>Body</p>',
+            'featured_image_1' => 'posts/featured/does-not-exist.jpg',
+            'status' => $status,
+            'views' => $views,
+        ]);
+        $post->forceFill(['created_at' => now()->subDays($daysOld)])->save();
+
+        return $post;
+    }
+
+    private function addLikes(Post $post, int $count): void
+    {
+        foreach (range(1, $count) as $i) {
+            $post->likedByUsers()->attach(User::factory()->create(['password' => 'password'])->id);
+        }
+    }
+
+    public function test_likes_and_comments_count_towards_the_score(): void
+    {
+        $mostViewed = $this->makePost('Zz Most Viewed', 10, 1);
+        $mostLoved = $this->makePost('Zz Most Loved', 4, 1);
+        $this->addLikes($mostLoved, 2);                                   // 4 + 2x2 = 8
+        Comment::create(['post_id' => $mostLoved->id, 'user_id' => $this->admin->id, 'content' => 'Nice', 'approved_at' => now()]); // + 3 = 11
+        $this->makePost('Zz Quiet One', 1, 1);
+        $this->makePost('Zz Fourth', 2, 1);
+
+        $trending = Post::trendingNow(8);
+
+        $this->assertSame(['Zz Most Loved', 'Zz Most Viewed', 'Zz Fourth', 'Zz Quiet One'], $trending->pluck('title')->all());
+        $this->assertSame(2, (int) $trending->first()->trend_likes);
+        $this->assertSame(1, (int) $trending->first()->trend_comments);
+        $this->assertSame(11, $trending->first()->trend_score);
+    }
+
+    public function test_only_the_last_7_days_count_when_there_are_enough_stories(): void
+    {
+        foreach (range(1, 4) as $i) {
+            $this->makePost("Zz Fresh {$i}", $i, 2);
+        }
+        $this->makePost('Zz Old But Popular', 999, 20);
+
+        $titles = Post::trendingNow(8)->pluck('title');
+
+        $this->assertNotContains('Zz Old But Popular', $titles);
+        $this->assertCount(4, $titles);
+    }
+
+    public function test_window_widens_to_30_days_when_the_week_is_quiet(): void
+    {
+        $this->makePost('Zz This Week', 5, 1);
+        $this->makePost('Zz Two Weeks Ago', 50, 14);
+        $this->makePost('Zz Too Old', 500, 45);
+
+        $titles = Post::trendingNow(8)->pluck('title')->all();
+
+        $this->assertSame(['Zz Two Weeks Ago', 'Zz This Week'], $titles);
+    }
+
+    public function test_drafts_and_posts_without_activity_never_trend(): void
+    {
+        $this->makePost('Zz Draft Hit', 100, 1, 'draft');
+        $this->makePost('Zz No Activity', 0, 1);
+
+        $titles = Post::trendingNow(8)->pluck('title');
+
+        $this->assertNotContains('Zz Draft Hit', $titles);
+        $this->assertNotContains('Zz No Activity', $titles);
+    }
+
+    public function test_homepage_shows_trending_with_real_like_counts(): void
+    {
+        $post = $this->makePost('Zz Homepage Trending Story', 3, 1);
+        $this->addLikes($post, 2);
+
+        $this->get(url('/'))
+            ->assertOk()
+            ->assertSee('Trending')
+            ->assertSee('Zz Homepage Trending Story');
+    }
+}

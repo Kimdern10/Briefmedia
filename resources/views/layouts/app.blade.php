@@ -126,12 +126,14 @@
 
     <!-- ================= SCRIPTS ================= -->
     <script src="{{ route('theme.asset', ['js', 'bm-site.js']) }}?v={{ filemtime(public_path('assets/js/bm-site.js')) }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js"></script>
+    <script src="{{ route('theme.asset', ['js', 'bm-alerts.js']) }}?v={{ filemtime(public_path('assets/js/bm-alerts.js')) }}"></script>
 
     <!-- Session messages (auth pages show them inline instead) -->
     @unless (View::hasSection('auth_page'))
-        @foreach (['success', 'message', 'info', 'warning', 'error'] as $flashKey)
+        @foreach (['success' => 'success', 'message' => 'success', 'info' => 'info', 'warning' => 'warning', 'error' => 'error'] as $flashKey => $flashTone)
             @if (session($flashKey))
-                <script>window.bmToast(@json(session($flashKey)), 4500);</script>
+                <script>window.bmToast(@json(session($flashKey)), @json($flashTone), 4500);</script>
                 @break
             @endif
         @endforeach

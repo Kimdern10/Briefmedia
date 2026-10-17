@@ -54,20 +54,9 @@
         </div>
     </div>
 
-    <!-- Confirmation dialog used by forms with data-confirm -->
-    <dialog class="ad-dialog" id="ad-confirm">
-        <div class="ad-dialog__body">
-            <div class="ad-dialog__icon"><i class="bi bi-exclamation-triangle"></i></div>
-            <h3 class="ad-dialog__title">Are you sure?</h3>
-            <p class="ad-dialog__text"></p>
-        </div>
-        <div class="ad-dialog__foot">
-            <button type="button" class="ad-btn ad-btn--ghost" data-confirm-cancel>Cancel</button>
-            <button type="button" class="ad-btn ad-btn--danger" data-confirm-ok>Confirm</button>
-        </div>
-    </dialog>
-
     <script src="{{ route('theme.asset', ['js', 'bm-admin.js']) }}?v={{ filemtime(public_path('assets/js/bm-admin.js')) }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js"></script>
+    <script src="{{ route('theme.asset', ['js', 'bm-alerts.js']) }}?v={{ filemtime(public_path('assets/js/bm-alerts.js')) }}"></script>
 
     @foreach (['success' => 'success', 'message' => 'success', 'info' => 'info', 'warning' => 'warning', 'error' => 'error'] as $flashKey => $flashTone)
         @if (session()->has($flashKey))
@@ -77,6 +66,10 @@
     @endforeach
 
     @livewireScripts
+    <script>
+        // Toasts sent by admin Livewire components ($this->toast(...))
+        window.addEventListener('admin-toast', (event) => window.adToast(event.detail.message, event.detail.tone || 'success'));
+    </script>
     @stack('scripts')
 </body>
 </html>

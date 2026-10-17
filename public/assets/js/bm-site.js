@@ -10,6 +10,11 @@
     /* ---------- Toast ---------- */
     let toastTimer;
     function toast(message, duration = 2200) {
+        // SweetAlert version from bm-alerts.js when available
+        if (window.Swal && window.bmToast !== toast) {
+            window.bmToast(message, 'success', Math.max(duration, 2500));
+            return;
+        }
         let el = $('.bm-toast');
         if (!el) {
             el = document.createElement('div');
@@ -22,7 +27,7 @@
         clearTimeout(toastTimer);
         toastTimer = setTimeout(() => el.classList.remove('is-visible'), duration);
     }
-    window.bmToast = toast;
+    if (!window.bmToast) { window.bmToast = toast; }
 
     /* ---------- Theme ---------- */
     function setTheme(theme) {

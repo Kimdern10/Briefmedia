@@ -5,12 +5,9 @@
     $placeholderImage = route('theme.asset', ['img', 'bm-placeholder.svg']);
     $imageFor = fn ($post) => $post->featured_image_1 ? asset('storage/' . $post->featured_image_1) : $placeholderImage;
 
-    // Trending: posts that have views or likes, most viewed first (max 8)
-    $filteredTrending = collect($trendingPosts ?? [])
-        ->filter(fn ($post) => $post->views > 0 || ($post->likes_count ?? 0) > 0)
-        ->sortByDesc(fn ($post) => [$post->views, $post->likes_count ?? 0])
-        ->values()
-        ->take(8);
+    // Trending: already ranked by Post::trendingNow() (views + likes x2 + comments x3)
+    $filteredTrending = collect($trendingPosts ?? [])->take(8);
+    $mostReadToday = \App\Models\Post::mostReadToday(5);
 @endphp
 
 <main>
@@ -29,8 +26,16 @@
                                      @if($index > 0) loading="lazy" @endif
                                      onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
                                 <div class="bm-hero__content">
+                                    @if($post->isBreaking())
+                                        <span class="bm-chip bm-chip--breaking">Breaking</span>
+                                    @elseif($post->isHeadline())
+                                        <span class="bm-chip bm-chip--light">Headline</span>
+                                    @endif
                                     @if($post->category)
                                         <a href="{{ route('category.page', $post->category->slug) }}" class="bm-chip bm-chip--light">{{ $post->category->name }}</a>
+                                    @endif
+                                    @if($post->video_url)
+                                        <span class="bm-chip bm-chip--light"><i class="bi bi-play-fill"></i> Video</span>
                                     @endif
                                     <h2 class="bm-hero__title">
                                         <a href="{{ route('posts.show', $post) }}">{{ $post->title }}</a>
@@ -39,7 +44,7 @@
                                         <p class="bm-hero__excerpt">{{ Str::limit($post->excerpt, 180) }}</p>
                                     @endif
                                     <div class="bm-meta">
-                                        <span>Posted by <strong>{{ optional($post->admin)->name ?? 'BriefMedia' }}</strong></span>
+                                        <span>Posted by <a href="{{ $post->authorUrl() }}" class="bm-author-link"><strong>{{ $post->authorDisplayName() }}</strong></a></span>
                                         <span>{{ $post->created_at->format('F j, Y') }}</span>
                                         <span><i class="bi bi-clock"></i> {{ $post->reading_time }}</span>
                                         <span><i class="bi bi-chat"></i> {{ $post->comments_count ?? 0 }}</span>
@@ -66,7 +71,7 @@
                                 <span>
                                     <span class="bm-hero__item-cat">{{ optional($post->category)->name ?? 'Story' }}</span>
                                     <span class="bm-hero__item-title">{{ $post->title }}</span>
-                                    <span class="bm-posted-by">Posted by <strong>{{ optional($post->admin)->name ?? 'BriefMedia' }}</strong></span>
+                                    <span class="bm-posted-by">Posted by <strong>{{ $post->authorDisplayName() }}</strong></span>
                                 </span>
                                 <span class="bm-hero__progress"></span>
                             </button>
@@ -106,6 +111,9 @@
                                 <img src="{{ $imageFor($trending) }}" alt="{{ $trending->title }}" loading="lazy"
                                      onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
                                 <span class="bm-trend__rank">{{ $index + 1 }}</span>
+                                @if($trending->trend_pinned ?? false)
+                                    <span class="bm-trend__featured">🔥 Featured</span>
+                                @endif
                             </a>
                             <div>
                                 <div class="bm-meta" style="margin-bottom: 6px;">
@@ -116,10 +124,11 @@
                                 <h3 class="bm-trend__title">
                                     <a href="{{ route('posts.show', $trending) }}">{{ Str::limit($trending->title, 80) }}</a>
                                 </h3>
-                                <p class="bm-posted-by" style="margin-top: 6px !important;">Posted by <strong>{{ optional($trending->admin)->name ?? 'BriefMedia' }}</strong></p>
+                                <p class="bm-posted-by" style="margin-top: 6px !important;">Posted by <a href="{{ $trending->authorUrl() }}" class="bm-author-link"><strong>{{ $trending->authorDisplayName() }}</strong></a></p>
                                 <div class="bm-meta" style="margin-top: 8px;">
                                     <span><i class="bi bi-eye"></i> {{ number_format($trending->views ?? 0) }}</span>
-                                    <span><i class="bi bi-heart"></i> {{ $trending->likes_count ?? $trending->likedByUsers->count() }}</span>
+                                    <span><i class="bi bi-heart"></i> {{ $trending->trend_likes ?? 0 }}</span>
+                                    <span><i class="bi bi-chat"></i> {{ $trending->trend_comments ?? 0 }}</span>
                                 </div>
                             </div>
                         </article>
@@ -129,6 +138,33 @@
                 @if($filteredTrending->count() < 8)
                     <p class="bm-trending-empty">Showing {{ $filteredTrending->count() }} trending {{ Str::plural('story', $filteredTrending->count()) }}</p>
                 @endif
+            </div>
+        </section>
+    @endif
+
+    <!-- ================= MOST READ TODAY ================= -->
+    @if($mostReadToday->isNotEmpty())
+        <section class="bm-section bm-section--tight">
+            <div class="bm-container">
+                <div class="bm-section__head">
+                    <div>
+                        <span class="bm-section__eyebrow"><i class="bi bi-graph-up-arrow"></i> {{ now()->format('l, j F') }}</span>
+                        <h2 class="bm-section__title">Most read today</h2>
+                    </div>
+                </div>
+                <ol class="bm-most-read" style="list-style: none; margin: 0; padding: 0;">
+                    @foreach($mostReadToday as $readPost)
+                        <li class="bm-most-read__item">
+                            <span class="bm-most-read__rank">{{ $loop->iteration }}</span>
+                            <div>
+                                <a href="{{ route('posts.show', $readPost) }}" class="bm-most-read__title">{{ $readPost->title }}</a>
+                                <span class="bm-most-read__meta">
+                                    {{ optional($readPost->category)->name ?? 'Story' }} · {{ number_format($readPost->views_today) }} {{ Str::plural('read', $readPost->views_today) }}
+                                </span>
+                            </div>
+                        </li>
+                    @endforeach
+                </ol>
             </div>
         </section>
     @endif

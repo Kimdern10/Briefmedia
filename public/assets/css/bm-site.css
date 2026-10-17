@@ -1541,3 +1541,92 @@ body.bm {
 .bm-reply-toggle:hover { color: var(--bm-accent); }
 .bm-reply-form { margin-top: 10px; }
 .bm-reply-form textarea { min-height: 70px; }
+
+/* Admin-picked trending story */
+.bm-trend__featured {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: var(--bm-accent);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .25);
+}
+
+/* ---------- Breaking news ---------- */
+.bm-topbar--breaking { background: #c8102e; color: #fff; }
+.bm-topbar--breaking .bm-ticker__label { display: inline-flex; align-items: center; gap: 6px; background: #fff; color: #c8102e; }
+.bm-topbar--breaking .bm-ticker__items a { opacity: 1; font-weight: 600; }
+.bm-topbar--breaking .bm-ticker__items a:hover { color: #fff; text-decoration: underline; }
+.bm-topbar--breaking .bm-topbar__date, .bm-topbar--breaking .bm-topbar__social a { opacity: .9; color: #fff; }
+.bm-ticker__pulse { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: bm-blink 1s ease-in-out infinite; }
+@keyframes bm-blink { 50% { opacity: .25; } }
+
+.bm-chip--breaking { background: #c8102e !important; color: #fff !important; }
+.bm-chip--video { background: var(--bm-ink) !important; color: var(--bm-bg) !important; }
+
+/* ---------- Video on the article page ---------- */
+.bm-video {
+    position: relative;
+    margin: 0 0 32px;
+    aspect-ratio: 16 / 9;
+    border-radius: var(--bm-radius);
+    overflow: hidden;
+    background: #000;
+    box-shadow: var(--bm-shadow);
+}
+.bm-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.bm-card__play {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    display: grid;
+    place-items: center;
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, .55);
+    color: #fff;
+    font-size: 26px;
+    transform: translate(-50%, -50%);
+    backdrop-filter: blur(4px);
+    pointer-events: none;
+}
+
+/* ---------- Photo caption and credit ---------- */
+.bm-article__hero:has(+ .bm-photo-caption) { margin-bottom: 12px; }
+.bm-photo-caption {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 16px;
+    max-width: 1160px;
+    margin: 0 auto 40px !important;
+    padding: 0 6px;
+    color: var(--bm-muted);
+    font-size: 13.5px;
+    line-height: 1.5;
+}
+.bm-photo-caption__credit { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; white-space: nowrap; }
+@media (max-width: 640px) { .bm-photo-caption { padding: 0; flex-direction: column; } }
+.bm-pending { padding: 1px 8px; border-radius: 999px; background: rgba(214, 145, 18, .14); color: #b5760a; font-size: 11px; font-weight: 700; }
+
+/* ---------- Writer pages ---------- */
+.bm-writer-hero { display: flex; align-items: center; gap: 28px; }
+.bm-writer-hero__photo { flex-shrink: 0; width: 120px; height: 120px; border-radius: 999px; object-fit: cover; object-position: 50% 25%; box-shadow: 0 0 0 4px var(--bm-surface), 0 0 0 5px var(--bm-line); }
+.bm-posted-by a:hover strong, a.bm-author-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 640px) { .bm-writer-hero { flex-direction: column; align-items: flex-start; gap: 16px; } .bm-writer-hero__photo { width: 88px; height: 88px; } }
+
+/* ---------- Most read today ---------- */
+.bm-most-read { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px; counter-reset: most-read; }
+.bm-most-read__item { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; padding-top: 14px; border-top: 2px solid var(--bm-ink); }
+.bm-most-read__rank { font-family: var(--bm-serif); font-size: 34px; font-weight: 700; line-height: .9; color: var(--bm-accent); }
+.bm-most-read__title { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; font-family: var(--bm-serif); font-size: 15.5px; font-weight: 600; line-height: 1.3; }
+.bm-most-read__title:hover { color: var(--bm-accent); }
+.bm-most-read__meta { display: block; margin-top: 6px; color: var(--bm-muted); font-size: 12px; }
+@media (max-width: 1080px) { .bm-most-read { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .bm-most-read { grid-template-columns: minmax(0, 1fr); } }

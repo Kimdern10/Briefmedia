@@ -1,13 +1,14 @@
 <?php
+
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\Post;
 use App\Models\Category;
 use App\Models\Comment;
+use App\Models\Post;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
-use Illuminate\Http\Request;
 
 class CategoryPostController extends Controller
 {
@@ -17,10 +18,10 @@ class CategoryPostController extends Controller
     public function category(Category $category)
     {
         $posts = Post::with([
-                'category',
-                'admin',
-                'likedByUsers'
-            ])
+            'category',
+            'admin',
+            'likedByUsers',
+        ])
             ->withCount(['comments', 'likedByUsers'])
             ->where('category_id', $category->id)
             ->where('status', 'published')
@@ -36,10 +37,7 @@ class CategoryPostController extends Controller
             ->take(5)
             ->get();
 
-        $trendingPosts = Post::where('status', 'published')
-            ->orderByDesc('views')
-            ->take(4)
-            ->get();
+        $trendingPosts = Post::trendingNow(5, 3);
 
         return view('user.posts.category', compact(
             'category',
@@ -53,79 +51,81 @@ class CategoryPostController extends Controller
     /* ===============================
      | Show single post
      |===============================*/
-  public function show(Post $post)
-{
-    $user = Auth::user();
+    public function show(Post $post)
+    {
+        $user = Auth::user();
 
-    if ($user) {
-        // Logged in user - check database
-        if (!$post->viewedByUsers()->where('user_id', $user->id)->exists()) {
-            $post->increment('views');
-            $post->viewedByUsers()->attach($user->id);
+        if ($user) {
+            // Logged in user - check database
+            if (! $post->viewedByUsers()->where('user_id', $user->id)->exists()) {
+                $post->increment('views');
+                Post::recordDailyView($post->id);
+                $post->viewedByUsers()->attach($user->id);
+            }
+        } else {
+            // Guest user - check cookie
+            $cookieName = 'viewed_post_'.$post->id;
+
+            // Use request()->cookie() instead of Cookie::has()
+            if (! request()->hasCookie($cookieName)) {
+                $post->increment('views');
+                Post::recordDailyView($post->id);
+                // Queue the cookie for 30 days
+                Cookie::queue($cookieName, true, 60 * 24 * 30);
+            }
         }
-    } else {
-        // Guest user - check cookie
-        $cookieName = 'viewed_post_' . $post->id;
-        
-        // Use request()->cookie() instead of Cookie::has()
-        if (!request()->hasCookie($cookieName)) {
-            $post->increment('views');
-            // Queue the cookie for 30 days
-            Cookie::queue($cookieName, true, 60 * 24 * 30);
-        }
+
+        // Load post relationships
+        $post->load([
+            'category',
+            'likedByUsers',
+            'comments' => function ($q) {
+                $q->whereNull('parent_id')
+                    ->with('replies.user', 'user')
+                    ->latest();
+            },
+        ])->loadCount(['comments', 'likedByUsers']);
+
+        $relatedPosts = Post::where('status', 'published')
+            ->where('category_id', $post->category_id)
+            ->where('id', '!=', $post->id)
+            ->latest()
+            ->take(4)
+            ->get();
+
+        $latestPosts = Post::where('status', 'published')->latest()->take(5)->get();
+
+        return view('user.posts.show', compact(
+            'post',
+            'relatedPosts',
+            'latestPosts'
+        ));
     }
-
-    // Load post relationships
-    $post->load([
-        'category',
-        'likedByUsers',
-        'comments' => function ($q) {
-            $q->whereNull('parent_id')
-              ->with('replies.user', 'user')
-              ->latest();
-        }
-    ])->loadCount(['comments', 'likedByUsers']);
-
-    $relatedPosts = Post::where('status', 'published')
-        ->where('category_id', $post->category_id)
-        ->where('id', '!=', $post->id)
-        ->latest()
-        ->take(4)
-        ->get();
-
-    $latestPosts = Post::where('status', 'published')->latest()->take(5)->get();
-
-    return view('user.posts.show', compact(
-        'post',
-        'relatedPosts',
-        'latestPosts'
-    ));
-}
 
     /* ===============================
      | Like / Unlike (Form-based - No AJAX)
      |===============================*/
-   public function toggleLike(Post $post)
-{
-    $user = auth()->user();
-    
-    if (!$user) {
-        return response()->json(['error' => 'Not authenticated'], 401);
-    }
+    public function toggleLike(Post $post)
+    {
+        $user = auth()->user();
 
-    if ($post->likedByUsers()->where('user_id', $user->id)->exists()) {
-        $post->likedByUsers()->detach($user->id);
-        $liked = false;
-    } else {
-        $post->likedByUsers()->attach($user->id);
-        $liked = true;
-    }
+        if (! $user) {
+            return response()->json(['error' => 'Not authenticated'], 401);
+        }
 
-    return response()->json([
-        'liked' => $liked,
-        'likes_count' => $post->likedByUsers()->count()
-    ]);
-}
+        if ($post->likedByUsers()->where('user_id', $user->id)->exists()) {
+            $post->likedByUsers()->detach($user->id);
+            $liked = false;
+        } else {
+            $post->likedByUsers()->attach($user->id);
+            $liked = true;
+        }
+
+        return response()->json([
+            'liked' => $liked,
+            'likes_count' => $post->likedByUsers()->count(),
+        ]);
+    }
 
     /* ===============================
      | Store Comment / Reply
@@ -133,23 +133,24 @@ class CategoryPostController extends Controller
     public function storeComment(Request $request, Post $post)
     {
         $request->validate([
-            'content'   => 'required|string|max:2000',
+            'content' => 'required|string|max:2000',
             'parent_id' => 'nullable|exists:post_comments,id',
         ]);
 
         $user = Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             return redirect()
                 ->route('login')
                 ->with('error', 'Login required to comment.');
         }
 
         Comment::create([
-            'post_id'   => $post->id,
-            'user_id'   => $user->id,
-            'content'   => $request->content,
+            'post_id' => $post->id,
+            'user_id' => $user->id,
+            'content' => $request->content,
             'parent_id' => $request->parent_id,
+            'approved_at' => Comment::approvedAtFor($user),
         ]);
 
         return back()->with('success', 'Comment added successfully.');

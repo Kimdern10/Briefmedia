@@ -17,7 +17,9 @@
 
         <div class="ad-dropdown">
             <button type="button" class="ad-avatar-btn" data-dropdown-toggle aria-label="Account menu">
-                <span class="ad-initial">{{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}</span>
+                <img class="ad-avatar" src="{{ auth()->user()->avatarUrl() }}" alt=""
+                     x-data @profile-photo-updated.window="if ($event.detail.url) { $el.src = $event.detail.url }"
+                     onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=e4407f&color=fff&size=120'">
                 <span>{{ Str::before(auth()->user()->name ?? 'Admin', ' ') }}</span>
                 <i class="bi bi-chevron-down" style="font-size: 11px;"></i>
             </button>
@@ -27,7 +29,7 @@
                     <small>{{ auth()->user()->email }}</small>
                 </div>
                 <a href="{{ url('/') }}" target="_blank" class="ad-dropdown__item"><i class="bi bi-box-arrow-up-right"></i> View website</a>
-                <a href="{{ route('profile') }}" class="ad-dropdown__item"><i class="bi bi-person"></i> My profile</a>
+                <a href="{{ route('admin.profile') }}" class="ad-dropdown__item"><i class="bi bi-person"></i> My profile</a>
                 <form action="{{ route('logout') }}" method="POST">
                     @csrf
                     <button type="submit" class="ad-dropdown__item"><i class="bi bi-box-arrow-right"></i> Sign out</button>

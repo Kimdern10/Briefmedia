@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\Admin\PostsTable;
 use App\Models\Category;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class AdminPostFilterTest extends TestCase
@@ -90,7 +92,16 @@ class AdminPostFilterTest extends TestCase
             ->assertSee('Wombat Published Story 12')
             ->assertDontSee($this->oldDraft->title);
 
-        // 12 matches at 10 per page: the next-page link must keep the search and status
-        $response->assertSee('q=Wombat', false)->assertSee('status=published', false);
+        // 12 matches at 10 per page: going to page 2 keeps the search and status filter
+        Livewire::actingAs($this->admin)
+            ->withQueryParams(['q' => 'Wombat', 'status' => 'published'])
+            ->test(PostsTable::class, ['mode' => 'active'])
+            ->assertSet('search', 'Wombat')
+            ->assertSet('status', 'published')
+            ->call('nextPage')
+            ->assertSee('Wombat Published Story 1')
+            ->assertSee('Wombat Published Story 2')
+            ->assertDontSee('Wombat Published Story 12')
+            ->assertDontSee($this->oldDraft->title);
     }
 }

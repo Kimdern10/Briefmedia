@@ -6,9 +6,13 @@
     $postDescription = Str::limit(strip_tags($post->content ?? $post->excerpt), 160);
     $postImage = asset('storage/' . ($post->featured_image_1 ?? 'default.jpg'));
     $placeholderImage = route('theme.asset', ['img', 'bm-placeholder.svg']);
-    $authorName = optional($post->admin)->name ?? 'BriefMedia';
+    $authorName = $post->authorDisplayName();
     $authorFallbackPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($authorName) . '&background=e4407f&color=fff&size=120';
-    $authorPhoto = optional(optional($post->admin)->Userprofile)->photoUrl() ?? $authorFallbackPhoto;
+    // A typed-in writer's name gets an initial avatar; otherwise use the posting admin's photo
+    $authorPhoto = trim((string) $post->author_name) !== ''
+        ? $authorFallbackPhoto
+        : (optional(optional($post->admin)->Userprofile)->photoUrl() ?? $authorFallbackPhoto);
+    $videoEmbedUrl = $post->videoEmbedUrl();
     $extraImages = collect([$post->featured_image_3, $post->featured_image_4])->filter();
 @endphp
 
@@ -57,7 +61,13 @@
             </nav>
 
             @if($post->category)
+                @if($post->isBreaking())
+                    <span class="bm-chip bm-chip--breaking">Breaking</span>
+                @endif
                 <a href="{{ route('category.page', $post->category->slug) }}" class="bm-chip">{{ $post->category->name }}</a>
+                @if($videoEmbedUrl)
+                    <span class="bm-chip bm-chip--video"><i class="bi bi-play-fill"></i> Video</span>
+                @endif
             @endif
 
             <h1 class="bm-article__title">{{ $post->title }}</h1>
@@ -70,7 +80,7 @@
                 <span class="bm-byline">
                     <img class="bm-byline__avatar" src="{{ $authorPhoto }}" alt="{{ $authorName }}"
                          onerror="this.onerror=null;this.src='{{ $authorFallbackPhoto }}'">
-                    <span>Posted by <strong>{{ $authorName }}</strong></span>
+                    <span>Posted by <a href="{{ $post->authorUrl() }}" class="bm-author-link"><strong>{{ $authorName }}</strong></a></span>
                 </span>
                 <span>{{ $post->created_at->format('F j, Y') }}</span>
                 <span><i class="bi bi-clock"></i> {{ $post->reading_time }}</span>
@@ -84,6 +94,12 @@
                  alt="{{ $post->title }}"
                  onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
         </figure>
+        @if($post->image_caption || $post->image_credit)
+            <p class="bm-photo-caption">
+                @if($post->image_caption)<span>{{ $post->image_caption }}</span>@endif
+                @if($post->image_credit)<span class="bm-photo-caption__credit"><i class="bi bi-camera"></i> Photo: {{ $post->image_credit }}</span>@endif
+            </p>
+        @endif
 
         <!-- ================= BODY ================= -->
         <div class="bm-article-layout">
@@ -98,6 +114,14 @@
             </aside>
 
             <article>
+                @if($videoEmbedUrl)
+                    <div class="bm-video">
+                        <iframe src="{{ $videoEmbedUrl }}" title="{{ $post->title }}" loading="lazy"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                @endif
+
                 @if($post->featured_image_2)
                     <figure class="bm-figure" style="margin-top: 0;">
                         <img src="{{ asset('storage/' . $post->featured_image_2) }}" alt="{{ $post->title }}" loading="lazy"
@@ -140,6 +164,24 @@
 
             <!-- ================= SIDEBAR ================= -->
             <aside class="bm-sidebar">
+                @php $sidebarMostRead = \App\Models\Post::mostReadToday(5)->reject(fn ($p) => $p->id === $post->id); @endphp
+                @if($sidebarMostRead->isNotEmpty())
+                    <div class="bm-widget">
+                        <h5 class="bm-widget__title"><i class="bi bi-graph-up-arrow"></i> Most read today</h5>
+                        <ol class="bm-mini-list" style="list-style: none; margin: 0; padding: 0;">
+                            @foreach($sidebarMostRead as $readPost)
+                                <li style="display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; align-items: start;">
+                                    <span class="bm-most-read__rank" style="font-size: 22px;">{{ $loop->iteration }}</span>
+                                    <div>
+                                        <p class="bm-mini__title"><a href="{{ route('posts.show', $readPost) }}">{{ $readPost->title }}</a></p>
+                                        <div class="bm-meta"><span>{{ number_format($readPost->views_today) }} {{ Str::plural('read', $readPost->views_today) }} today</span></div>
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ol>
+                    </div>
+                @endif
+
                 <div class="bm-widget">
                     <h5 class="bm-widget__title"><i class="bi bi-lightning-charge-fill"></i> Latest posts</h5>
                     <ul class="bm-mini-list">

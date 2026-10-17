@@ -6,7 +6,8 @@
 @php
     $editing = isset($post) && $post;
     $autoSeo = (bool) old('enable_auto_seo', $editing ? ($post->enable_auto_seo ?? true) : true);
-    $statusValue = old('status', $editing ? $post->status : 'draft');
+    $statusValue = old('status', $editing ? ($post->isScheduled() ? 'scheduled' : $post->status) : 'draft');
+    $publishAtValue = old('publish_at', $editing && $post->publish_at ? $post->publish_at->format('Y-m-d\TH:i') : '');
     $previewTitle = old('meta_title', $editing ? ($post->meta_title ?? $post->title) : null) ?: old('title', $editing ? $post->title : 'Post title');
     $previewDescription = old('meta_description', $editing ? $post->meta_description : null) ?: 'Post description will appear here…';
     $previewUrl = url('/') . '/posts/' . ($editing ? $post->slug : Str::slug(old('title', 'sample-post')));
@@ -97,6 +98,25 @@
                                 @enderror
                             </div>
                         @endforeach
+                    </div>
+
+                    <div class="ad-grid ad-grid--2" style="gap: 0 16px; margin-top: 18px;">
+                        <div class="ad-field">
+                            <label class="ad-label" for="image_caption">Cover photo caption <small>Optional</small></label>
+                            <input type="text" name="image_caption" id="image_caption" maxlength="255"
+                                   class="ad-input @error('image_caption') is-invalid @enderror"
+                                   value="{{ old('image_caption', $editing ? $post->image_caption : '') }}"
+                                   placeholder="Governor Soludo at Eke Awka market on Monday">
+                            @error('image_caption') <span class="ad-error">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="ad-field">
+                            <label class="ad-label" for="image_credit">Photo credit <small>Optional</small></label>
+                            <input type="text" name="image_credit" id="image_credit" maxlength="120"
+                                   class="ad-input @error('image_credit') is-invalid @enderror"
+                                   value="{{ old('image_credit', $editing ? $post->image_credit : '') }}"
+                                   placeholder="BriefMedia / Chioma Agbomma">
+                            @error('image_credit') <span class="ad-error">{{ $message }}</span> @enderror
+                        </div>
                     </div>
                 </div>
             </div>
@@ -299,8 +319,21 @@
                                 <input type="radio" name="status" value="published" {{ $statusValue === 'published' ? 'checked' : '' }}>
                                 <span><i class="bi bi-globe2"></i> Published</span>
                             </label>
+                            <label class="ad-status-option" style="grid-column: 1 / -1;">
+                                <input type="radio" name="status" value="scheduled" {{ $statusValue === 'scheduled' ? 'checked' : '' }}>
+                                <span><i class="bi bi-calendar-event"></i> Schedule for later</span>
+                            </label>
                         </div>
                         @error('status') <span class="ad-error">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div class="ad-field" id="publish-at-field" style="{{ $statusValue === 'scheduled' ? '' : 'display: none;' }}">
+                        <label class="ad-label" for="publish_at">Go live on</label>
+                        <input type="datetime-local" name="publish_at" id="publish_at" value="{{ $publishAtValue }}"
+                               min="{{ now()->addMinutes(5)->format('Y-m-d\TH:i') }}"
+                               class="ad-input @error('publish_at') is-invalid @enderror">
+                        <div class="ad-help"><span>Nigeria time ({{ config('app.timezone') }}). The post publishes itself at this time.</span></div>
+                        @error('publish_at') <span class="ad-error">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="ad-field">
@@ -335,6 +368,75 @@
                 </div>
             </div>
 
+            @php
+                $breakingChecked = (bool) old('is_breaking', $editing ? $post->isBreaking() : false);
+                $headlineChecked = (bool) old('is_headline', $editing ? $post->isHeadline() : false);
+            @endphp
+            <div class="ad-card">
+                <div class="ad-card__head"><h3 class="ad-card__title"><i class="bi bi-megaphone"></i> News options</h3></div>
+                <div class="ad-card__body">
+                    <div class="ad-field">
+                        <label class="ad-label" for="author_name">Written by <small>Optional</small></label>
+                        <input type="text" name="author_name" id="author_name" maxlength="120"
+                               class="ad-input @error('author_name') is-invalid @enderror"
+                               value="{{ old('author_name', $editing ? $post->author_name : '') }}"
+                               placeholder="{{ auth()->user()->name }}">
+                        <div class="ad-help"><span>Shown as “Posted by …”. Leave empty to use your name.</span></div>
+                        @error('author_name') <span class="ad-error">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div class="ad-field">
+                        <label class="ad-check" for="is_headline">
+                            <input type="hidden" name="is_headline" value="0">
+                            <input type="checkbox" name="is_headline" id="is_headline" value="1" {{ $headlineChecked ? 'checked' : '' }}>
+                            <span>
+                                <strong>Headline news</strong>
+                                <small>
+                                    @if($editing && $post->isHeadline())
+                                        Headline until {{ $post->headline_until->format('j M, g:i A') }}. Untick to stop now.
+                                    @else
+                                        Show first in the big homepage slider for {{ \App\Models\Post::HEADLINE_HOURS / 24 }} day
+                                    @endif
+                                </small>
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="ad-field">
+                        <label class="ad-check" for="is_breaking">
+                            <input type="hidden" name="is_breaking" value="0">
+                            <input type="checkbox" name="is_breaking" id="is_breaking" value="1" {{ $breakingChecked ? 'checked' : '' }}>
+                            <span>
+                                <strong style="color: var(--ad-red);">Breaking news</strong>
+                                <small>
+                                    @if($editing && $post->isBreaking())
+                                        Breaking until {{ $post->breaking_until->format('j M, g:i A') }}. Untick to stop now.
+                                    @else
+                                        Red “Breaking” bar at the top of every page for {{ \App\Models\Post::BREAKING_HOURS / 24 }} day
+                                    @endif
+                                </small>
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="ad-field">
+                        <label class="ad-label" for="video_url">Video link <small>Optional</small></label>
+                        <input type="url" name="video_url" id="video_url" maxlength="500"
+                               class="ad-input @error('video_url') is-invalid @enderror"
+                               value="{{ old('video_url', $editing ? $post->video_url : '') }}"
+                               placeholder="https://www.youtube.com/watch?v=…">
+                        <div class="ad-help"><span>YouTube, Facebook or Vimeo. The video plays at the top of the story.</span></div>
+                        @error('video_url') <span class="ad-error">{{ $message }}</span> @enderror
+                        @if($editing && $post->videoEmbedUrl())
+                            <div class="ad-video-preview">
+                                <iframe src="{{ $post->videoEmbedUrl() }}" title="Video preview" loading="lazy"
+                                        allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
             <div class="ad-card">
                 <div class="ad-card__body" style="font-size: 13px; color: var(--ad-muted);">
                     <strong style="color: var(--ad-ink);"><i class="bi bi-lightbulb" style="color: var(--ad-amber);"></i> Tips</strong>
@@ -354,6 +456,14 @@
 <script>
 (function () {
     const form = document.getElementById('post-form');
+
+    // Show the date picker only when "Schedule for later" is chosen
+    const publishAtField = document.getElementById('publish-at-field');
+    form.querySelectorAll('input[name=status]').forEach((radio) => radio.addEventListener('change', () => {
+        const scheduled = form.querySelector('input[name=status]:checked').value === 'scheduled';
+        publishAtField.style.display = scheduled ? '' : 'none';
+        if (scheduled) { document.getElementById('publish_at').focus(); }
+    }));
     const contentField = document.getElementById('editor');
 
     // Rich text editor (the plain textarea stays usable if the CDN is unreachable)
@@ -371,6 +481,10 @@
         if (!form.title.value.trim()) { problems.push('Add a title.'); }
         if (!contentField.value.trim()) { problems.push('Write some content.'); }
         if (!form.category_id.value) { problems.push('Choose a category.'); }
+        const statusChoice = form.querySelector('input[name=status]:checked');
+        if (statusChoice && statusChoice.value === 'scheduled' && !document.getElementById('publish_at').value) {
+            problems.push('Pick the date and time to publish.');
+        }
         const cover = form.querySelector('[name=featured_image_1]');
         if (cover.required && !cover.files.length) { problems.push('Upload a cover image.'); }
 

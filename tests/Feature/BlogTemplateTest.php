@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\ChangePassword;
 use App\Models\Category;
 use App\Models\Comment;
 use App\Models\Post;
@@ -140,7 +141,7 @@ class BlogTemplateTest extends TestCase
             ->get(route('profile'))
             ->assertOk()
             ->assertSee('bm-account', false)
-            ->assertSee(route('password-update'), false);
+            ->assertSeeLivewire(ChangePassword::class);
     }
 
     public function test_admin_pages_render_with_the_new_admin_layout(): void

@@ -15,10 +15,16 @@
         <img src="{{ $post->featured_image_1 ? asset('storage/' . $post->featured_image_1) : route('theme.asset', ['img', 'bm-placeholder.svg']) }}"
              alt="{{ $post->title }}" loading="lazy"
              onerror="this.onerror=null;this.src='{{ route('theme.asset', ['img', 'bm-placeholder.svg']) }}'">
+        @if($post->video_url)
+            <span class="bm-card__play"><i class="bi bi-play-fill"></i></span>
+        @endif
     </a>
 
     <div class="bm-card__body">
         <div class="bm-meta">
+            @if($post->isBreaking())
+                <span class="bm-chip bm-chip--breaking">Breaking</span>
+            @endif
             @if($cardCategory)
                 @if($cardCategorySlug)
                     <a href="{{ route('category.page', $cardCategorySlug) }}" class="bm-chip">{{ $cardCategory }}</a>
@@ -36,7 +42,7 @@
         </h3>
 
         <p class="bm-posted-by">
-            Posted by <strong>{{ optional($post->admin)->name ?? 'BriefMedia' }}</strong>
+            Posted by <a href="{{ $post->authorUrl() }}" class="bm-author-link"><strong>{{ $post->authorDisplayName() }}</strong></a>
             <span aria-hidden="true">·</span>
             <time datetime="{{ $post->created_at->toDateString() }}">{{ $post->created_at->format('M j, Y') }}</time>
         </p>

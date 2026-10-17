@@ -3,50 +3,25 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Post;
 use App\Models\Category;
+use App\Models\Post;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class PostController extends Controller
 {
     /* ===============================
         ACTIVE POSTS LIST
     =============================== */
-    public function index(Request $request)
+    public function index()
     {
-        $search = trim((string) $request->query('q', ''));
-        $status = in_array($request->query('status'), ['draft', 'published'], true)
-            ? $request->query('status')
-            : 'all';
-
-        $matchingSearch = Post::query()
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($query) use ($search) {
-                    $query->where('title', 'LIKE', "%{$search}%")
-                        ->orWhere('excerpt', 'LIKE', "%{$search}%")
-                        ->orWhereHas('category', fn ($category) => $category->where('name', 'LIKE', "%{$search}%"));
-                });
-            });
-
-        $statusCounts = [
-            'all' => (clone $matchingSearch)->count(),
-            'published' => (clone $matchingSearch)->where('status', 'published')->count(),
-            'draft' => (clone $matchingSearch)->where('status', 'draft')->count(),
-        ];
-
-        $posts = $matchingSearch
-            ->with(['category', 'admin'])
-            ->when($status !== 'all', fn ($query) => $query->where('status', $status))
-            ->latest()
-            ->paginate(10)
-            ->withQueryString();
-
-        return view('admin.posts.index', compact('posts', 'search', 'status', 'statusCounts'));
+        // The list, search and filters live in the Livewire component Admin\PostsTable.
+        return view('admin.posts.index');
     }
 
     /* ===============================
@@ -54,12 +29,8 @@ class PostController extends Controller
     =============================== */
     public function trash()
     {
-        $posts = Post::onlyTrashed()
-            ->with(['category', 'admin'])
-            ->latest()
-            ->paginate(10);
-
-        return view('admin.posts.trash', compact('posts'));
+        // The trash list lives in the Livewire component Admin\PostsTable (mode "trash").
+        return view('admin.posts.trash');
     }
 
     /* ===============================
@@ -68,6 +39,7 @@ class PostController extends Controller
     public function create()
     {
         $categories = Category::all();
+
         return view('admin.posts.create', compact('categories'));
     }
 
@@ -82,8 +54,11 @@ class PostController extends Controller
             'featured_image_2' => 'nullable|image|max:5120',
             'featured_image_3' => 'nullable|image|max:5120',
             'featured_image_4' => 'nullable|image|max:5120',
-            'status' => 'required|in:draft,published',
-            
+            'status' => 'required|in:draft,published,scheduled',
+            'publish_at' => 'nullable|required_if:status,scheduled|date|after:now',
+            'image_caption' => 'nullable|string|max:255',
+            'image_credit' => 'nullable|string|max:120',
+
             // SEO validation
             'enable_auto_seo' => 'nullable|boolean',
             'meta_title' => 'nullable|max:70',
@@ -100,56 +75,64 @@ class PostController extends Controller
             'schema_markup' => 'nullable|json',
             'no_index' => 'nullable|boolean',
             'no_follow' => 'nullable|boolean',
+
+            // News options
+            'author_name' => 'nullable|string|max:120',
+            'is_headline' => 'nullable|boolean',
+            'is_breaking' => 'nullable|boolean',
+            'video_url' => ['nullable', 'url', 'max:500', function ($attribute, $value, $fail) {
+                if ($value && Post::embedUrlFor($value) === null) {
+                    $fail('Use a YouTube, Facebook or Vimeo video link.');
+                }
+            }],
         ]);
 
         try {
             $data = $this->preparePostData($request);
             $data['admin_id'] = Auth::id();
-            
+            $data['breaking_until'] = $request->boolean('is_breaking') ? now()->addHours(Post::BREAKING_HOURS) : null;
+            $data['headline_until'] = $request->boolean('is_headline') ? now()->addHours(Post::HEADLINE_HOURS) : null;
+
             // Handle featured images
             $data = $this->handleFeaturedImages($request, $data);
-            
+
             // Handle SEO images
             $data = $this->handleSeoImages($request, $data);
-            
+
             // Create the post
             $post = Post::create($data);
 
+            try {
 
+                $url = route('posts.show', $post->slug);
 
+                $response = Http::post(
+                    'https://graph.facebook.com/'.
+                    config('facebook.graph_version').'/'.
+                    config('facebook.page_id').'/feed',
+                    [
+                        'message' => $post->title,
 
+                        'link' => $url,
 
-try {
+                        'access_token' => config('facebook.access_token'),
+                    ]
+                );
 
-    $url = route('posts.show', $post->slug);
+                Log::info('Facebook Response', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
 
-    $response = Http::post(
-        "https://graph.facebook.com/" .
-        config('facebook.graph_version') . "/" .
-        config('facebook.page_id') . "/feed",
-        [
-            'message' => $post->title,
+            } catch (\Exception $e) {
+                Log::error('Facebook post failed: '.$e->getMessage());
+            }
 
-            'link' => $url,
-
-            'access_token' => config('facebook.access_token'),
-        ]
-    );
-
-    Log::info('Facebook Response', [
-        'status' => $response->status(),
-        'body' => $response->body(),
-    ]);
-
-} catch (\Exception $e) {
-    Log::error('Facebook post failed: ' . $e->getMessage());
-}
-            
             // Log the activity
             Log::info('Post created', [
                 'post_id' => $post->id,
                 'title' => $post->title,
-                'admin_id' => Auth::id()
+                'admin_id' => Auth::id(),
             ]);
 
             return redirect()
@@ -157,8 +140,8 @@ try {
                 ->with('success', 'Post created successfully with SEO settings!');
 
         } catch (\Exception $e) {
-            Log::error('Failed to create post: ' . $e->getMessage());
-            
+            Log::error('Failed to create post: '.$e->getMessage());
+
             return redirect()
                 ->back()
                 ->withInput()
@@ -190,8 +173,11 @@ try {
             'featured_image_2' => 'nullable|image|max:5120',
             'featured_image_3' => 'nullable|image|max:5120',
             'featured_image_4' => 'nullable|image|max:5120',
-            'status' => 'required|in:draft,published',
-            
+            'status' => 'required|in:draft,published,scheduled',
+            'publish_at' => 'nullable|required_if:status,scheduled|date|after:now',
+            'image_caption' => 'nullable|string|max:255',
+            'image_credit' => 'nullable|string|max:120',
+
             // SEO validation
             'enable_auto_seo' => 'nullable|boolean',
             'meta_title' => 'nullable|max:70',
@@ -208,27 +194,54 @@ try {
             'schema_markup' => 'nullable|json',
             'no_index' => 'nullable|boolean',
             'no_follow' => 'nullable|boolean',
+
+            // News options
+            'author_name' => 'nullable|string|max:120',
+            'is_headline' => 'nullable|boolean',
+            'is_breaking' => 'nullable|boolean',
+            'video_url' => ['nullable', 'url', 'max:500', function ($attribute, $value, $fail) {
+                if ($value && Post::embedUrlFor($value) === null) {
+                    $fail('Use a YouTube, Facebook or Vimeo video link.');
+                }
+            }],
         ]);
 
         try {
             $data = $this->preparePostData($request);
-            
+
+            // Keep the post's web address unless the title changed, so shared links keep working
+            if ($request->input('title') === $post->title) {
+                unset($data['slug']);
+            } else {
+                $data['slug'] = $this->uniqueSlug($request->input('title'), $post->id);
+            }
+
+            // Breaking news: keep the current 24-hour window when re-saving, start one when newly ticked
+            $data['breaking_until'] = $request->boolean('is_breaking')
+                ? ($post->isBreaking() ? $post->breaking_until : now()->addHours(Post::BREAKING_HOURS))
+                : null;
+
+            // Headline: same rule, 1 day from when it was ticked
+            $data['headline_until'] = $request->boolean('is_headline')
+                ? ($post->isHeadline() ? $post->headline_until : now()->addHours(Post::HEADLINE_HOURS))
+                : null;
+
             // Handle featured images
             $data = $this->handleFeaturedImages($request, $data, $post);
-            
+
             // Handle SEO images
             $data = $this->handleSeoImages($request, $data, $post);
-            
+
             // Handle image removals
             $this->handleImageRemovals($request, $post);
-            
+
             // Update the post
             $post->update($data);
-            
+
             Log::info('Post updated', [
                 'post_id' => $post->id,
                 'title' => $post->title,
-                'admin_id' => Auth::id()
+                'admin_id' => Auth::id(),
             ]);
 
             return redirect()
@@ -236,8 +249,8 @@ try {
                 ->with('success', 'Post updated successfully with SEO settings!');
 
         } catch (\Exception $e) {
-            Log::error('Failed to update post: ' . $e->getMessage());
-            
+            Log::error('Failed to update post: '.$e->getMessage());
+
             return redirect()
                 ->back()
                 ->withInput()
@@ -256,7 +269,7 @@ try {
         Log::info('Post moved to trash', [
             'post_id' => $post->id,
             'title' => $post->title,
-            'admin_id' => Auth::id()
+            'admin_id' => Auth::id(),
         ]);
 
         return redirect()
@@ -275,7 +288,7 @@ try {
         Log::info('Post restored from trash', [
             'post_id' => $post->id,
             'title' => $post->title,
-            'admin_id' => Auth::id()
+            'admin_id' => Auth::id(),
         ]);
 
         return redirect()
@@ -292,14 +305,14 @@ try {
 
         // Delete all associated images
         $this->deletePostImages($post);
-        
+
         // Force delete the post
         $post->forceDelete();
 
         Log::info('Post permanently deleted', [
             'post_id' => $post->id,
             'title' => $post->title,
-            'admin_id' => Auth::id()
+            'admin_id' => Auth::id(),
         ]);
 
         return redirect()
@@ -317,13 +330,13 @@ try {
         $post->update([
             'status' => $post->status === 'published'
                 ? 'draft'
-                : 'published'
+                : 'published',
         ]);
 
         Log::info('Post status toggled', [
             'post_id' => $post->id,
             'new_status' => $post->status,
-            'admin_id' => Auth::id()
+            'admin_id' => Auth::id(),
         ]);
 
         return back()
@@ -350,13 +363,13 @@ try {
             'meta_description' => $request->meta_description,
             'enable_auto_seo' => $request->boolean('enable_auto_seo', true),
         ]);
-        
+
         // Generate preview data
         $preview = [
             'google' => [
                 'title' => $post->meta_title,
                 'description' => $post->meta_description,
-                'url' => url('/posts/' . Str::slug($request->title)),
+                'url' => url('/posts/'.Str::slug($request->title)),
             ],
             'facebook' => [
                 'title' => $post->og_title,
@@ -365,7 +378,7 @@ try {
             'twitter' => [
                 'title' => $post->twitter_title,
                 'description' => $post->twitter_description,
-            ]
+            ],
         ];
 
         return response()->json($preview);
@@ -385,13 +398,13 @@ try {
             $suggestions[] = [
                 'type' => 'warning',
                 'field' => 'meta_title',
-                'message' => 'Meta title is too short. Recommended length is 50-60 characters.'
+                'message' => 'Meta title is too short. Recommended length is 50-60 characters.',
             ];
         } elseif (strlen($metaTitle) > 70) {
             $suggestions[] = [
                 'type' => 'warning',
                 'field' => 'meta_title',
-                'message' => 'Meta title is too long. It may be truncated in search results.'
+                'message' => 'Meta title is too long. It may be truncated in search results.',
             ];
         }
 
@@ -401,13 +414,13 @@ try {
             $suggestions[] = [
                 'type' => 'warning',
                 'field' => 'meta_description',
-                'message' => 'Meta description is too short. Recommended length is 150-160 characters.'
+                'message' => 'Meta description is too short. Recommended length is 150-160 characters.',
             ];
         } elseif (strlen($metaDesc) > 320) {
             $suggestions[] = [
                 'type' => 'warning',
                 'field' => 'meta_description',
-                'message' => 'Meta description is too long. It may be truncated in search results.'
+                'message' => 'Meta description is too long. It may be truncated in search results.',
             ];
         }
 
@@ -416,22 +429,22 @@ try {
             $suggestions[] = [
                 'type' => 'info',
                 'field' => 'meta_image',
-                'message' => 'Consider adding a meta image for better social sharing.'
+                'message' => 'Consider adding a meta image for better social sharing.',
             ];
         }
 
         // Check for keywords in content
-        if (!empty($post->meta_keywords)) {
+        if (! empty($post->meta_keywords)) {
             $keywords = explode(',', $post->meta_keywords);
             $content = strip_tags($post->content);
-            
+
             foreach ($keywords as $keyword) {
                 $keyword = trim($keyword);
-                if (!empty($keyword) && stripos($content, $keyword) === false) {
+                if (! empty($keyword) && stripos($content, $keyword) === false) {
                     $suggestions[] = [
                         'type' => 'warning',
                         'field' => 'meta_keywords',
-                        'message' => "Keyword '{$keyword}' not found in content."
+                        'message' => "Keyword '{$keyword}' not found in content.",
                     ];
                 }
             }
@@ -453,7 +466,7 @@ try {
 
         try {
             $posts = Post::whereIn('id', $request->post_ids);
-            
+
             switch ($request->action) {
                 case 'enable_auto_seo':
                     $posts->update(['enable_auto_seo' => true]);
@@ -476,20 +489,20 @@ try {
             Log::info('Bulk SEO update performed', [
                 'action' => $request->action,
                 'post_count' => count($request->post_ids),
-                'admin_id' => Auth::id()
+                'admin_id' => Auth::id(),
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => $message
+                'message' => $message,
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Bulk SEO update failed: ' . $e->getMessage());
-            
+            Log::error('Bulk SEO update failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update SEO settings'
+                'message' => 'Failed to update SEO settings',
             ], 500);
         }
     }
@@ -501,6 +514,22 @@ try {
     /**
      * Prepare post data from request
      */
+    /**
+     * A slug for $title that no other post uses (ignoring $ignorePostId).
+     */
+    private function uniqueSlug(string $title, ?int $ignorePostId = null): string
+    {
+        $base = Str::slug($title) ?: 'post';
+        $slug = $base;
+        $suffix = 2;
+
+        while (Post::withTrashed()->where('slug', $slug)->when($ignorePostId, fn ($query) => $query->where('id', '!=', $ignorePostId))->exists()) {
+            $slug = $base.'-'.$suffix++;
+        }
+
+        return $slug;
+    }
+
     private function preparePostData(Request $request)
     {
         $data = $request->only([
@@ -522,18 +551,34 @@ try {
 
         // Generate slug from title
         $data['slug'] = Str::slug($request->title);
-        
+
         // Ensure unique slug
-        $count = Post::where('slug', 'LIKE', $data['slug'] . '%')->count();
+        $count = Post::where('slug', 'LIKE', $data['slug'].'%')->count();
         if ($count > 0) {
-            $data['slug'] = $data['slug'] . '-' . ($count + 1);
+            $data['slug'] = $data['slug'].'-'.($count + 1);
         }
-        
+
         // Handle boolean fields
         $data['enable_auto_seo'] = $request->boolean('enable_auto_seo', true);
         $data['no_index'] = $request->boolean('no_index', false);
         $data['no_follow'] = $request->boolean('no_follow', false);
-        
+
+        // Scheduling: a scheduled post is stored as a draft with a publish time
+        if ($request->input('status') === 'scheduled') {
+            $data['status'] = 'draft';
+            $data['publish_at'] = Carbon::parse($request->input('publish_at'));
+        } else {
+            $data['publish_at'] = null;
+        }
+
+        // Photo caption and credit
+        $data['image_caption'] = trim((string) $request->input('image_caption')) ?: null;
+        $data['image_credit'] = trim((string) $request->input('image_credit')) ?: null;
+
+        // News options
+        $data['author_name'] = trim((string) $request->input('author_name')) ?: null;
+        $data['video_url'] = trim((string) $request->input('video_url')) ?: null;
+
         return $data;
     }
 
@@ -544,13 +589,13 @@ try {
     {
         for ($i = 1; $i <= 4; $i++) {
             $field = "featured_image_{$i}";
-            
+
             if ($request->hasFile($field)) {
                 // Delete old image if updating
                 if ($post && $post->$field) {
                     Storage::disk('public')->delete($post->$field);
                 }
-                
+
                 // Store new image
                 $path = $request->file($field)->store('posts/featured', 'public');
                 $data[$field] = $path;
@@ -559,7 +604,7 @@ try {
                 $data[$field] = $post->$field;
             }
         }
-        
+
         return $data;
     }
 
@@ -569,14 +614,14 @@ try {
     private function handleSeoImages(Request $request, array $data, ?Post $post = null)
     {
         $seoImages = ['meta_image', 'og_image', 'twitter_image'];
-        
+
         foreach ($seoImages as $field) {
             if ($request->hasFile($field)) {
                 // Delete old image if updating
                 if ($post && $post->$field) {
                     Storage::disk('public')->delete($post->$field);
                 }
-                
+
                 // Store new image
                 $path = $request->file($field)->store('posts/seo', 'public');
                 $data[$field] = $path;
@@ -585,7 +630,7 @@ try {
                 $data[$field] = $post->$field;
             }
         }
-        
+
         return $data;
     }
 
@@ -596,12 +641,12 @@ try {
     {
         $imageFields = [
             'featured_image_1', 'featured_image_2', 'featured_image_3', 'featured_image_4',
-            'meta_image', 'og_image', 'twitter_image'
+            'meta_image', 'og_image', 'twitter_image',
         ];
-        
+
         foreach ($imageFields as $field) {
             $removeField = "remove_{$field}";
-            
+
             if ($request->has($removeField) && $post->$field) {
                 Storage::disk('public')->delete($post->$field);
                 $post->$field = null;
@@ -617,31 +662,32 @@ try {
     {
         $imageFields = [
             'featured_image_1', 'featured_image_2', 'featured_image_3', 'featured_image_4',
-            'meta_image', 'og_image', 'twitter_image'
+            'meta_image', 'og_image', 'twitter_image',
         ];
-        
+
         foreach ($imageFields as $field) {
             if ($post->$field) {
                 Storage::disk('public')->delete($post->$field);
             }
         }
     }
-public function headlines()
-{
-    $posts = Post::latest()
-        ->where('status', 'published')
-        ->take(5)
-        ->get();
 
-    $message = "*Briefmedia Headlines For " . now()->format('jS F Y') . "*\n\n";
+    public function headlines()
+    {
+        $posts = Post::latest()
+            ->where('status', 'published')
+            ->take(5)
+            ->get();
 
-    foreach ($posts as $post) {
-        $message .= "🔹 " . $post->title . "\n";
-        $message .= route('posts.show', $post->slug) . "\n\n";
+        $message = '*Briefmedia Headlines For '.now()->format('jS F Y')."*\n\n";
+
+        foreach ($posts as $post) {
+            $message .= '🔹 '.$post->title."\n";
+            $message .= route('posts.show', $post->slug)."\n\n";
+        }
+
+        $message .= 'Visit www.briefmediablog.com for more news stories.';
+
+        return view('admin.news.headlines', compact('message'));
     }
-
-    $message .= "Visit www.briefmediablog.com for more news stories.";
-
-    return view('admin.news.headlines', compact('message'));
-}
 }
