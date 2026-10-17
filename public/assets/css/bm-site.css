@@ -422,6 +422,7 @@ body.bm {
 .bm-search__form i { color: var(--bm-muted); font-size: 18px; }
 .bm-search__input {
     flex: 1;
+    min-width: 0;
     height: 48px;
     border: 0;
     background: transparent;
@@ -1442,3 +1443,14 @@ body.bm {
 .bm-card__foot { justify-content: flex-start; }
 .bm-card__foot .bm-card__actions { margin-left: -10px; }
 .bm-hero .bm-meta strong { color: #fff; }
+
+/* ---------- Search overlay on phones ---------- */
+.bm-search__form .bm-btn { flex-shrink: 0; }
+@media (max-width: 640px) {
+    .bm-search { padding: 76px 12px 12px; }
+    .bm-search__box { padding: 6px; border-radius: 16px; }
+    .bm-search__form { gap: 8px; padding: 4px 4px 4px 12px; }
+    .bm-search__input { height: 44px; font-size: 16px; } /* 16px stops iOS from zooming in */
+    .bm-search__form .bm-btn { height: 40px; padding: 0 14px; }
+    .bm-search__hint { display: none; }
+}

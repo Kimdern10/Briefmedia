@@ -38,7 +38,7 @@
 @section('content')
 @php
     $profileImage = optional($user->Userprofile)->profile_picture
-        ? asset('Userprofile/' . $user->Userprofile->profile_picture)
+        ? $user->Userprofile->photoUrl()
         : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=e4407f&color=fff&size=240';
     $showSecurityTab = session('success')
         || $errors->has('current_password')

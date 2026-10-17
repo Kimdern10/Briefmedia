@@ -8,8 +8,7 @@
     $placeholderImage = route('theme.asset', ['img', 'bm-placeholder.svg']);
     $authorName = optional($post->admin)->name ?? 'BriefMedia';
     $authorFallbackPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($authorName) . '&background=e4407f&color=fff&size=120';
-    $authorProfilePicture = optional(optional($post->admin)->Userprofile)->profile_picture;
-    $authorPhoto = $authorProfilePicture ? asset('Userprofile/' . $authorProfilePicture) : $authorFallbackPhoto;
+    $authorPhoto = optional(optional($post->admin)->Userprofile)->photoUrl() ?? $authorFallbackPhoto;
     $extraImages = collect([$post->featured_image_3, $post->featured_image_4])->filter();
 @endphp
 

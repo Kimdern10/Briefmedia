@@ -34,6 +34,11 @@ Route::get('/theme/{type}/{file}', \App\Http\Controllers\ThemeAssetController::c
     ->where(['type' => 'css|js|img', 'file' => 'bm-[a-z0-9-]+\.(css|js|svg|png)'])
     ->name('theme.asset');
 
+// Uploaded profile photos, served from the project folder (see ProfilePhotoController)
+Route::get('/profile-photo/{file}', \App\Http\Controllers\ProfilePhotoController::class)
+    ->where('file', '[A-Za-z0-9_.-]+')
+    ->name('profile.photo');
+
 Route::view('/terms', 'pages.terms')->name('terms');
 Route::view('/privacy', 'pages.privacy')->name('privacy');
 // register view

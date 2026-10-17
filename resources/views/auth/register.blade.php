@@ -53,7 +53,7 @@
             <div class="bm-field">
                 <label class="bm-check" for="terms">
                     <input type="checkbox" id="terms" name="terms" required {{ old('terms') ? 'checked' : '' }}>
-                    <span>I agree to the <a href="{{ route('terms') }}" style="color: var(--bm-accent); font-weight: 600;">Terms &amp; Conditions</a></span>
+                    <span>I agree to the <a href="{{ route('terms') }}" style="color: var(--bm-accent); font-weight: 600;">Terms &amp; Conditions</a> and <a href="{{ route('privacy') }}" style="color: var(--bm-accent); font-weight: 600;">Privacy Policy</a></span>
                 </label>
                 @error('terms')
                     <span class="bm-error">{{ $message }}</span>

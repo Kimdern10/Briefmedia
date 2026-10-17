@@ -3,7 +3,7 @@
     $profileImage = null;
     if (auth()->check()) {
         $profileImage = optional(auth()->user()->Userprofile)->profile_picture
-            ? asset('Userprofile/' . auth()->user()->Userprofile->profile_picture)
+            ? auth()->user()->Userprofile->photoUrl()
             : 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&background=e4407f&color=fff&size=120';
     }
 @endphp
@@ -71,6 +71,7 @@
                     @endif
                     <a class="bm-dropdown__item" href="{{ route('contact') }}"><i class="bi bi-envelope"></i> Contact us</a>
                     <a class="bm-dropdown__item" href="{{ route('terms') }}"><i class="bi bi-file-text"></i> Terms &amp; Conditions</a>
+                    <a class="bm-dropdown__item" href="{{ route('privacy') }}"><i class="bi bi-shield-lock"></i> Privacy Policy</a>
                 </div>
             </div>
         </nav>

@@ -52,6 +52,7 @@
                 <ul class="bm-footer__links">
                     <li><a href="{{ route('contact') }}">Contact us</a></li>
                     <li><a href="{{ route('terms') }}">Terms &amp; Conditions</a></li>
+                    <li><a href="{{ route('privacy') }}">Privacy Policy</a></li>
                     <li><a href="https://www.facebook.com/Briefmediablog" target="_blank" rel="noopener">Facebook page</a></li>
                     @guest
                         <li><a href="{{ route('sign-up') }}">Create an account</a></li>
@@ -64,6 +65,7 @@
             <span>© {{ date('Y') }} BriefMedia. All rights reserved.</span>
             <nav>
                 <a href="{{ route('terms') }}">Terms</a>
+                <a href="{{ route('privacy') }}">Privacy</a>
                 <a href="{{ route('contact') }}">Contact</a>
             </nav>
         </div>

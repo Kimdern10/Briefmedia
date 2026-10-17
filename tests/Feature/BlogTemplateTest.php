@@ -116,9 +116,20 @@ class BlogTemplateTest extends TestCase
 
     public function test_auth_and_static_pages_render(): void
     {
-        foreach (['login', 'sign-up', 'forgetPassword', 'contact', 'terms'] as $routeName) {
+        foreach (['login', 'sign-up', 'forgetPassword', 'contact', 'terms', 'privacy'] as $routeName) {
             $this->get(route($routeName))->assertOk()->assertSee('bm-logo', false);
         }
+    }
+
+    public function test_privacy_policy_page_renders_and_is_linked_from_every_page(): void
+    {
+        $this->get(route('privacy'))
+            ->assertOk()
+            ->assertSee('Privacy Policy')
+            ->assertSee('Google AdSense');
+
+        $this->get(url('/'))->assertOk()->assertSee(route('privacy'), false);
+        $this->get(route('sign-up'))->assertOk()->assertSee(route('privacy'), false);
     }
 
     public function test_profile_page_renders_for_a_reader(): void
