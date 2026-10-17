@@ -164,12 +164,6 @@
 <!-- ================= SEARCH OVERLAY ================= -->
 <div class="bm-search" id="bm-search" aria-hidden="true" role="dialog" aria-label="Search">
     <div class="bm-search__box">
-        <form action="{{ route('user.posts.search') }}" method="GET" class="bm-search__form">
-            <i class="bi bi-search"></i>
-            <input type="search" name="query" class="bm-search__input" placeholder="Search stories, topics, people…"
-                   value="{{ request('query') }}" required autocomplete="off" aria-label="Search posts">
-            <button type="submit" class="bm-btn bm-btn--primary bm-btn--sm">Search</button>
-        </form>
-        <div class="bm-search__hint">Press <kbd>Enter</kbd> to search · <kbd>Esc</kbd> to close · <kbd>Ctrl</kbd> + <kbd>K</kbd> anywhere</div>
+        <livewire:live-search />
     </div>
 </div>

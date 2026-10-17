@@ -99,8 +99,8 @@
     <link rel="stylesheet" href="{{ route('theme.asset', ['css', 'bm-site.css']) }}?v={{ filemtime(public_path('assets/css/bm-site.css')) }}">
     @stack('styles')
 
-    <!-- Alpine (like buttons) -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+    {{-- Livewire (its script also provides Alpine.js, used by the like buttons) --}}
+    @livewireStyles
 </head>
 
 <body class="bm">
@@ -137,6 +137,7 @@
         @endforeach
     @endunless
 
+    @livewireScripts
     @stack('scripts')
 </body>
 </html>

@@ -24,6 +24,7 @@
     <link rel="stylesheet" href="{{ asset('assets/css/font/bootstrap-icons.css') }}">
     <link rel="stylesheet" href="{{ route('theme.asset', ['css', 'bm-admin.css']) }}?v={{ filemtime(public_path('assets/css/bm-admin.css')) }}">
     @stack('styles')
+    @livewireStyles
 </head>
 
 <body class="ad">
@@ -75,6 +76,7 @@
         @endif
     @endforeach
 
+    @livewireScripts
     @stack('scripts')
 </body>
 </html>
