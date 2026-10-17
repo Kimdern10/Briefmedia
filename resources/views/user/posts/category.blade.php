@@ -7,9 +7,7 @@
     $placeholderImage = route('theme.asset', ['img', 'bm-placeholder.svg']);
     $sidebarCategories = $allCategories ?? collect();
     $sidebarLatest = ($latestPosts ?? collect())->take(5);
-    $sidebarTrending = ($trendingPosts ?? collect())
-        ->filter(fn ($post) => $post->views > 0)
-        ->take(5);
+    $sidebarTrending = ($trendingPosts ?? collect())->take(5);
 @endphp
 
 <main>

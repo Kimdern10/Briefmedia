@@ -123,8 +123,8 @@ class AppServiceProvider extends ServiceProvider
                 ->take(7)
                 ->get();
 
-            // Most Viewed Posts
-            $mostViewedPosts = Post::orderByDesc('views')->take(5)->get();
+            // Trending now: same rule as the homepage (Post::trendingNow)
+            $trendingPosts = Post::trendingNow(5);
 
             // Share all with admin dashboard view
             $view->with([
@@ -137,7 +137,7 @@ class AppServiceProvider extends ServiceProvider
                 'postsPerMonth' => $postsPerMonth,
                 'viewsPerDay' => $viewsPerDay,
                 'subscriberGrowth' => $subscriberGrowth,
-                'mostViewedPosts' => $mostViewedPosts,
+                'trendingPosts' => $trendingPosts,
             ]);
         });
     }

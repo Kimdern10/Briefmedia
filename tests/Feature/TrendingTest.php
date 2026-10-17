@@ -115,4 +115,34 @@ class TrendingTest extends TestCase
             ->assertSee('Trending')
             ->assertSee('Zz Homepage Trending Story');
     }
+
+    public function test_admin_dashboard_uses_the_trending_rule_not_all_time_views(): void
+    {
+        $this->admin->forceFill(['role_as' => 1])->save();
+        $this->makePost('Zz Old Views Giant', 5000, 90);
+        $this->makePost('Zz Old Views Draft', 9000, 1, 'draft');
+        $talkedAbout = $this->makePost('Zz Talked About Now', 2, 1);
+        $this->addLikes($talkedAbout, 2);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('Trending now')
+            ->assertDontSee('Most viewed')
+            ->assertSee('Zz Talked About Now')
+            ->assertDontSee('Zz Old Views Giant')
+            // The draft is still listed under "Latest posts", so check the trending list itself
+            ->assertViewHas('trendingPosts', fn ($posts) => $posts->pluck('title')->all() === ['Zz Talked About Now']);
+    }
+
+    public function test_category_sidebar_keeps_trending_stories_with_no_views(): void
+    {
+        $liked = $this->makePost('Zz Liked No Views', 0, 1);
+        $this->addLikes($liked, 1);
+
+        $this->get(route('category.page', $this->category->slug))
+            ->assertOk()
+            ->assertViewHas('trendingPosts', fn ($posts) => $posts->contains('id', $liked->id))
+            ->assertSee('Zz Liked No Views');
+    }
 }

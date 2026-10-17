@@ -72,7 +72,6 @@ class Post extends Model
 
     protected $appends = [
         'comments_count',
-        'trending_score',
         'images',
         'social_image',
     ];
@@ -145,14 +144,6 @@ class Post extends Model
     public function getLikesCountAttribute()
     {
         return $this->likes()->count();
-    }
-
-    // Trending score formula
-    public function getTrendingScoreAttribute()
-    {
-        return $this->views
-            + ($this->likes_count * 2)
-            + ($this->comments_count * 3);
     }
 
     // Featured images array
@@ -453,13 +444,6 @@ class Post extends Model
     public function scopeWithoutSeo($query)
     {
         return $query->where('no_index', true);
-    }
-
-    public function scopeTrending($query)
-    {
-        return $query->published()
-            ->orderBy('views', 'desc')
-            ->orderBy('likes', 'desc');
     }
 
     /**
@@ -776,12 +760,6 @@ class Post extends Model
         }
 
         return $pinned->concat($automatic)->take($limit)->values();
-    }
-
-    public function scopePopular($query)
-    {
-        return $query->published()
-            ->orderBy('views', 'desc');
     }
 
     public function scopeByCategory($query, $categoryId)

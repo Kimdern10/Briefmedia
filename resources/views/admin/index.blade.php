@@ -7,7 +7,7 @@
     $monthNames = [1 => 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     $postsPerMonthLabels = collect($postsPerMonth->keys())->sort()->map(fn ($month) => $monthNames[(int) $month] ?? $month)->values();
     $postsPerMonthValues = collect($postsPerMonth->toArray())->sortKeys()->values();
-    $maxViews = max(1, (int) $mostViewedPosts->max('views'));
+    $maxTrendScore = max(1, (int) $trendingPosts->max('trend_score'));
     $placeholderImage = route('theme.asset', ['img', 'bm-placeholder.svg']);
     $publishedPosts = max(0, $totalPosts - $draftPosts);
 
@@ -113,19 +113,29 @@
 
     <div class="ad-stack">
         <div class="ad-card">
-            <div class="ad-card__head"><h3 class="ad-card__title"><i class="bi bi-fire"></i> Most viewed</h3></div>
+            <div class="ad-card__head"><h3 class="ad-card__title"><i class="bi bi-fire"></i> Trending now</h3></div>
             <ul class="ad-list">
-                @forelse($mostViewedPosts as $post)
+                @forelse($trendingPosts as $post)
                     <li>
                         <span class="ad-rank">{{ $loop->iteration }}</span>
                         <div style="flex: 1; min-width: 0;">
-                            <div class="ad-post-cell__title" style="font-size: 13px;">{{ $post->title }}</div>
-                            <div class="ad-bar"><span style="width: {{ round(($post->views / $maxViews) * 100) }}%;"></span></div>
+                            <div class="ad-post-cell__title" style="font-size: 13px;">
+                                {{ $post->title }}
+                                @if($post->trend_pinned)
+                                    <span class="ad-badge" title="Marked as trending by an admin">🔥 Pinned</span>
+                                @endif
+                            </div>
+                            <div class="ad-bar"><span style="width: {{ round(($post->trend_score / $maxTrendScore) * 100) }}%;"></span></div>
+                            <div class="ad-post-cell__sub">
+                                <i class="bi bi-eye"></i> {{ number_format($post->views) }}
+                                · <i class="bi bi-heart"></i> {{ $post->trend_likes }}
+                                · <i class="bi bi-chat"></i> {{ $post->trend_comments }}
+                            </div>
                         </div>
-                        <strong style="font-variant-numeric: tabular-nums;">{{ number_format($post->views) }}</strong>
+                        <strong style="font-variant-numeric: tabular-nums;" title="Trend score">{{ number_format($post->trend_score) }}</strong>
                     </li>
                 @empty
-                    <li class="ad-post-cell__sub">No views yet</li>
+                    <li class="ad-post-cell__sub">Nothing trending yet</li>
                 @endforelse
             </ul>
         </div>
