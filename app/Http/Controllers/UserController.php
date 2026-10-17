@@ -18,7 +18,7 @@ class UserController extends Controller
     //
     public function signUp()
     {
-        return view ('auth.register');
+        return view ('auth.registeyfugtrr');
     }
 
     public function createUser(Request $request)
@@ -140,22 +140,22 @@ class UserController extends Controller
     {
         // Get the search query
         $query = $request->input('query');
-        
+
         // If no query, redirect back or show all posts
         if (empty($query)) {
             return redirect()->back()->with('error', 'Please enter a search term');
         }
-        
+
         // Search published posts only (drafts must not leak into results)
         $posts = Post::with(['category', 'admin', 'likedByUsers'])
                       ->published()
                       ->search($query)
                       ->latest()
                       ->paginate(12);
-        
+
         // Get categories for sidebar if needed
         $categories = Category::all();
-        
+
         // Return view with results
         return view('user.posts.search', compact('posts', 'query', 'categories'));
     }
