@@ -218,6 +218,7 @@ class BlogTemplateTest extends TestCase
             'meta_title', 'meta_description', 'meta_keywords', 'meta_image', 'canonical_url',
             'og_title', 'og_description', 'og_image', 'twitter_title', 'twitter_description',
             'twitter_image', 'schema_markup', 'no_index', 'no_follow', 'remove_featured_image_1',
+            'image_caption', 'image_credit',
         ] as $field) {
             $response->assertSee('name="'.$field.'"', false);
         }

@@ -96,27 +96,31 @@
                                 @error($field)
                                     <span class="ad-error">{{ $message }}</span>
                                 @enderror
+
+                                @if($slot === 1)
+                                    {{-- Caption and credit sit right under the cover photo they describe --}}
+                                    <div class="ad-photo-meta">
+                                        <div class="ad-field">
+                                            <label class="ad-label" for="image_caption"><i class="bi bi-card-text"></i> Cover photo caption <small>Optional</small></label>
+                                            <input type="text" name="image_caption" id="image_caption" maxlength="255"
+                                                   class="ad-input @error('image_caption') is-invalid @enderror"
+                                                   value="{{ old('image_caption', $editing ? $post->image_caption : '') }}"
+                                                   placeholder="Governor Soludo at Eke Awka market on Monday">
+                                            @error('image_caption') <span class="ad-error">{{ $message }}</span> @enderror
+                                        </div>
+                                        <div class="ad-field">
+                                            <label class="ad-label" for="image_credit"><i class="bi bi-camera"></i> Photo credit <small>Optional</small></label>
+                                            <input type="text" name="image_credit" id="image_credit" maxlength="120"
+                                                   class="ad-input @error('image_credit') is-invalid @enderror"
+                                                   value="{{ old('image_credit', $editing ? $post->image_credit : '') }}"
+                                                   placeholder="BriefMedia / Chioma Agbomma">
+                                            @error('image_credit') <span class="ad-error">{{ $message }}</span> @enderror
+                                        </div>
+                                        <p class="ad-photo-meta__hint">Shown under the cover photo on the article page.</p>
+                                    </div>
+                                @endif
                             </div>
                         @endforeach
-                    </div>
-
-                    <div class="ad-grid ad-grid--2" style="gap: 0 16px; margin-top: 18px;">
-                        <div class="ad-field">
-                            <label class="ad-label" for="image_caption">Cover photo caption <small>Optional</small></label>
-                            <input type="text" name="image_caption" id="image_caption" maxlength="255"
-                                   class="ad-input @error('image_caption') is-invalid @enderror"
-                                   value="{{ old('image_caption', $editing ? $post->image_caption : '') }}"
-                                   placeholder="Governor Soludo at Eke Awka market on Monday">
-                            @error('image_caption') <span class="ad-error">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="ad-field">
-                            <label class="ad-label" for="image_credit">Photo credit <small>Optional</small></label>
-                            <input type="text" name="image_credit" id="image_credit" maxlength="120"
-                                   class="ad-input @error('image_credit') is-invalid @enderror"
-                                   value="{{ old('image_credit', $editing ? $post->image_credit : '') }}"
-                                   placeholder="BriefMedia / Chioma Agbomma">
-                            @error('image_credit') <span class="ad-error">{{ $message }}</span> @enderror
-                        </div>
                     </div>
                 </div>
             </div>

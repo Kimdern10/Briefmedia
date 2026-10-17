@@ -621,3 +621,11 @@ body.ad {
 .ad-dropzone input { display: none; }
 .ad-spin { display: inline-block; animation: ad-spin .8s linear infinite; }
 .ad-newsletter-sender { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* ---------- Cover photo caption + credit (under the cover upload) ---------- */
+.ad-photo-meta { margin-top: 12px; padding: 12px; border: 1px dashed var(--ad-line, #e3e5ea); border-radius: 12px; background: var(--ad-surface-2, rgba(0,0,0,.02)); }
+.ad-photo-meta .ad-field { margin-bottom: 10px; }
+.ad-photo-meta .ad-label i { opacity: .7; margin-right: 2px; }
+.ad-photo-meta__hint { margin: 0; font-size: 12px; color: var(--ad-muted, #6b7280); }
+.ad-photo-meta .ad-label { display: flex; align-items: center; justify-content: flex-start; gap: 6px; }
+.ad-photo-meta .ad-label small { margin-left: auto; }
