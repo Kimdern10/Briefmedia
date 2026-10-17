@@ -130,7 +130,7 @@
                 @endif
 
                 <div class="bm-prose">
-                    {!! $post->content !!}
+                    {!! $post->formattedContent() !!}
                 </div>
 
                 @if($extraImages->isNotEmpty())

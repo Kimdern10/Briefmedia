@@ -1103,7 +1103,8 @@ body.bm {
 .bm-rail__count { font-size: 12px; font-weight: 600; color: var(--bm-muted); margin-top: -4px; }
 
 .bm-prose { font-size: 18.5px; line-height: 1.8; color: var(--bm-ink-2); word-wrap: break-word; }
-.bm-prose > * + * { margin-top: 1.15em !important; }
+.bm-prose > * + * { margin-top: 1.35em !important; }
+.bm-prose p { margin-bottom: 0; }
 .bm-prose h2, .bm-prose h3, .bm-prose h4 { font-family: var(--bm-serif); color: var(--bm-ink); line-height: 1.25; margin-top: 1.8em !important; letter-spacing: -.01em; }
 .bm-prose h2 { font-size: 30px; }
 .bm-prose h3 { font-size: 24px; }

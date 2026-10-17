@@ -534,6 +534,43 @@ class Post extends Model
     }
 
     /**
+     * Article body with even paragraph spacing: plain text is split into
+     * paragraphs, and the empty paragraphs and double line breaks editors
+     * leave behind (which show as big gaps) are removed.
+     */
+    public function formattedContent(): string
+    {
+        $html = trim((string) $this->content);
+
+        if ($html === '') {
+            return '';
+        }
+
+        // Plain text (no block tags): blank lines start a new paragraph, single lines become <br>
+        if (! preg_match('~<(p|div|h[1-6]|ul|ol|blockquote|table|figure|img|iframe)\b~i', $html)) {
+            return collect(preg_split('~\R\s*\R~', $html))
+                ->map(fn (string $paragraph) => trim($paragraph))
+                ->filter()
+                ->map(fn (string $paragraph) => '<p>'.nl2br($paragraph, false).'</p>')
+                ->implode("\n");
+        }
+
+        $spacer = '(?:\s|&nbsp;|&#160;|\x{00A0}|<br\s*/?>)';
+
+        // Two or more <br> in a row inside a paragraph: split it into two paragraphs
+        $html = preg_replace_callback('~(<p\b[^>]*>)(.*?)</p>~isu', fn (array $match) => $match[1]
+            .preg_replace('~(?:<br\s*/?>\s*(?:&nbsp;|\x{00A0})?\s*){2,}~iu', '</p><p>', $match[2]).'</p>', $html);
+
+        // Empty paragraphs/divs (only spaces, &nbsp; or <br>)
+        $html = preg_replace('~<(p|div)\b[^>]*>'.$spacer.'*</\1>~iu', '', $html);
+
+        // A <br> right at the start or end of a paragraph
+        $html = preg_replace(['~(<p\b[^>]*>)\s*<br\s*/?>~i', '~<br\s*/?>\s*</p>~i'], ['$1', '</p>'], $html);
+
+        return trim($html);
+    }
+
+    /**
      * Name shown after "Posted by": the writer's name typed in the post form,
      * otherwise the admin who posted it.
      */
