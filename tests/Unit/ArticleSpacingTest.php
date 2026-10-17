@@ -39,7 +39,7 @@ class ArticleSpacingTest extends TestCase
     public function test_plain_text_is_split_into_paragraphs(): void
     {
         $this->assertSame(
-            "<p>First paragraph<br>still first</p>\n<p>Second paragraph</p>",
+            "<p>First paragraph<br>\nstill first</p>\n<p>Second paragraph</p>",
             $this->format("First paragraph\nstill first\r\n\r\n\r\nSecond paragraph")
         );
     }
