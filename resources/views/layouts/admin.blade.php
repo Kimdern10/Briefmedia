@@ -54,9 +54,11 @@
         </div>
     </div>
 
-    <script src="{{ route('theme.asset', ['js', 'bm-admin.js']) }}?v={{ filemtime(public_path('assets/js/bm-admin.js')) }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js"></script>
-    <script src="{{ route('theme.asset', ['js', 'bm-alerts.js']) }}?v={{ filemtime(public_path('assets/js/bm-alerts.js')) }}"></script>
+    {{-- data-navigate-once: these run on the first visit only; admin pages after that swap in without a reload (bm-navigate.js) --}}
+    <script src="{{ route('theme.asset', ['js', 'bm-navigate.js']) }}?v={{ filemtime(public_path('assets/js/bm-navigate.js')) }}" data-navigate-once></script>
+    <script src="{{ route('theme.asset', ['js', 'bm-admin.js']) }}?v={{ filemtime(public_path('assets/js/bm-admin.js')) }}" data-navigate-once></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js" data-navigate-once></script>
+    <script src="{{ route('theme.asset', ['js', 'bm-alerts.js']) }}?v={{ filemtime(public_path('assets/js/bm-alerts.js')) }}" data-navigate-once></script>
 
     @foreach (['success' => 'success', 'message' => 'success', 'info' => 'info', 'warning' => 'warning', 'error' => 'error'] as $flashKey => $flashTone)
         @if (session()->has($flashKey))
@@ -66,7 +68,7 @@
     @endforeach
 
     @livewireScripts
-    <script>
+    <script data-navigate-once>
         // Toasts sent by admin Livewire components ($this->toast(...))
         window.addEventListener('admin-toast', (event) => window.adToast(event.detail.message, event.detail.tone || 'success'));
     </script>

@@ -539,10 +539,24 @@
 </form>
 
 @push('scripts')
-<script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
 <script>
 (function () {
     const form = document.getElementById('post-form');
+    let changed = false;
+    let submitting = false;
+    form.addEventListener('input', () => { changed = true; });
+    form.addEventListener('change', () => { changed = true; });
+
+    // Moving to another admin page without saving: ask first
+    const onLeave = (event) => {
+        if (!document.body.contains(form)) { document.removeEventListener('livewire:navigate', onLeave); return; }
+        if (changed && !submitting && !window.confirm('Leave this page? Changes you made to this post will be lost.')) {
+            event.preventDefault();
+            return;
+        }
+        document.removeEventListener('livewire:navigate', onLeave);
+    };
+    document.addEventListener('livewire:navigate', onLeave);
 
     // Show the date picker only when "Schedule for later" is chosen
     const publishAtField = document.getElementById('publish-at-field');
@@ -553,13 +567,18 @@
     }));
     const contentField = document.getElementById('editor');
 
-    // Rich text editor (the plain textarea stays usable if the CDN is unreachable)
-    if (window.CKEDITOR) {
-        CKEDITOR.replace('editor', { height: 420, versionCheck: false, removePlugins: 'elementspath', resize_enabled: true });
+    // Rich text editor, loaded once and reused on the next edit page (the plain textarea
+    // stays usable if the CDN is unreachable)
+    BM.loadScript('https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js').then(function () {
+        if (!document.body.contains(contentField)) { return; }
+        if (CKEDITOR.instances.editor) { CKEDITOR.instances.editor.destroy(true); }
+        const editor = CKEDITOR.replace('editor', { height: 420, versionCheck: false, removePlugins: 'elementspath', resize_enabled: true });
+        editor.on('change', () => { changed = true; });
         contentField.removeAttribute('required');
-    }
+    }).catch(() => {});
 
     form.addEventListener('submit', function (event) {
+        submitting = true;
         if (window.CKEDITOR && CKEDITOR.instances.editor) {
             CKEDITOR.instances.editor.updateElement();
         }
@@ -577,6 +596,7 @@
 
         if (problems.length) {
             event.preventDefault();
+            submitting = false;
             window.adToast(problems.join(' '), 'error');
         }
     });

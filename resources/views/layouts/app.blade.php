@@ -125,9 +125,11 @@
     @include('snippets.footer')
 
     <!-- ================= SCRIPTS ================= -->
-    <script src="{{ route('theme.asset', ['js', 'bm-site.js']) }}?v={{ filemtime(public_path('assets/js/bm-site.js')) }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js"></script>
-    <script src="{{ route('theme.asset', ['js', 'bm-alerts.js']) }}?v={{ filemtime(public_path('assets/js/bm-alerts.js')) }}"></script>
+    {{-- data-navigate-once: these run on the first visit only; pages after that swap in without a reload (bm-navigate.js) --}}
+    <script src="{{ route('theme.asset', ['js', 'bm-navigate.js']) }}?v={{ filemtime(public_path('assets/js/bm-navigate.js')) }}" data-navigate-once></script>
+    <script src="{{ route('theme.asset', ['js', 'bm-site.js']) }}?v={{ filemtime(public_path('assets/js/bm-site.js')) }}" data-navigate-once></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js" data-navigate-once></script>
+    <script src="{{ route('theme.asset', ['js', 'bm-alerts.js']) }}?v={{ filemtime(public_path('assets/js/bm-alerts.js')) }}" data-navigate-once></script>
 
     <!-- Session messages (auth pages show them inline instead) -->
     @unless (View::hasSection('auth_page'))
@@ -143,8 +145,8 @@
 
     {{-- Breaking news push alerts (OneSignal). Only loads once ONESIGNAL_APP_ID is set in .env --}}
     @if (config('services.onesignal.app_id'))
-        <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-        <script>
+        <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer data-navigate-once></script>
+        <script data-navigate-once>
             window.OneSignalDeferred = window.OneSignalDeferred || [];
             OneSignalDeferred.push(async (OneSignal) => {
                 await OneSignal.init({
@@ -161,12 +163,15 @@
                 });
                 updateButtons();
                 OneSignal.User.PushSubscription.addEventListener('change', updateButtons);
+                // Each page swaps in a new footer, so refresh its button too
+                document.addEventListener('livewire:navigated', updateButtons);
 
-                document.querySelectorAll('[data-push-optin]').forEach((button) => button.addEventListener('click', async () => {
+                document.addEventListener('click', async (event) => {
+                    if (!event.target.closest('[data-push-optin]')) { return; }
                     await OneSignal.Notifications.requestPermission();
                     await OneSignal.User.PushSubscription.optIn();
                     updateButtons();
-                }));
+                });
             });
         </script>
     @endif

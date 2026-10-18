@@ -151,9 +151,10 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-(function () {
+// Chart.js is loaded once and reused when coming back to the dashboard (see bm-navigate.js)
+BM.loadScript('https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js').then(function () {
+    if (!document.getElementById('viewsChart')) { return; }
     const styles = getComputedStyle(document.documentElement);
     const accent = styles.getPropertyValue('--ad-accent').trim() || '#e4407f';
     const muted = styles.getPropertyValue('--ad-muted').trim() || '#7a7a88';
@@ -203,6 +204,6 @@
         },
         options: { maintainAspectRatio: false, scales }
     });
-})();
+}).catch(() => window.adToast('Charts could not load. Check your connection.', 'warning'));
 </script>
 @endpush
