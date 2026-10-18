@@ -681,3 +681,9 @@ body.ad {
 .ad-btn.is-busy::after { content: ""; position: absolute; inset: 0; margin: auto; width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-color: var(--ad-muted) transparent var(--ad-muted) var(--ad-muted); animation: ad-busy-spin .7s linear infinite; }
 .ad-btn--primary.is-busy::after, .ad-btn--accent.is-busy::after { border-color: #fff transparent #fff #fff; }
 @keyframes ad-busy-spin { to { transform: rotate(360deg); } }
+
+/* ---------- No sideways scrolling in the admin ---------- */
+html { overflow-x: hidden; }
+@supports (overflow: clip) {
+    html, body.ad { overflow-x: clip; }
+}

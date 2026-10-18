@@ -1780,3 +1780,28 @@ body.bm {
     .bm-card--compact .bm-chip:not(.bm-chip--live):not(.bm-chip--breaking) { display: none; }
     .bm-card--compact .bm-posted-by { font-size: 11.5px; flex-wrap: wrap; }
 }
+
+/* ======================================================================
+   No sideways scrolling on phones and laptops
+   ====================================================================== */
+/* hidden on <html> only (it applies to the window, so sticky parts keep working); "clip" on both where supported */
+html { overflow-x: hidden; }
+@supports (overflow: clip) {
+    html, body.bm { overflow-x: clip; }
+}
+body.bm { max-width: 100%; }
+
+/* The slide-out menu waits off the right edge: keep it inside its own box */
+.bm-drawer { overflow: hidden; }
+
+/* Share menus never stick out past the screen edge */
+.bm-share__menu { max-width: calc(100vw - 32px); }
+
+/* Pasted story content (photos, tables, videos, embeds) shrinks to fit the screen */
+.bm-prose { overflow-wrap: anywhere; }
+.bm-prose img, .bm-prose video, .bm-prose iframe, .bm-prose embed, .bm-prose object, .bm-prose svg, .bm-prose figure { max-width: 100% !important; }
+.bm-prose img, .bm-prose video { height: auto !important; }
+.bm-prose [style*="width"] { max-width: 100% !important; }
+.bm-prose table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.bm-prose pre { max-width: 100%; overflow-x: auto; white-space: pre-wrap; }
+.bm-prose blockquote.twitter-tweet, .bm-prose .instagram-media, .bm-prose .fb-post { max-width: 100% !important; min-width: 0 !important; }
