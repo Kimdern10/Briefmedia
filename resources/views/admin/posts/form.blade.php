@@ -432,7 +432,7 @@
                                     @if($editing && $post->isBreaking())
                                         Breaking until {{ $post->breaking_until->format('j M, g:i A') }}. Untick to stop now.
                                     @else
-                                        Red “Breaking” bar at the top of every page for {{ \App\Models\Post::BREAKING_HOURS / 24 }} day
+                                        Red “Breaking” bar at the top of every page for {{ \App\Models\Post::BREAKING_HOURS }} hours, plus a push alert
                                     @endif
                                 </small>
                             </span>

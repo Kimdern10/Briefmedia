@@ -7,6 +7,7 @@ use App\Models\Post;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -93,7 +94,7 @@ class NewsOptionsTest extends TestCase
         $this->assertTrue($post->isHeadline());
         $this->assertTrue($post->headline_until->between(now()->addHours(23), now()->addHours(25)));
         $this->assertTrue($post->isBreaking());
-        $this->assertTrue($post->breaking_until->between(now()->addHours(23), now()->addHours(25)));
+        $this->assertTrue($post->breaking_until->between(now()->addHours(5), now()->addHours(7)), 'breaking lasts 6 hours');
         $this->assertSame('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ', $post->videoEmbedUrl());
     }
 
@@ -217,6 +218,29 @@ class NewsOptionsTest extends TestCase
         $post->refresh();
         $this->assertFalse($post->isHeadline());
         $this->assertFalse($post->isBreaking());
+        $this->get(url('/'))->assertOk()->assertDontSee('bm-topbar--breaking', false);
+    }
+
+    public function test_breaking_ends_after_6_hours_while_the_headline_stays_for_the_day(): void
+    {
+        DB::table('posts')->update(['headline_until' => null, 'breaking_until' => null]);
+
+        $post = $this->makePost([
+            'title' => 'Zz Six Hour Breaking',
+            'breaking_until' => now()->addHours(Post::BREAKING_HOURS),
+            'headline_until' => now()->addHours(Post::HEADLINE_HOURS),
+        ]);
+
+        $this->assertSame(6, Post::BREAKING_HOURS);
+        $this->get(url('/'))->assertOk()->assertSee('bm-topbar--breaking', false);
+
+        $this->travel(6)->hours();
+        $this->travel(1)->minutes();
+        Cache::flush();
+
+        $post->refresh();
+        $this->assertFalse($post->isBreaking());
+        $this->assertTrue($post->isHeadline());
         $this->get(url('/'))->assertOk()->assertDontSee('bm-topbar--breaking', false);
     }
 

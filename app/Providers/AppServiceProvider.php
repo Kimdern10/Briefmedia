@@ -24,9 +24,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Navigation data for the public header and footer. Both views use it, so it is built
         // once per request, and cached for a minute (cleared when a post or category changes).
-        $navigation = null;
-        View::composer(['snippets.header', 'snippets.footer'], function ($view) use (&$navigation) {
-            $navigation ??= Cache::remember(Post::HOME_CACHE_PREFIX.'nav', 60, function () {
+        View::composer(['snippets.header', 'snippets.footer'], function ($view) {
+            $request = request();
+            $navigation = $request->attributes->get('bm.navigation') ?? Cache::remember(Post::HOME_CACHE_PREFIX.'nav', 60, function () {
                 $allCategories = Category::orderBy('id')->get(['id', 'name', 'slug']);
 
                 return [
@@ -45,6 +45,7 @@ class AppServiceProvider extends ServiceProvider
                 ];
             });
 
+            $request->attributes->set('bm.navigation', $navigation);
             $view->with($navigation);
         });
 

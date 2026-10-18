@@ -518,9 +518,10 @@ class Post extends Model
     public const PINNED_TRENDING_DAYS = 2;
 
     /**
-     * How long a post stays "breaking news" after the admin ticks the box.
+     * How long a post stays "breaking news" after the admin ticks the box. Kept short:
+     * "breaking" means happening now, and a red bar left up all day gets ignored.
      */
-    public const BREAKING_HOURS = 24;
+    public const BREAKING_HOURS = 6;
 
     /**
      * How long a post stays a headline after the admin ticks the box.
