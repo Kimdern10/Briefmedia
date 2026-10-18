@@ -199,6 +199,119 @@
         }
     });
 
+    /* ---------- Photo viewer (story pages) ---------- */
+    // Tap a photo in a story to see it full-screen and uncropped; arrows or swipe for the
+    // story's other photos; ✕, Esc or tapping outside the photo closes it.
+    const viewerPhotos = '.bm-article__hero img, .bm-figure img, .bm-gallery img, .bm-prose img';
+    let viewer = null;
+
+    function storyPhotos() {
+        return $$(viewerPhotos).filter((img) => {
+            const link = img.closest('a[href]');
+            // Photos that link somewhere else (not to an image) keep their link
+            return img.src && !img.src.includes('bm-placeholder') && (!link || /\.(jpe?g|png|gif|webp)(\?|$)/i.test(link.href));
+        });
+    }
+
+    function captionFor(img) {
+        if (img.closest('.bm-article__hero')) {
+            const caption = $('.bm-photo-caption');
+            if (caption) {
+                // Caption and photo credit, e.g. "Governor in Awka · Photo: BriefMedia"
+                return $$('span', caption).map((part) => part.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean).join(' · ');
+            }
+        }
+        const figure = img.closest('figure');
+        const figcaption = figure && $('figcaption', figure);
+
+        return figcaption ? figcaption.textContent.trim() : '';
+    }
+
+    function openViewer(photos, index) {
+        closeViewer();
+        let current = index;
+
+        viewer = document.createElement('div');
+        viewer.className = 'bm-viewer';
+        viewer.setAttribute('role', 'dialog');
+        viewer.setAttribute('aria-modal', 'true');
+        viewer.setAttribute('aria-label', 'Photo viewer');
+        viewer.innerHTML = `
+            <button type="button" class="bm-viewer__close" aria-label="Close photo"><i class="bi bi-x-lg"></i></button>
+            ${photos.length > 1 ? '<button type="button" class="bm-viewer__nav bm-viewer__nav--prev" aria-label="Previous photo"><i class="bi bi-chevron-left"></i></button>' : ''}
+            <figure class="bm-viewer__stage"><img alt=""><figcaption class="bm-viewer__caption"></figcaption></figure>
+            ${photos.length > 1 ? '<button type="button" class="bm-viewer__nav bm-viewer__nav--next" aria-label="Next photo"><i class="bi bi-chevron-right"></i></button>' : ''}
+            ${photos.length > 1 ? '<span class="bm-viewer__count"></span>' : ''}`;
+
+        const image = $('img', viewer);
+        const caption = $('.bm-viewer__caption', viewer);
+        const count = $('.bm-viewer__count', viewer);
+
+        const show = (next) => {
+            current = (next + photos.length) % photos.length;
+            const source = photos[current];
+            image.classList.remove('is-ready');
+            image.onload = () => image.classList.add('is-ready');
+            image.src = source.currentSrc || source.src;
+            image.alt = source.alt || '';
+            const text = captionFor(source);
+            caption.textContent = text;
+            caption.hidden = !text;
+            if (count) { count.textContent = (current + 1) + ' / ' + photos.length; }
+        };
+
+        viewer.show = show;
+        viewer.step = (by) => show(current + by);
+
+        viewer.addEventListener('click', (event) => {
+            if (event.target.closest('.bm-viewer__nav--prev')) { viewer.step(-1); return; }
+            if (event.target.closest('.bm-viewer__nav--next')) { viewer.step(1); return; }
+            // Anywhere except the photo itself closes the viewer
+            if (event.target !== image) { closeViewer(); }
+        });
+
+        let touchX = null;
+        viewer.addEventListener('touchstart', (event) => { touchX = event.touches[0].clientX; }, { passive: true });
+        viewer.addEventListener('touchend', (event) => {
+            if (touchX === null || photos.length < 2) { return; }
+            const delta = event.changedTouches[0].clientX - touchX;
+            if (Math.abs(delta) > 50) { viewer.step(delta < 0 ? 1 : -1); }
+            touchX = null;
+        });
+
+        document.body.appendChild(viewer);
+        document.documentElement.classList.add('bm-viewer-open');
+        show(current);
+        requestAnimationFrame(() => viewer && viewer.classList.add('is-open'));
+        $('.bm-viewer__close', viewer).focus();
+    }
+
+    function closeViewer() {
+        if (!viewer) { return; }
+        viewer.remove();
+        viewer = null;
+        document.documentElement.classList.remove('bm-viewer-open');
+    }
+
+    document.addEventListener('click', (event) => {
+        const img = event.target.closest(viewerPhotos);
+        if (!img || event.button !== 0 || viewer) { return; }
+        const photos = storyPhotos();
+        const index = photos.indexOf(img);
+        if (index === -1) { return; }
+        event.preventDefault();
+        openViewer(photos, index);
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (!viewer) { return; }
+        if (event.key === 'Escape') { closeViewer(); }
+        if (event.key === 'ArrowRight') { viewer.step(1); }
+        if (event.key === 'ArrowLeft') { viewer.step(-1); }
+    });
+
+    document.addEventListener('livewire:navigating', closeViewer);
+
     /* ---------- Back to top ---------- */
     window.addEventListener('scroll', () => {
         const toTop = $('#bm-to-top');
