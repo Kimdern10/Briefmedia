@@ -116,7 +116,7 @@
 
         <!-- ================= HERO IMAGE ================= -->
         <figure class="bm-article__hero">
-            <img src="{{ $post->featured_image_1 ? asset('storage/' . $post->featured_image_1) : $placeholderImage }}"
+            <img src="{{ $post->coverUrl() }}" fetchpriority="high" decoding="async"
                  alt="{{ $post->title }}"
                  onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
         </figure>
@@ -250,7 +250,7 @@
                             <li class="bm-mini">
                                 <a href="{{ route('posts.show', $latestPost) }}">
                                     <img class="bm-mini__img" loading="lazy" alt="{{ $latestPost->title }}"
-                                         src="{{ $latestPost->featured_image_1 ? asset('storage/' . $latestPost->featured_image_1) : $placeholderImage }}"
+                                         src="{{ $latestPost->coverUrl('card') }}"
                                          onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
                                 </a>
                                 <div>

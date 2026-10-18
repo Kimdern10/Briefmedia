@@ -23,30 +23,24 @@ class ImageOptimizer
 
     public const QUALITY = 80;
 
+    /** Width of the small version used on story cards and lists. */
+    public const CARD_WIDTH = 640;
+
     /**
      * Save an uploaded image on the public disk and return its path.
-     * With $withJpegCopy, a JPEG copy is saved next to a WebP file for link previews.
+     * With $withCopies (cover photos), a JPEG copy for link previews and a small card
+     * version are saved next to the WebP file.
      */
     public static function store(UploadedFile $file, string $directory, string $format = 'webp', int $maxWidth = self::MAX_WIDTH, bool $withJpegCopy = false): string
     {
         try {
-            $image = static::load($file);
+            $image = static::load($file->getRealPath());
 
             if ($image === null || ($format === 'webp' && ! function_exists('imagewebp'))) {
                 return $file->store($directory, 'public');
             }
 
-            $image = static::scaleDown($image, $maxWidth);
-            $basename = $directory.'/'.Str::random(40);
-            $path = $basename.'.'.$format;
-
-            Storage::disk('public')->put($path, static::encode($image, $format));
-
-            if ($withJpegCopy && $format === 'webp') {
-                Storage::disk('public')->put($basename.'.jpg', static::encode(static::scaleDown($image, 1200), 'jpg'));
-            }
-
-            return $path;
+            return static::saveVersions($image, $directory, $format, $maxWidth, $withJpegCopy);
         } catch (Throwable $e) {
             Log::warning('Image optimisation skipped: '.$e->getMessage());
 
@@ -55,7 +49,89 @@ class ImageOptimizer
     }
 
     /**
-     * Delete a stored image and its JPEG link-preview copy.
+     * Make a compressed WebP version of a photo already on the public disk (old uploads).
+     * The original file is left as it is. Returns the new path, or null if it couldn't be done.
+     */
+    public static function optimizeStored(string $path, bool $withCopies = false): ?string
+    {
+        $disk = Storage::disk('public');
+
+        if (! $disk->exists($path) || ! function_exists('imagewebp')) {
+            return null;
+        }
+
+        try {
+            $image = static::load($disk->path($path));
+
+            return $image ? static::saveVersions($image, dirname($path), 'webp', self::MAX_WIDTH, $withCopies) : null;
+        } catch (Throwable $e) {
+            Log::warning("Could not optimise {$path}: ".$e->getMessage());
+
+            return null;
+        }
+    }
+
+    /**
+     * Add the small card version for a WebP photo that doesn't have one yet.
+     */
+    public static function addCardVersion(string $webpPath): bool
+    {
+        $disk = Storage::disk('public');
+        $cardPath = static::cardPathFor($webpPath);
+
+        if ($cardPath === null || $disk->exists($cardPath) || ! $disk->exists($webpPath)) {
+            return false;
+        }
+
+        try {
+            $image = static::load($disk->path($webpPath));
+            if (! $image) {
+                return false;
+            }
+            $disk->put($cardPath, static::encode(static::scaleDown($image, self::CARD_WIDTH), 'webp'));
+
+            return true;
+        } catch (Throwable $e) {
+            Log::warning("Could not make a card version of {$webpPath}: ".$e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Where the small card version of a WebP photo lives ("abc.webp" → "abc-640.webp").
+     */
+    public static function cardPathFor(?string $path): ?string
+    {
+        if (! $path || ! preg_match('/\.webp$/i', $path) || preg_match('/-'.self::CARD_WIDTH.'\.webp$/i', $path)) {
+            return null;
+        }
+
+        return preg_replace('/\.webp$/i', '-'.self::CARD_WIDTH.'.webp', $path);
+    }
+
+    /**
+     * Save the main version (and, for cover photos, the JPEG copy and card version).
+     */
+    private static function saveVersions(GdImage $image, string $directory, string $format, int $maxWidth, bool $withCopies): string
+    {
+        $disk = Storage::disk('public');
+        $image = static::scaleDown($image, $maxWidth);
+        $basename = trim($directory, '/').'/'.Str::random(40);
+        $path = $basename.'.'.$format;
+
+        $disk->put($path, static::encode($image, $format));
+
+        if ($withCopies && $format === 'webp') {
+            $disk->put($basename.'.jpg', static::encode(static::scaleDown($image, 1200), 'jpg'));
+            $disk->put(static::cardPathFor($path), static::encode(static::scaleDown($image, self::CARD_WIDTH), 'webp'));
+        }
+
+        return $path;
+    }
+
+    /**
+     * Delete a stored image and its JPEG link-preview copy and card version.
      */
     public static function delete(?string $path): void
     {
@@ -70,15 +146,18 @@ class ImageOptimizer
         if ($jpegCopy !== $path) {
             $disk->delete($jpegCopy);
         }
+
+        if ($cardPath = static::cardPathFor($path)) {
+            $disk->delete($cardPath);
+        }
     }
 
-    private static function load(UploadedFile $file): ?GdImage
+    private static function load(string $source): ?GdImage
     {
         if (! extension_loaded('gd')) {
             return null;
         }
 
-        $source = $file->getRealPath();
         $type = @exif_imagetype($source) ?: null;
 
         // Animated GIFs would lose their animation, so keep them as they are

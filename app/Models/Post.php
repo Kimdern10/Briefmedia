@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ImageOptimizer;
 use App\Services\PostAnnouncer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -628,6 +629,26 @@ class Post extends Model
     public function tagList(): string
     {
         return $this->tags->pluck('name')->implode(', ');
+    }
+
+    /**
+     * Cover photo for the site: "card" is the small 640px version used on story cards and lists
+     * (falls back to the full photo when an old upload hasn't been optimised yet).
+     */
+    public function coverUrl(string $size = 'full'): string
+    {
+        $path = $this->featured_image_1;
+
+        if (! $path) {
+            return route('theme.asset', ['img', 'bm-placeholder.svg']);
+        }
+
+        if ($size === 'card' && ($cardPath = ImageOptimizer::cardPathFor($path))
+            && Storage::disk('public')->exists($cardPath)) {
+            return asset('storage/'.$cardPath);
+        }
+
+        return asset('storage/'.$path);
     }
 
     /**

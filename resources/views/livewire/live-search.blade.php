@@ -13,7 +13,7 @@
         <div class="bm-search__results" role="listbox" aria-label="Quick results">
             @forelse($results as $result)
                 <a href="{{ route('posts.show', $result) }}" class="bm-search__result" role="option" wire:key="search-result-{{ $result->id }}">
-                    <img src="{{ $result->featured_image_1 ? asset('storage/' . $result->featured_image_1) : route('theme.asset', ['img', 'bm-placeholder.svg']) }}"
+                    <img src="{{ $result->coverUrl('card') }}"
                          alt="" loading="lazy"
                          onerror="this.onerror=null;this.src='{{ route('theme.asset', ['img', 'bm-placeholder.svg']) }}'">
                     <span>

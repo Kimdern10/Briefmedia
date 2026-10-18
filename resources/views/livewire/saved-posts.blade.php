@@ -11,7 +11,7 @@
                 <li class="bm-mini" wire:key="saved-{{ $savedPost->id }}">
                     <a href="{{ route('posts.show', $savedPost) }}">
                         <img class="bm-mini__img" loading="lazy" alt="{{ $savedPost->title }}"
-                             src="{{ $savedPost->featured_image_1 ? asset('storage/' . $savedPost->featured_image_1) : route('theme.asset', ['img', 'bm-placeholder.svg']) }}"
+                             src="{{ $savedPost->coverUrl('card') }}"
                              onerror="this.onerror=null;this.src='{{ route('theme.asset', ['img', 'bm-placeholder.svg']) }}'">
                     </a>
                     <div style="min-width: 0;">

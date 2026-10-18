@@ -87,7 +87,7 @@
                                 <li class="bm-mini">
                                     <a href="{{ route('posts.show', $latestPost) }}">
                                         <img class="bm-mini__img" loading="lazy" alt="{{ $latestPost->title }}"
-                                             src="{{ $latestPost->featured_image_1 ? asset('storage/' . $latestPost->featured_image_1) : $placeholderImage }}"
+                                             src="{{ $latestPost->coverUrl('card') }}"
                                              onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
                                     </a>
                                     <div>
@@ -113,7 +113,7 @@
                                 <li class="bm-mini">
                                     <a href="{{ route('posts.show', $trendingPost) }}">
                                         <img class="bm-mini__img" loading="lazy" alt="{{ $trendingPost->title }}"
-                                             src="{{ $trendingPost->featured_image_1 ? asset('storage/' . $trendingPost->featured_image_1) : $placeholderImage }}"
+                                             src="{{ $trendingPost->coverUrl('card') }}"
                                              onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
                                     </a>
                                     <div>

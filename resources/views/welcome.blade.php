@@ -3,7 +3,8 @@
 @section('content')
 @php
     $placeholderImage = route('theme.asset', ['img', 'bm-placeholder.svg']);
-    $imageFor = fn ($post) => $post->featured_image_1 ? asset('storage/' . $post->featured_image_1) : $placeholderImage;
+    // Small 640px version for thumbnails and Trending; the big slider photo uses the full one
+    $imageFor = fn ($post, $size = 'card') => $post->coverUrl($size);
 
     // Trending: posts an admin marked with the Trend button (Post::trendingNow)
     $filteredTrending = collect($trendingPosts ?? [])->take(8);
@@ -22,8 +23,8 @@
                         @foreach($sliderPosts as $index => $post)
                             <article class="bm-hero__slide {{ $index === 0 ? 'is-active' : '' }}" aria-roledescription="slide"
                                      aria-label="{{ $index + 1 }} of {{ $sliderPosts->count() }}">
-                                <img class="bm-hero__img" src="{{ $imageFor($post) }}" alt="{{ $post->title }}"
-                                     @if($index > 0) loading="lazy" @endif
+                                <img class="bm-hero__img" src="{{ $imageFor($post, 'full') }}" alt="{{ $post->title }}" decoding="async"
+                                     @if($index > 0) loading="lazy" @else fetchpriority="high" @endif
                                      onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
                                 <div class="bm-hero__content">
                                     @if($post->isLive())
