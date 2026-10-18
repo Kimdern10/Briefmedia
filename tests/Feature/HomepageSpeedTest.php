@@ -95,7 +95,7 @@ class HomepageSpeedTest extends TestCase
         $this->get(url('/'))->assertOk()->assertDontSee('Zz Headline Was Changed');
     }
 
-    public function test_homepage_shows_each_category_with_its_six_newest_stories_only(): void
+    public function test_homepage_shows_each_category_with_its_seven_newest_stories_only(): void
     {
         foreach (range(1, 9) as $i) {
             $post = $this->makePost("Zz Cat Story {$i}");
@@ -105,7 +105,7 @@ class HomepageSpeedTest extends TestCase
         $this->get(url('/'))->assertOk()->assertViewHas('categoriesWithPosts', function ($categories) {
             $posts = $categories->firstWhere('id', $this->category->id)->posts;
 
-            return $posts->count() === 6 && $posts->first()->title === 'Zz Cat Story 9';
+            return $posts->count() === 7 && $posts->first()->title === 'Zz Cat Story 9';
         });
     }
 

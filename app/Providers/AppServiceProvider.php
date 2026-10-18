@@ -72,13 +72,13 @@ class AppServiceProvider extends ServiceProvider
                         ->get()
                 )->values();
 
-                // Each category with only the 6 newest stories it shows (not every story it has)
+                // Each category with only the 7 newest stories it shows (1 big + 6 in an even grid) (not every story it has)
                 $categoriesWithPosts = Category::whereHas('posts', fn ($query) => $query->where('status', 'published'))
                     ->get()
                     ->each(fn (Category $category) => $category->setRelation('posts', $forCards()
                         ->where('category_id', $category->id)
                         ->latest()
-                        ->take(6)
+                        ->take(7)
                         ->get()));
 
                 return [

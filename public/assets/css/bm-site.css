@@ -1749,3 +1749,34 @@ body.bm {
     .bm-results__who { grid-template-columns: auto minmax(0, 1fr); }
     .bm-results__votes { grid-column: 1 / -1; }
 }
+
+/* ======================================================================
+   Bigger photos on story cards, less empty space between sections
+   ====================================================================== */
+.bm-section { padding: 36px 0; }
+.bm-section--tight { padding: 26px 0; }
+.bm-section__head { margin-bottom: 20px; padding-bottom: 12px; }
+
+/* Taller photos (4:3 instead of 16:10) so they show more of the picture */
+.bm-card--lead .bm-card__media,
+.bm-card--compact .bm-card__media,
+.bm-card--default .bm-card__media { aspect-ratio: 4 / 3; }
+.bm-cat-grid { gap: 26px; }
+.bm-cat-grid__rest { gap: 20px; }
+.bm-card { gap: 12px; }
+
+@media (max-width: 640px) {
+    .bm-section { padding: 26px 0; }
+    .bm-section--tight { padding: 20px 0; }
+    .bm-section__head { margin-bottom: 16px; }
+
+    /* Category stories: two columns with the photo on top (bigger photos than a
+       small thumbnail beside the title, and a shorter page to scroll) */
+    .bm-cat-grid__rest { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 14px; }
+    .bm-card--compact { display: flex; flex-direction: column; gap: 8px; }
+    .bm-card--compact .bm-card__media { aspect-ratio: 4 / 3; border-radius: 12px; }
+    .bm-card--compact .bm-card__body { gap: 6px; }
+    .bm-card--compact .bm-card__title { font-size: 15px; line-height: 1.3; }
+    .bm-card--compact .bm-chip:not(.bm-chip--live):not(.bm-chip--breaking) { display: none; }
+    .bm-card--compact .bm-posted-by { font-size: 11.5px; flex-wrap: wrap; }
+}

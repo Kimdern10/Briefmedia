@@ -175,7 +175,7 @@
     <!-- ================= CATEGORY SECTIONS ================= -->
     @foreach ($categoriesWithPosts as $category)
         @php
-            $categoryPosts = $category->posts->take(6);
+            $categoryPosts = $category->posts->take(7);
             $leadPost = $categoryPosts->first();
             $otherPosts = $categoryPosts->slice(1);
         @endphp
