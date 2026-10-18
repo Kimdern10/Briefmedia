@@ -7,7 +7,7 @@
 <style>
     .bm-account { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 28px; align-items: start; }
     .bm-account__card { position: sticky; top: calc(var(--bm-header-h) + 20px); text-align: center; }
-    .bm-account__avatar { position: relative; width: 120px; height: 120px; margin: 0 auto 16px; border-radius: 999px; cursor: pointer; }
+    .bm-account__avatar { position: relative; display: block; width: 120px; height: 120px; margin: 0 auto 16px; border-radius: 999px; cursor: pointer; }
     .bm-account__avatar img { width: 100%; height: 100%; border-radius: 999px; object-fit: cover; box-shadow: 0 0 0 4px var(--bm-surface), 0 0 0 5px var(--bm-line); }
     .bm-account__avatar span { position: absolute; right: 2px; bottom: 2px; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 999px; background: var(--bm-ink); color: var(--bm-bg); border: 3px solid var(--bm-surface); font-size: 14px; }
     .bm-account__name { font-family: var(--bm-serif); font-size: 22px; font-weight: 600; }

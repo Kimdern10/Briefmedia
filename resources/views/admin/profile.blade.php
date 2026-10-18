@@ -10,7 +10,7 @@
     </div>
 </div>
 
-<div class="ad-grid ad-grid--main" style="grid-template-columns: 320px minmax(0, 1fr);">
+<div class="ad-grid ad-grid--profile">
     <div class="ad-stack">
         <livewire:profile-photo variant="admin" />
     </div>

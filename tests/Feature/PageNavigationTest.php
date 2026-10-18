@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\SeoSetting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
@@ -54,6 +55,70 @@ class PageNavigationTest extends TestCase
             ->assertSee("BM.loadScript('https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js')", false)
             ->assertSee("addEventListener('livewire:navigate', onLeave)", false)
             ->assertDontSee('<script src="https://cdn.ckeditor.com', false);
+    }
+
+    private function admin(): User
+    {
+        $admin = User::factory()->create(['password' => 'password']);
+        $admin->forceFill(['role_as' => 1])->save();
+
+        return $admin;
+    }
+
+    public function test_background_form_saves_get_the_next_page_address_instead_of_a_redirect(): void
+    {
+        $this->actingAs($this->admin())
+            ->withHeaders(['X-BM-Background-Form' => '1'])
+            ->post(route('admin.categories.store'), ['name' => 'Zz Background Category'])
+            ->assertOk()
+            ->assertJson(['redirect' => route('admin.categories.index')]);
+
+        $this->assertDatabaseHas('categories', ['name' => 'Zz Background Category']);
+
+        // The "saved" message waits in the session for the page opened next
+        $this->assertSame('Category created successfully.', session('success'));
+    }
+
+    public function test_background_form_with_mistakes_goes_back_with_the_errors(): void
+    {
+        $this->actingAs($this->admin())
+            ->from(route('admin.categories.create'))
+            ->withHeaders(['X-BM-Background-Form' => '1'])
+            ->post(route('admin.categories.store'), ['name' => ''])
+            ->assertOk()
+            ->assertJson(['redirect' => route('admin.categories.create')])
+            ->assertSessionHasErrors('name');
+    }
+
+    public function test_normal_form_saves_still_redirect(): void
+    {
+        $this->actingAs($this->admin())
+            ->post(route('admin.categories.store'), ['name' => 'Zz Normal Category'])
+            ->assertRedirect(route('admin.categories.index'));
+    }
+
+    public function test_seo_settings_save_with_empty_optional_fields(): void
+    {
+        SeoSetting::query()->delete();
+
+        $this->actingAs($this->admin())
+            ->from(route('admin.seo.edit'))
+            ->post(route('admin.seo.update'), ['site_name' => 'Zz BriefMedia', 'robots_meta' => '', 'og_type' => '', 'twitter_card' => ''])
+            ->assertRedirect(route('admin.seo.edit'));
+
+        $this->assertDatabaseHas('seo_settings', ['site_name' => 'Zz BriefMedia', 'robots_meta' => 'index, follow', 'og_type' => 'website']);
+    }
+
+    public function test_profile_and_posts_table_use_their_mobile_friendly_layouts(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->get(route('admin.profile'))->assertOk()
+            ->assertSee('ad-grid--profile', false)
+            ->assertDontSee('grid-template-columns: 320px', false);
+
+        $this->actingAs($admin)->get(route('admin.posts.index'))->assertOk()
+            ->assertSee('ad-table ad-table--stack', false);
     }
 
     public function test_navigation_script_is_served(): void

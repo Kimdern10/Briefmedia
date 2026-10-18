@@ -8,6 +8,7 @@ use App\Http\Middleware\EncryptCookies;
 use App\Http\Middleware\PreventRequestsDuringMaintenance;
 use App\Http\Middleware\PublishScheduledPosts;
 use App\Http\Middleware\RedirectIfAuthenticated;
+use App\Http\Middleware\RedirectsForBackgroundForms;
 use App\Http\Middleware\TrimStrings;
 use App\Http\Middleware\TrustProxies;
 use App\Http\Middleware\ValidateSignature;
@@ -61,6 +62,7 @@ class Kernel extends HttpKernel
             VerifyCsrfToken::class,
             SubstituteBindings::class,
             PublishScheduledPosts::class,
+            RedirectsForBackgroundForms::class,
         ],
 
         'api' => [

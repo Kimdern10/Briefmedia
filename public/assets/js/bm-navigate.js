@@ -137,6 +137,73 @@
         }
     }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
+    /* ---------- Admin forms save in the background ---------- */
+    // Category, SEO and post forms are sent with fetch (photos included). The server answers
+    // a redirect with {redirect: url} (RedirectsForBackgroundForms); that page then opens with
+    // Livewire navigation, showing the "saved" toast or the form again with its errors.
+    document.addEventListener('submit', (event) => {
+        const form = event.target;
+        if (event.defaultPrevented || !(form instanceof HTMLFormElement) || startArea !== 'admin') { return; }
+        if ((form.getAttribute('method') || 'get').toLowerCase() !== 'post') { return; }
+        if (form.hasAttribute('wire:submit') || form.hasAttribute('data-no-navigate') || (form.target && form.target !== '_self')) { return; }
+        // "Are you sure?" forms ask first (bm-alerts.js) and then submit normally
+        if (form.hasAttribute('data-confirm-text')) { return; }
+
+        const url = new URL(form.getAttribute('action') || location.href, location.href);
+        if (!canNavigateTo(url)) { return; }
+
+        event.preventDefault();
+        if (form.dataset.bmSending === '1') { return; }
+        form.dataset.bmSending = '1';
+
+        const buttons = Array.from(form.querySelectorAll('button[type=submit], button:not([type])'));
+        buttons.forEach((button) => { button.disabled = true; button.classList.add('is-busy'); });
+        const finish = () => {
+            delete form.dataset.bmSending;
+            buttons.forEach((button) => { button.disabled = false; button.classList.remove('is-busy'); });
+        };
+
+        const data = new FormData(form);
+        if (event.submitter && event.submitter.name) { data.append(event.submitter.name, event.submitter.value); }
+
+        fetch(url.href, {
+            method: 'POST',
+            body: data,
+            credentials: 'same-origin',
+            headers: { 'X-BM-Background-Form': '1', 'Accept': 'text/html, application/json' },
+        }).then(async (response) => {
+            if (response.status === 419) {
+                // Session expired (left open too long): reload to get a fresh form
+                location.reload();
+                return;
+            }
+
+            const type = response.headers.get('Content-Type') || '';
+            if (type.includes('application/json')) {
+                const body = await response.json();
+                if (body.redirect) {
+                    navigate(body.redirect);
+                    return;
+                }
+            }
+
+            if (response.ok && type.includes('text/html')) {
+                // The page answered with HTML instead of a redirect: show it as a normal page
+                const html = await response.text();
+                document.open();
+                document.write(html);
+                document.close();
+                return;
+            }
+
+            throw new Error('Unexpected response ' + response.status);
+        }).catch((error) => {
+            console.error(error);
+            const say = window.adToast || window.bmToast;
+            say && say('Could not save. Check your connection and try again.', 'error');
+        }).finally(finish);
+    });
+
     /* ---------- After each navigation ---------- */
     document.addEventListener('livewire:navigated', () => {
         // Ended up on a page with the other design (e.g. sent to log in) or an error page: load it properly

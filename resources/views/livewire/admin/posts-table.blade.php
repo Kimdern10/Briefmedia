@@ -25,7 +25,7 @@
     </div>
 
     <div class="ad-table-wrap" wire:loading.class="is-loading" wire:target="search,setStatus,gotoPage,nextPage,previousPage,clearSearch">
-        <table class="ad-table">
+        <table class="ad-table ad-table--stack">
             <thead>
                 <tr>
                     <th>Post</th>
