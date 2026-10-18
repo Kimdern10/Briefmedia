@@ -79,8 +79,20 @@ class OptimizePostImages extends Command
             foreach ($work as $slot => $task) {
                 $path = $post->{$slot};
 
-                if ($task === 'add card version') {
-                    ImageOptimizer::addCardVersion($path) ? $this->line("   {$slot}: card version added") : $failed++;
+                if ($task === 'add card version' || $task === 'redo card version') {
+                    $cardPath = ImageOptimizer::cardPathFor($path);
+                    $oldSize = $disk->exists($cardPath) ? (int) $disk->size($cardPath) : 0;
+
+                    if (ImageOptimizer::addCardVersion($path, replace: true)) {
+                        $newSize = (int) $disk->size($cardPath);
+                        if ($oldSize > 0) {
+                            $before += $oldSize;
+                            $after += $newSize;
+                        }
+                        $this->line(sprintf('   %s: card version %s', $slot, $oldSize > 0 ? $this->kb($oldSize).' → '.$this->kb($newSize) : 'added'));
+                    } else {
+                        $failed++;
+                    }
 
                     continue;
                 }
@@ -129,7 +141,8 @@ class OptimizePostImages extends Command
     }
 
     /**
-     * What needs doing for each photo of a post: optimise an old upload, or add a missing card version.
+     * What needs doing for each photo of a post: optimise an old upload, shrink a WebP that is
+     * still too big, or add (or redo) the small card version.
      *
      * @return array<string, string>
      */
@@ -149,8 +162,24 @@ class OptimizePostImages extends Command
                 if (! preg_match('/\.gif$/i', $path)) {
                     $work[$slot] = 'compress to WebP';
                 }
-            } elseif ($slot === 'featured_image_1' && ! $disk->exists(ImageOptimizer::cardPathFor($path))) {
-                $work[$slot] = 'add card version';
+
+                continue;
+            }
+
+            // A WebP that is still too big (made on a server where resizing failed): redo it
+            if ((ImageOptimizer::widthOf($path) ?? 0) > ImageOptimizer::MAX_WIDTH) {
+                $work[$slot] = 'resize';
+
+                continue;
+            }
+
+            if ($slot === 'featured_image_1') {
+                $cardPath = ImageOptimizer::cardPathFor($path);
+                if (! $disk->exists($cardPath)) {
+                    $work[$slot] = 'add card version';
+                } elseif ((ImageOptimizer::widthOf($cardPath) ?? 0) > ImageOptimizer::CARD_WIDTH) {
+                    $work[$slot] = 'redo card version';
+                }
             }
         }
 

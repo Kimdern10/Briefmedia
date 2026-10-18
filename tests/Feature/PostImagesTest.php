@@ -134,6 +134,60 @@ class PostImagesTest extends TestCase
         $this->assertSame(1, Post::where('title', 'like', 'Zz Batch%')->where('featured_image_1', 'not like', '%.webp')->count());
     }
 
+    private function putWebp(string $path, int $width, int $height): void
+    {
+        $image = imagecreatetruecolor($width, $height);
+        ob_start();
+        imagewebp($image);
+        Storage::disk('public')->put($path, ob_get_clean());
+    }
+
+    public function test_command_redoes_webp_photos_that_were_left_full_size(): void
+    {
+        // What a server whose resizing failed produced: a full-size WebP and a full-size "card"
+        $this->putWebp('posts/featured/zz-big.webp', 2560, 1920);
+        $this->putWebp('posts/featured/zz-big-640.webp', 2560, 1920);
+        $this->putWebp('posts/featured/zz-inline.webp', 2400, 1600);
+
+        $post = Post::create([
+            'admin_id' => $this->admin->id,
+            'category_id' => $this->category->id,
+            'title' => 'Zz Too Big Webp',
+            'content' => '<p>Body</p>',
+            'featured_image_1' => 'posts/featured/zz-big.webp',
+            'featured_image_2' => 'posts/featured/zz-inline.webp',
+            'status' => 'published',
+        ]);
+
+        $this->artisan('images:optimize')->expectsOutputToContain('All post photos are optimised.')->assertSuccessful();
+
+        $post->refresh();
+        $disk = Storage::disk('public');
+        $this->assertNotSame('posts/featured/zz-big.webp', $post->featured_image_1);
+        $this->assertSame(1600, getimagesizefromstring($disk->get($post->featured_image_1))[0]);
+        $this->assertSame(640, getimagesizefromstring($disk->get(preg_replace('/\.webp$/', '-640.webp', $post->featured_image_1)))[0]);
+        $this->assertSame(1600, getimagesizefromstring($disk->get($post->featured_image_2))[0]);
+    }
+
+    public function test_command_shrinks_a_card_version_that_is_too_big(): void
+    {
+        $this->putWebp('posts/featured/zz-ok.webp', 1200, 800);
+        $this->putWebp('posts/featured/zz-ok-640.webp', 1200, 800);
+
+        Post::create([
+            'admin_id' => $this->admin->id,
+            'category_id' => $this->category->id,
+            'title' => 'Zz Card Too Big',
+            'content' => '<p>Body</p>',
+            'featured_image_1' => 'posts/featured/zz-ok.webp',
+            'status' => 'published',
+        ]);
+
+        $this->artisan('images:optimize')->expectsOutputToContain('card version')->assertSuccessful();
+
+        $this->assertSame(640, getimagesizefromstring(Storage::disk('public')->get('posts/featured/zz-ok-640.webp'))[0]);
+    }
+
     public function test_already_compressed_covers_just_get_their_card_version(): void
     {
         $webp = 'posts/featured/zz-ready.webp';

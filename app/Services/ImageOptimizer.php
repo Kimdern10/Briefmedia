@@ -74,12 +74,12 @@ class ImageOptimizer
     /**
      * Add the small card version for a WebP photo that doesn't have one yet.
      */
-    public static function addCardVersion(string $webpPath): bool
+    public static function addCardVersion(string $webpPath, bool $replace = false): bool
     {
         $disk = Storage::disk('public');
         $cardPath = static::cardPathFor($webpPath);
 
-        if ($cardPath === null || $disk->exists($cardPath) || ! $disk->exists($webpPath)) {
+        if ($cardPath === null || ($disk->exists($cardPath) && ! $replace) || ! $disk->exists($webpPath)) {
             return false;
         }
 
@@ -204,9 +204,31 @@ class ImageOptimizer
             return $image;
         }
 
-        $scaled = imagescale($image, $maxWidth, (int) round(imagesy($image) * $maxWidth / $width), IMG_BICUBIC);
+        $height = max(1, (int) round(imagesy($image) * $maxWidth / $width));
 
-        return $scaled instanceof GdImage ? $scaled : $image;
+        // imagecopyresampled works with every GD build (imagescale with IMG_BICUBIC silently
+        // fails on some shared hosts, which left photos at full size)
+        $scaled = imagecreatetruecolor($maxWidth, $height);
+        imagealphablending($scaled, false);
+        imagesavealpha($scaled, true);
+        imagefill($scaled, 0, 0, imagecolorallocatealpha($scaled, 0, 0, 0, 127));
+
+        if (! imagecopyresampled($scaled, $image, 0, 0, 0, 0, $maxWidth, $height, $width, imagesy($image))) {
+            throw new \RuntimeException('Could not resize the image');
+        }
+
+        return $scaled;
+    }
+
+    /**
+     * Width in pixels of a stored image, or null if it can't be read.
+     */
+    public static function widthOf(string $path): ?int
+    {
+        $disk = Storage::disk('public');
+        $size = $disk->exists($path) ? @getimagesize($disk->path($path)) : false;
+
+        return $size ? (int) $size[0] : null;
     }
 
     private static function encode(GdImage $image, string $format): string
