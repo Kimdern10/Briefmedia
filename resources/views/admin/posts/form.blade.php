@@ -44,11 +44,11 @@
 
                     <div class="ad-field">
                         <label class="ad-label" for="excerpt">Excerpt <small>Shown on cards and under the headline</small></label>
-                        <textarea name="excerpt" id="excerpt" rows="3" maxlength="{{ $editing ? 500 : 700 }}"
+                        <textarea name="excerpt" id="excerpt" rows="5" maxlength="{{ \App\Models\Post::EXCERPT_MAX }}"
                                   class="ad-textarea @error('excerpt') is-invalid @enderror"
-                                  data-counter="excerpt_count" data-recommended="200"
+                                  data-counter="excerpt_count" data-recommended="{{ \App\Models\Post::EXCERPT_MAX }}"
                                   placeholder="A short summary of the story">{{ old('excerpt', $editing ? $post->excerpt : '') }}</textarea>
-                        <div class="ad-help"><span>Aim for one or two sentences.</span><span class="ad-counter"><span id="excerpt_count">0</span> chars</span></div>
+                        <div class="ad-help"><span>Up to {{ number_format(\App\Models\Post::EXCERPT_MAX) }} characters. Cards show the first line or two.</span><span class="ad-counter"><span id="excerpt_count">0</span> chars</span></div>
                         @error('excerpt')
                             <span class="ad-error">{{ $message }}</span>
                         @enderror

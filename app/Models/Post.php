@@ -507,6 +507,11 @@ class Post extends Model
     }
 
     /**
+     * Longest summary (excerpt) allowed in the post editor, in characters.
+     */
+    public const EXCERPT_MAX = 2000;
+
+    /**
      * How long an admin's "Trend" pick lasts.
      */
     public const PINNED_TRENDING_DAYS = 2;

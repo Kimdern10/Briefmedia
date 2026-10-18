@@ -292,4 +292,34 @@ class PublishingFeaturesTest extends TestCase
         $this->assertSame(1, (int) DB::table('post_daily_views')
             ->where('post_id', $post->id)->where('date', now()->toDateString())->value('views'));
     }
+
+    /* ---------- Longer summaries ---------- */
+
+    public function test_summary_can_be_up_to_2000_characters_on_new_and_edited_posts(): void
+    {
+        $long = str_repeat('A longer summary of the story. ', 60); // ~1,800 characters
+
+        $this->actingAs($this->admin)->post(route('admin.posts.store'), [
+            'category_id' => $this->category->id,
+            'title' => 'Zz Long Summary Story',
+            'excerpt' => $long,
+            'content' => '<p>Body</p>',
+            'status' => 'published',
+            'featured_image_1' => UploadedFile::fake()->image('cover.jpg'),
+        ])->assertSessionHasNoErrors();
+
+        $post = Post::where('title', 'Zz Long Summary Story')->firstOrFail();
+        $this->assertSame(trim($long), $post->excerpt);
+
+        $this->actingAs($this->admin)->put(route('admin.posts.update', $post->id), [
+            'category_id' => $this->category->id,
+            'title' => 'Zz Long Summary Story',
+            'excerpt' => $long.$long,
+            'content' => '<p>Body</p>',
+            'status' => 'published',
+        ])->assertSessionHasErrors('excerpt');
+
+        $this->actingAs($this->admin)->get(route('admin.posts.edit', $post->id))->assertOk()
+            ->assertSee('maxlength="2000"', false);
+    }
 }

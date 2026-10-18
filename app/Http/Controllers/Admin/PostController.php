@@ -48,7 +48,7 @@ class PostController extends Controller
         $request->validate([
             'category_id' => 'required|exists:categories,id',
             'title' => 'required|string|max:255',
-            'excerpt' => 'nullable|string|max:700',
+            'excerpt' => 'nullable|string|max:'.Post::EXCERPT_MAX,
             'content' => 'required|string',
             'featured_image_1' => 'required|image|max:5120', // Increased to 5MB
             'featured_image_2' => 'nullable|image|max:5120',
@@ -143,7 +143,7 @@ class PostController extends Controller
         $request->validate([
             'category_id' => 'required|exists:categories,id',
             'title' => 'required|string|max:255',
-            'excerpt' => 'nullable|string|max:500',
+            'excerpt' => 'nullable|string|max:'.Post::EXCERPT_MAX,
             'content' => 'required|string',
             'featured_image_1' => 'nullable|image|max:5120',
             'featured_image_2' => 'nullable|image|max:5120',
