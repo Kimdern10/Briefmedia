@@ -50,7 +50,7 @@ class SitemapController extends Controller
 
             return view('sitemaps.news', [
                 'posts' => $posts,
-                'publicationName' => optional(SeoSetting::first())->site_name ?: 'BriefMedia',
+                'publicationName' => optional(SeoSetting::current())->site_name ?: 'BriefMedia',
             ])->render();
         });
 

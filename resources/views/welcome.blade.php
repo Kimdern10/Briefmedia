@@ -7,7 +7,7 @@
 
     // Trending: posts an admin marked with the Trend button (Post::trendingNow)
     $filteredTrending = collect($trendingPosts ?? [])->take(8);
-    $mostReadToday = \App\Models\Post::mostReadToday(5);
+    $mostReadToday ??= \App\Models\Post::mostReadToday(5);
 @endphp
 
 <main>

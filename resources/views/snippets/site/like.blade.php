@@ -5,8 +5,11 @@
 --}}
 @php
     $likeButtonClass = $class ?? 'bm-action';
-    $likedByMe = auth()->check() && $post->likedByUsers->contains(auth()->id());
-    $likesTotal = $post->likedByUsers->count();
+    // Homepage cards bring a like count and the visitor's liked post ids (no per-card queries)
+    $likedByMe = auth()->check() && (isset($likedPostIds)
+        ? in_array($post->id, $likedPostIds, true)
+        : $post->likedByUsers->contains(auth()->id()));
+    $likesTotal = $post->liked_by_users_count ?? $post->likedByUsers->count();
 @endphp
 
 @auth

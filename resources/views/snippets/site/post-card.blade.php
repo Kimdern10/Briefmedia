@@ -62,7 +62,7 @@
                 <span class="bm-action" title="Views" style="cursor: default;"><i class="bi bi-eye"></i> {{ number_format($post->views ?? 0) }}</span>
                 <a href="{{ route('posts.show', $post) }}#comments" class="bm-action" title="Comments"><i class="bi bi-chat"></i> {{ $post->comments_count ?? 0 }}</a>
                 @include('snippets.site.like', ['post' => $post])
-                @include('snippets.site.share', ['post' => $post])
+                @include('snippets.site.share', ['post' => $post, 'lazy' => true])
             </div>
         </div>
     </div>

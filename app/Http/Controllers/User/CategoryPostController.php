@@ -58,8 +58,7 @@ class CategoryPostController extends Controller
         if ($user) {
             // Logged in user - check database
             if (! $post->viewedByUsers()->where('user_id', $user->id)->exists()) {
-                $post->increment('views');
-                Post::recordDailyView($post->id);
+                $post->countView();
                 $post->viewedByUsers()->attach($user->id);
             }
         } else {
@@ -68,8 +67,7 @@ class CategoryPostController extends Controller
 
             // Use request()->cookie() instead of Cookie::has()
             if (! request()->hasCookie($cookieName)) {
-                $post->increment('views');
-                Post::recordDailyView($post->id);
+                $post->countView();
                 // Queue the cookie for 30 days
                 Cookie::queue($cookieName, true, 60 * 24 * 30);
             }

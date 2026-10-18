@@ -30,10 +30,6 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
-
 // Design files served from the project folder (see ThemeAssetController)
 Route::get('/theme/{type}/{file}', ThemeAssetController::class)
     ->where(['type' => 'css|js|img', 'file' => 'bm-[a-z0-9-]+\.(css|js|svg|png)'])
@@ -108,7 +104,8 @@ Route::get('/newsletter/unsubscribe/{token}', [NewsletterController::class, 'uns
 
 Route::get('/', [UserController::class, 'blade'])->name('home');
 
-Route::get('/home', [HomeController::class, 'index'])->name('home');
+// Its own name: two routes called "home" stop `php artisan route:cache` from working
+Route::get('/home', [HomeController::class, 'index'])->name('home.redirect');
 
 Route::middleware(['auth', 'isAdmin'])->prefix('admin')->group(function () {
     Route::get('dashboard', [AdminController::class, 'admin_dashboard'])->name('admin.dashboard');

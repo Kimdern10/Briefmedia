@@ -36,6 +36,7 @@ class LiveUpdatesManager extends Component
     {
         $post = Post::withTrashed()->findOrFail($this->postId);
         $post->forceFill(['is_live' => ! $post->is_live])->saveQuietly();
+        Post::forgetHomeCache(); // LIVE badges on homepage cards
         $this->isLive = (bool) $post->is_live;
 
         $this->toast($this->isLive ? 'Live coverage is on. Readers see a LIVE badge.' : 'Live coverage ended.');

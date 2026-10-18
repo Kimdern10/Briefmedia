@@ -7,8 +7,8 @@ use App\Models\Post;
 use App\Models\SeoSetting;
 use App\Models\Subscriber;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -19,73 +19,82 @@ class AppServiceProvider extends ServiceProvider
         // Use Bootstrap 5 pagination
         Paginator::useBootstrap();
 
-        // Guard against missing table before migrations have run
-        if (Schema::hasTable('seo_settings')) {
-            $seo = SeoSetting::first();
-            View::share('globalSeo', $seo);
-        }
+        // Site-wide SEO settings (cached; the table may not exist before the first migration)
+        View::share('globalSeo', SeoSetting::current());
 
-        // Navigation data for the public header and footer
-        View::composer(['snippets.header', 'snippets.footer'], function ($view) {
-            $allCategories = Category::orderBy('id')->get(['id', 'name', 'slug']);
+        // Navigation data for the public header and footer. Both views use it, so it is built
+        // once per request, and cached for a minute (cleared when a post or category changes).
+        $navigation = null;
+        View::composer(['snippets.header', 'snippets.footer'], function ($view) use (&$navigation) {
+            $navigation ??= Cache::remember(Post::HOME_CACHE_PREFIX.'nav', 60, function () {
+                $allCategories = Category::orderBy('id')->get(['id', 'name', 'slug']);
 
-            $view->with([
-                'navCategories' => $allCategories->take(5),
-                'moreCategories' => $allCategories->skip(5)->values(),
-                'tickerPosts' => Post::where('status', 'published')
-                    ->latest()
-                    ->take(6)
-                    ->get(['id', 'title', 'slug']),
-                // Breaking news replaces the "Latest" ticker while any is active
-                'breakingPosts' => Post::where('status', 'published')
-                    ->where('breaking_until', '>', now())
-                    ->latest()
-                    ->take(6)
-                    ->get(['id', 'title', 'slug']),
-            ]);
+                return [
+                    'navCategories' => $allCategories->take(5),
+                    'moreCategories' => $allCategories->skip(5)->values(),
+                    'tickerPosts' => Post::where('status', 'published')
+                        ->latest()
+                        ->take(6)
+                        ->get(['id', 'title', 'slug']),
+                    // Breaking news replaces the "Latest" ticker while any is active
+                    'breakingPosts' => Post::where('status', 'published')
+                        ->where('breaking_until', '>', now())
+                        ->latest()
+                        ->take(6)
+                        ->get(['id', 'title', 'slug']),
+                ];
+            });
+
+            $view->with($navigation);
         });
 
-        // Homepage data (only the homepage needs it)
+        // Homepage data (only the homepage needs it). Cached for a minute so busy moments
+        // (election night) don't hit the database on every visit; any post change clears it.
         View::composer('welcome', function ($view) {
+            $home = Cache::remember(Post::HOME_CACHE_PREFIX.'home', 60, function () {
+                // Cards show likes and comments, so count them in the same query
+                $forCards = fn () => Post::with(['category', 'admin'])
+                    ->withCount(['comments', 'likedByUsers'])
+                    ->where('status', 'published');
 
-            // Slider posts (4 latest)
-            // Slider: active headlines (1 day after ticking) first, then the latest stories
-            $sliderQuery = fn () => Post::with(['category', 'admin', 'likedByUsers'])
-                ->withCount('comments')
-                ->where('status', 'published');
-
-            $headlinePosts = $sliderQuery()
-                ->where('headline_until', '>', now())
-                ->latest()
-                ->take(4)
-                ->get();
-
-            $sliderPosts = $headlinePosts->concat(
-                $sliderQuery()
-                    ->whereNotIn('id', $headlinePosts->pluck('id'))
+                // Slider: active headlines (1 day after ticking) first, then the latest stories
+                $headlinePosts = $forCards()
+                    ->where('headline_until', '>', now())
                     ->latest()
-                    ->take(4 - $headlinePosts->count())
+                    ->take(4)
+                    ->get();
+
+                $sliderPosts = $headlinePosts->concat(
+                    $forCards()
+                        ->whereNotIn('id', $headlinePosts->pluck('id'))
+                        ->latest()
+                        ->take(4 - $headlinePosts->count())
+                        ->get()
+                )->values();
+
+                // Each category with only the 6 newest stories it shows (not every story it has)
+                $categoriesWithPosts = Category::whereHas('posts', fn ($query) => $query->where('status', 'published'))
                     ->get()
-            )->values();
+                    ->each(fn (Category $category) => $category->setRelation('posts', $forCards()
+                        ->where('category_id', $category->id)
+                        ->latest()
+                        ->take(6)
+                        ->get()));
 
-            // Trending: only posts an admin marked with the Trend button (Post::trendingNow)
-            $trendingPosts = Post::trendingNow(8);
+                return [
+                    'sliderPosts' => $sliderPosts,
+                    // Trending: only posts an admin marked with the Trend button (Post::trendingNow)
+                    'trendingPosts' => Post::trendingNow(8),
+                    'categoriesWithPosts' => $categoriesWithPosts,
+                    'mostReadToday' => Post::mostReadToday(5),
+                ];
+            });
 
-            // Latest 6 posts for EACH category
-            $categoriesWithPosts = Category::with(['posts' => function ($query) {
-                $query->with(['admin', 'likedByUsers'])
-                    ->where('status', 'published')
-                    ->latest(); // do NOT use take() here
-            }])
-                ->whereHas('posts', function ($query) {
-                    $query->where('status', 'published');
-                })
-                ->get();
-
-            $view->with([
-                'sliderPosts' => $sliderPosts,
-                'trendingPosts' => $trendingPosts,
-                'categoriesWithPosts' => $categoriesWithPosts,
+            $view->with($home + [
+                // Which of these stories the visitor has liked (not cached: it is per visitor)
+                'likedPostIds' => auth()->check()
+                    ? auth()->user()->likedPosts()->pluck('posts.id')->all()
+                    : [],
             ]);
         });
 

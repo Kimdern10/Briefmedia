@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -174,10 +175,15 @@ class Post extends Model
      | Accessors
      |==========================*/
 
-    // Dynamic comment count (top-level only)
+    // Approved top-level comment count. Uses the number loaded with withCount('comments')
+    // when there is one, so a page of cards doesn't run one query per card.
     public function getCommentsCountAttribute()
     {
-        return $this->comments()->count();
+        if (array_key_exists('comments_count', $this->attributes)) {
+            return (int) $this->attributes['comments_count'];
+        }
+
+        return $this->attributes['comments_count'] = $this->comments()->count();
     }
 
     // Total likes count
@@ -487,6 +493,20 @@ class Post extends Model
     }
 
     /**
+     * Cache keys for the homepage ("home:home") and the header/footer menus and ticker ("home:nav").
+     */
+    public const HOME_CACHE_PREFIX = 'home:';
+
+    /**
+     * Clear the cached homepage and menus so changes show straight away.
+     */
+    public static function forgetHomeCache(): void
+    {
+        Cache::forget(self::HOME_CACHE_PREFIX.'home');
+        Cache::forget(self::HOME_CACHE_PREFIX.'nav');
+    }
+
+    /**
      * How long an admin's "Trend" pick lasts.
      */
     public const PINNED_TRENDING_DAYS = 2;
@@ -688,8 +708,8 @@ class Post extends Model
             ->values()
             ->all();
 
-        $siteName = optional(SeoSetting::first())->site_name ?: config('app.name', 'BriefMedia');
-        $logo = optional(SeoSetting::first())->site_logo;
+        $siteName = optional(SeoSetting::current())->site_name ?: config('app.name', 'BriefMedia');
+        $logo = optional(SeoSetting::current())->site_logo;
 
         $schema = [
             '@context' => 'https://schema.org',
@@ -823,6 +843,19 @@ class Post extends Model
             });
 
         return [$name, $query];
+    }
+
+    /**
+     * Count one reader view: the total on the post and today's count. Done straight in the
+     * database so the post's "last modified" time (used by the sitemap) stays the same.
+     */
+    public function countView(): void
+    {
+        DB::table('posts')->where('id', $this->id)->increment('views');
+        $this->views = (int) $this->views + 1;
+        $this->syncOriginalAttribute('views');
+
+        static::recordDailyView($this->id);
     }
 
     /**
@@ -1006,5 +1039,10 @@ class Post extends Model
 
         // Share newly published posts to Facebook/Telegram, and send breaking news push alerts
         static::saved(fn (self $post) => PostAnnouncer::handle($post));
+
+        // Show changes on the homepage straight away instead of after the 1-minute cache
+        static::saved(fn () => static::forgetHomeCache());
+        static::deleted(fn () => static::forgetHomeCache());
+        static::restored(fn () => static::forgetHomeCache());
     }
 }

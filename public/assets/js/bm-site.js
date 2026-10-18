@@ -66,6 +66,10 @@
                 return;
             }
 
+            if (shareTrigger) {
+                fillShareMenu(wrapper);
+            }
+
             const willOpen = !wrapper.classList.contains('is-open');
             closeAll(wrapper);
             wrapper.classList.toggle('is-open', willOpen);
@@ -90,6 +94,40 @@
             closeAll();
         }
     });
+
+    // Cards send an empty share menu to keep pages small; build its links on first open
+    function fillShareMenu(wrapper) {
+        const menu = $('.bm-share__menu[data-share-lazy]', wrapper);
+        if (!menu || menu.childElementCount) { return; }
+
+        const url = encodeURIComponent(wrapper.dataset.url);
+        const title = encodeURIComponent(wrapper.dataset.title);
+        const links = [
+            ['facebook', 'Facebook', `https://www.facebook.com/sharer/sharer.php?u=${url}`],
+            ['twitter-x', 'X (Twitter)', `https://twitter.com/intent/tweet?url=${url}&text=${title}`],
+            ['linkedin', 'LinkedIn', `https://www.linkedin.com/sharing/share-offsite?url=${url}`],
+            ['whatsapp', 'WhatsApp', `https://wa.me/?text=${title}%20${url}`],
+        ];
+
+        links.forEach(([icon, label, href]) => {
+            const link = document.createElement('a');
+            link.className = 'bm-share__option';
+            link.target = '_blank';
+            link.rel = 'noopener';
+            link.href = href;
+            link.innerHTML = `<i class="bi bi-${icon}"></i> `;
+            link.append(label);
+            menu.append(link);
+        });
+
+        const copy = document.createElement('button');
+        copy.type = 'button';
+        copy.className = 'bm-share__option';
+        copy.dataset.copyLink = wrapper.dataset.url;
+        copy.innerHTML = '<i class="bi bi-link-45deg"></i> ';
+        copy.append('Copy link');
+        menu.append(copy);
+    }
 
     function fallbackCopy(text, done) {
         const input = document.createElement('textarea');

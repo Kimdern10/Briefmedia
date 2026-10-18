@@ -4,15 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Category extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'name', 'description'
+        'name', 'description',
     ];
 
     /**
@@ -29,6 +29,10 @@ class Category extends Model
         static::updating(function ($category) {
             $category->slug = Str::slug($category->name);
         });
+
+        // Menus and homepage sections are cached for a minute; show category changes at once
+        static::saved(fn () => Post::forgetHomeCache());
+        static::deleted(fn () => Post::forgetHomeCache());
     }
 
     /**
@@ -38,7 +42,4 @@ class Category extends Model
     {
         return $this->hasMany(Post::class);
     }
-
-
-
 }
