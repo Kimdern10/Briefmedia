@@ -388,6 +388,8 @@ class NewsroomFeaturesTest extends TestCase
 
         $custom = json_encode(['@context' => 'https://schema.org', '@type' => 'Event', 'name' => 'Zz Custom Event']);
         $post->forceFill(['schema_markup' => $custom])->saveQuietly();
+        // saveQuietly skips the "saved" event that clears pages kept for guests (a normal save does it)
+        Post::forgetHomeCache();
 
         $this->get(route('posts.show', $post))->assertOk()->assertSee('Zz Custom Event');
     }

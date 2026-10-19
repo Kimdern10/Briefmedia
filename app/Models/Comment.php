@@ -44,6 +44,13 @@ class Comment extends Model
         return $author && (int) $author->role_as === 1 ? now() : null;
     }
 
+    protected static function booted(): void
+    {
+        // Story pages and comment counts on cards are saved for guests: new, approved or removed comments show at once
+        static::saved(fn () => Post::forgetHomeCache());
+        static::deleted(fn () => Post::forgetHomeCache());
+    }
+
     public function post()
     {
         return $this->belongsTo(Post::class);

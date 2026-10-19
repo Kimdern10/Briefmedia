@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Http\Middleware\CacheGuestPages;
 use App\Services\ImageOptimizer;
 use App\Services\PostAnnouncer;
 use Illuminate\Database\Eloquent\Builder;
@@ -506,9 +507,8 @@ class Post extends Model
         Cache::forget(self::HOME_CACHE_PREFIX.'home');
         Cache::forget(self::HOME_CACHE_PREFIX.'nav');
         Cache::forget(self::HOME_CACHE_PREFIX.'years');
-        // Finished homepage HTML kept for guests (CacheGuestHomepage)
-        Cache::forget(self::HOME_CACHE_PREFIX.'page:home');
-        Cache::forget(self::HOME_CACHE_PREFIX.'page:more');
+        // Finished pages kept for guests (CacheGuestPages): a new version number retires every saved copy
+        Cache::forever(CacheGuestPages::VERSION_KEY, (int) Cache::get(CacheGuestPages::VERSION_KEY, 1) + 1);
     }
 
     /**

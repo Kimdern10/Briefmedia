@@ -3,13 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\Comment;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
-class CacheGuestHomepageTest extends TestCase
+class CacheGuestPagesTest extends TestCase
 {
     use DatabaseTransactions;
 
@@ -53,7 +54,62 @@ class CacheGuestHomepageTest extends TestCase
         $this->get(url('/?part=more'))->assertOk()->assertHeader('X-BM-Page-Cache', 'miss');
         $this->get(url('/?part=more'))->assertOk()->assertHeader('X-BM-Page-Cache', 'hit');
 
-        $this->get(url('/?utm_source=facebook'))->assertOk()->assertHeaderMissing('X-BM-Page-Cache');
+        $this->get(url('/?anything=else'))->assertOk()->assertHeaderMissing('X-BM-Page-Cache');
+    }
+
+    public function test_links_shared_on_facebook_use_the_saved_page(): void
+    {
+        $this->get(url('/'))->assertOk()->assertHeader('X-BM-Page-Cache', 'miss');
+
+        $this->get(url('/?fbclid=IwAR0abc&utm_source=facebook'))->assertOk()->assertHeader('X-BM-Page-Cache', 'hit');
+    }
+
+    public function test_category_pages_are_saved_per_page_number(): void
+    {
+        $post = $this->makePost('Zz Category Cache Story');
+        $category = $post->category;
+
+        $this->get(route('category.page', $category))->assertOk()->assertHeader('X-BM-Page-Cache', 'miss');
+        $this->get(route('category.page', $category))->assertOk()->assertHeader('X-BM-Page-Cache', 'hit')->assertSee('Zz Category Cache Story');
+
+        $this->get(route('category.page', [$category, 'page' => 2]))->assertOk()->assertHeader('X-BM-Page-Cache', 'miss');
+        $this->get(route('category.page', [$category, 'page' => 'x']))->assertOk()->assertHeaderMissing('X-BM-Page-Cache');
+    }
+
+    public function test_story_pages_are_saved_and_still_count_each_new_reader(): void
+    {
+        $post = $this->makePost('Zz Story Cache');
+
+        $this->get(route('posts.show', $post))->assertOk()->assertHeader('X-BM-Page-Cache', 'miss');
+        $this->assertSame(1, (int) $post->fresh()->views);
+
+        // A new reader (no "viewed" cookie) gets the saved page and is still counted
+        $this->flushSession();
+        $this->get(route('posts.show', $post))
+            ->assertOk()
+            ->assertHeader('X-BM-Page-Cache', 'hit')
+            ->assertCookie('viewed_post_'.$post->id);
+        $this->assertSame(2, (int) $post->fresh()->views);
+
+        // The same reader again is not counted twice
+        $this->withCookie('viewed_post_'.$post->id, '1')->get(route('posts.show', $post))->assertHeader('X-BM-Page-Cache', 'hit');
+        $this->assertSame(2, (int) $post->fresh()->views);
+    }
+
+    public function test_a_new_comment_shows_on_the_saved_story_page_straight_away(): void
+    {
+        $post = $this->makePost('Zz Commented Story');
+        $this->get(route('posts.show', $post))->assertOk();
+        $this->get(route('posts.show', $post))->assertHeader('X-BM-Page-Cache', 'hit');
+
+        Comment::create([
+            'post_id' => $post->id,
+            'user_id' => $post->admin_id,
+            'content' => 'Zz A fresh approved comment',
+            'approved_at' => now(),
+        ]);
+
+        $this->get(route('posts.show', $post))->assertOk()->assertHeader('X-BM-Page-Cache', 'miss')->assertSee('Zz A fresh approved comment');
     }
 
     public function test_a_new_story_shows_straight_away(): void

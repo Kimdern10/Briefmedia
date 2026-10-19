@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\CacheGuestPages;
 use App\Models\Category;
 use App\Models\Comment;
 use App\Models\Post;
@@ -12,6 +13,37 @@ use Illuminate\Support\Facades\Cookie;
 
 class CategoryPostController extends Controller
 {
+    public function __construct()
+    {
+        // Guests get the saved page HTML (story views are still counted, see CacheGuestPages)
+        $this->middleware(CacheGuestPages::class)->only(['category', 'show']);
+    }
+
+    /**
+     * Counts a view once per reader: logged-in readers by account, guests by a 30-day cookie.
+     */
+    public static function recordView(Post $post): void
+    {
+        $user = Auth::user();
+
+        if ($user) {
+            if (! $post->viewedByUsers()->where('user_id', $user->id)->exists()) {
+                $post->countView();
+                $post->viewedByUsers()->attach($user->id);
+            }
+
+            return;
+        }
+
+        $cookieName = 'viewed_post_'.$post->id;
+
+        if (! request()->hasCookie($cookieName)) {
+            $post->countView();
+            // Queue the cookie for 30 days
+            Cookie::queue($cookieName, true, 60 * 24 * 30);
+        }
+    }
+
     /* ===============================
      | Show posts by category
      |===============================*/
@@ -53,25 +85,7 @@ class CategoryPostController extends Controller
      |===============================*/
     public function show(Post $post)
     {
-        $user = Auth::user();
-
-        if ($user) {
-            // Logged in user - check database
-            if (! $post->viewedByUsers()->where('user_id', $user->id)->exists()) {
-                $post->countView();
-                $post->viewedByUsers()->attach($user->id);
-            }
-        } else {
-            // Guest user - check cookie
-            $cookieName = 'viewed_post_'.$post->id;
-
-            // Use request()->cookie() instead of Cookie::has()
-            if (! request()->hasCookie($cookieName)) {
-                $post->countView();
-                // Queue the cookie for 30 days
-                Cookie::queue($cookieName, true, 60 * 24 * 30);
-            }
-        }
+        self::recordView($post);
 
         // Load post relationships
         $post->load([
