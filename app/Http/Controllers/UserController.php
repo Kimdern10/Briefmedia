@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Post;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
@@ -189,5 +190,18 @@ class UserController extends Controller
     {
         // No need to query anything here since all variables come from AppServiceProvider
         return view('welcome');
+    }
+
+    /**
+     * How many category blocks the homepage sends with the page; homeMoreSections() serves the rest.
+     */
+    public const HOME_SECTIONS_WITH_PAGE = 2;
+
+    /**
+     * The homepage's lower category blocks, loaded by bm-site.js as the reader scrolls (same cached data as the homepage).
+     */
+    public function homeMoreSections(): View
+    {
+        return view('snippets.site.home-more-sections');
     }
 }

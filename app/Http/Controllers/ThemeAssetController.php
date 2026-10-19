@@ -36,7 +36,7 @@ class ThemeAssetController extends Controller
         abort_unless(isset(self::CONTENT_TYPES[$extension]) && is_file($path), 404);
 
         if ($extension === 'css') {
-            $path = $this->minifiedCopyOf($path);
+            $path = self::minifiedCopyOf($path);
         }
 
         return response()->file($path, [
@@ -49,8 +49,9 @@ class ThemeAssetController extends Controller
     /**
      * The stylesheet without comments and extra spaces (about a quarter smaller), kept in
      * storage/framework/cache and made again whenever the original file changes.
+     * The site layout also puts this copy of bm-site.css straight into the page (see layouts/app).
      */
-    private function minifiedCopyOf(string $path): string
+    public static function minifiedCopyOf(string $path): string
     {
         $copy = storage_path('framework/cache/theme-'.md5($path).'-'.filemtime($path).'-v'.self::MINIFIER_VERSION.'.css');
 

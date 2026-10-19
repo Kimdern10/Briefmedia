@@ -178,7 +178,7 @@ class NewsOptionsTest extends TestCase
         $this->makePost(['title' => 'Zz Newer Ordinary Story']);
 
         $home = $this->get(url('/'))->assertOk();
-        $home->assertSee('bm-topbar--breaking', false)
+        $home->assertSee('class="bm-topbar bm-topbar--breaking"', false)
             ->assertSee('Zz Breaking Headline Video Story')
             ->assertSee('Samuel Uzochukwu');
 
@@ -218,7 +218,7 @@ class NewsOptionsTest extends TestCase
         $post->refresh();
         $this->assertFalse($post->isHeadline());
         $this->assertFalse($post->isBreaking());
-        $this->get(url('/'))->assertOk()->assertDontSee('bm-topbar--breaking', false);
+        $this->get(url('/'))->assertOk()->assertDontSee('class="bm-topbar bm-topbar--breaking"', false);
     }
 
     public function test_breaking_ends_after_6_hours_while_the_headline_stays_for_the_day(): void
@@ -232,7 +232,7 @@ class NewsOptionsTest extends TestCase
         ]);
 
         $this->assertSame(6, Post::BREAKING_HOURS);
-        $this->get(url('/'))->assertOk()->assertSee('bm-topbar--breaking', false);
+        $this->get(url('/'))->assertOk()->assertSee('class="bm-topbar bm-topbar--breaking"', false);
 
         $this->travel(6)->hours();
         $this->travel(1)->minutes();
@@ -241,13 +241,13 @@ class NewsOptionsTest extends TestCase
         $post->refresh();
         $this->assertFalse($post->isBreaking());
         $this->assertTrue($post->isHeadline());
-        $this->get(url('/'))->assertOk()->assertDontSee('bm-topbar--breaking', false);
+        $this->get(url('/'))->assertOk()->assertDontSee('class="bm-topbar bm-topbar--breaking"', false);
     }
 
     public function test_no_breaking_bar_when_nothing_is_breaking(): void
     {
         DB::table('posts')->update(['breaking_until' => null]);
 
-        $this->get(url('/'))->assertOk()->assertDontSee('bm-topbar--breaking', false);
+        $this->get(url('/'))->assertOk()->assertDontSee('class="bm-topbar bm-topbar--breaking"', false);
     }
 }

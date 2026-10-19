@@ -103,6 +103,7 @@ Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])
 Route::get('/newsletter/unsubscribe/{token}', [NewsletterController::class, 'unsubscribe'])->name('newsletter.unsubscribe');
 
 Route::get('/', [UserController::class, 'blade'])->name('home');
+Route::get('/home/more', [UserController::class, 'homeMoreSections'])->name('home.more');
 
 // Its own name: two routes called "home" stop `php artisan route:cache` from working
 Route::get('/home', [HomeController::class, 'index'])->name('home.redirect');
