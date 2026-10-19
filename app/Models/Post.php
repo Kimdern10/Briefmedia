@@ -654,6 +654,25 @@ class Post extends Model
     }
 
     /**
+     * "srcset" for the cover photo: the 640px card version and the full photo, so phones download
+     * the small one and big screens the big one. Null when there's no card version yet.
+     */
+    public function coverSrcset(): ?string
+    {
+        $path = $this->featured_image_1;
+        $cardPath = ImageOptimizer::cardPathFor($path);
+
+        if (! $cardPath || ! Storage::disk('public')->exists($cardPath)) {
+            return null;
+        }
+
+        $fullWidth = ImageOptimizer::widthOf($path) ?? ImageOptimizer::MAX_WIDTH;
+        $cardWidth = min(ImageOptimizer::CARD_WIDTH, $fullWidth);
+
+        return asset('storage/'.$cardPath).' '.$cardWidth.'w, '.asset('storage/'.$path).' '.$fullWidth.'w';
+    }
+
+    /**
      * Image for Facebook/WhatsApp/X link previews. Uploaded cover photos are saved as WebP for
      * speed, with a JPEG copy next to them because some apps don't preview WebP.
      */

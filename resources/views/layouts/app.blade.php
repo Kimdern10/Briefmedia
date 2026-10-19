@@ -17,7 +17,7 @@
         })();
     </script>
 
-    {{-- AdSense and Google Analytics start once the page has shown (shortly after it loads, or
+    {{-- AdSense and Google Analytics start once the page has shown (6 seconds after it loads, or
          at the reader's first scroll/tap/key), so they don't slow phones down while the page appears.
          Ads and page views still work for every visitor: both queue their work until then. --}}
     <script>
@@ -44,7 +44,8 @@
             ['scroll', 'pointerdown', 'keydown', 'touchstart'].forEach(function (name) {
                 window.addEventListener(name, start, { once: true, passive: true });
             });
-            window.addEventListener('load', function () { setTimeout(start, 2500); }, { once: true });
+            // Readers who don't scroll or tap still get ads and are counted, a few seconds later
+            window.addEventListener('load', function () { setTimeout(start, 6000); }, { once: true });
         })();
     </script>
 
@@ -175,11 +176,10 @@
             link.rel = 'stylesheet';
         };
     </script>
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" onload="bmUseStylesheet(this)">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" onload="bmUseStylesheet(this)">
     <link rel="preload" as="style" href="{{ asset('assets/css/font/bootstrap-icons.css') }}" onload="bmUseStylesheet(this)">
-    <link rel="preload" as="font" type="font/woff2" href="{{ asset('assets/css/font/fonts/bootstrap-icons0107.woff2') }}?dd67030699838ea613ee6dbda90effa6" crossorigin>
     <noscript>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap">
         <link rel="stylesheet" href="{{ asset('assets/css/font/bootstrap-icons.css') }}">
     </noscript>
     <link rel="stylesheet" href="{{ route('theme.asset', ['css', 'bm-site.css']) }}?v={{ filemtime(public_path('assets/css/bm-site.css')) }}">
@@ -209,7 +209,6 @@
     {{-- data-navigate-once: these run on the first visit only; pages after that swap in without a reload (bm-navigate.js) --}}
     <script src="{{ route('theme.asset', ['js', 'bm-navigate.js']) }}?v={{ filemtime(public_path('assets/js/bm-navigate.js')) }}" data-navigate-once></script>
     <script src="{{ route('theme.asset', ['js', 'bm-site.js']) }}?v={{ filemtime(public_path('assets/js/bm-site.js')) }}" data-navigate-once></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js" data-navigate-once></script>
     <script src="{{ route('theme.asset', ['js', 'bm-alerts.js']) }}?v={{ filemtime(public_path('assets/js/bm-alerts.js')) }}" data-navigate-once></script>
 
     <!-- Session messages (auth pages show them inline instead) -->

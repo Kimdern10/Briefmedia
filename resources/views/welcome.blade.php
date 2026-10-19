@@ -12,9 +12,17 @@
 @endphp
 
 {{-- The first slider photo is the biggest thing on the page: start downloading it straight away --}}
+@php
+    // Slider photo width: the whole screen on phones and tablets, about two-thirds of the page on laptops
+    $heroSizes = '(max-width: 900px) 100vw, 760px';
+@endphp
 @if(($firstSlide = $sliderPosts->first()) && $firstSlide->featured_image_1)
     @push('head')
-        <link rel="preload" as="image" href="{{ $firstSlide->coverUrl() }}" fetchpriority="high">
+        @if($firstSrcset = $firstSlide->coverSrcset())
+            <link rel="preload" as="image" href="{{ $firstSlide->coverUrl() }}" imagesrcset="{{ $firstSrcset }}" imagesizes="{{ $heroSizes }}" fetchpriority="high">
+        @else
+            <link rel="preload" as="image" href="{{ $firstSlide->coverUrl() }}" fetchpriority="high">
+        @endif
     @endpush
 @endif
 
@@ -33,6 +41,7 @@
                             <article class="bm-hero__slide {{ $index === 0 ? 'is-active' : '' }}" aria-roledescription="slide"
                                      aria-label="{{ $index + 1 }} of {{ $sliderPosts->count() }}">
                                 <img class="bm-hero__img" src="{{ $imageFor($post, 'full') }}" alt="{{ $post->title }}" decoding="async"
+                                     @if($srcset = $post->coverSrcset()) srcset="{{ $srcset }}" sizes="{{ $heroSizes }}" @endif
                                      @if($index > 0) loading="lazy" @else fetchpriority="high" @endif
                                      onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
                                 <div class="bm-hero__content">

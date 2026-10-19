@@ -38,7 +38,11 @@
 
 {{-- The cover photo is the biggest thing on the page: start downloading it straight away --}}
 @if($post->featured_image_1)
+@if($coverSrcset = $post->coverSrcset())
+<link rel="preload" as="image" href="{{ $post->coverUrl() }}" imagesrcset="{{ $coverSrcset }}" imagesizes="(max-width: 900px) 100vw, 1200px" fetchpriority="high">
+@else
 <link rel="preload" as="image" href="{{ $post->coverUrl() }}" fetchpriority="high">
+@endif
 @endif
 
 <meta property="og:title" content="{{ $postTitle }}">
@@ -137,6 +141,7 @@
         <!-- ================= HERO IMAGE ================= -->
         <figure class="bm-article__hero">
             <img src="{{ $post->coverUrl() }}" fetchpriority="high" decoding="async"
+                 @if($coverSrcset = $post->coverSrcset()) srcset="{{ $coverSrcset }}" sizes="(max-width: 900px) 100vw, 1200px" @endif
                  alt="{{ $post->title }}"
                  onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
         </figure>

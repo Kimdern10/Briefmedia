@@ -25,9 +25,12 @@ class PageNavigationTest extends TestCase
     {
         $html = $this->get(url('/'))->assertOk()->getContent();
 
-        foreach (['bm-navigate.js', 'bm-site.js', 'sweetalert2', 'bm-alerts.js', '/livewire/livewire'] as $file) {
+        foreach (['bm-navigate.js', 'bm-site.js', 'bm-alerts.js', '/livewire/livewire'] as $file) {
             $this->assertScriptRunsOnce($html, $file);
         }
+
+        // SweetAlert is fetched by bm-alerts.js the first time a pop-up is needed, not with every page
+        $this->assertDoesNotMatchRegularExpression('~<script[^>]+sweetalert2~', $html);
     }
 
     public function test_admin_pages_load_the_navigation_script_once(): void

@@ -252,7 +252,7 @@
             const source = photos[current];
             image.classList.remove('is-ready');
             image.onload = () => image.classList.add('is-ready');
-            image.src = source.currentSrc || source.src;
+            image.src = source.src; // always the full photo (cards and phones may show a smaller version)
             image.alt = source.alt || '';
             const text = captionFor(source);
             caption.textContent = text;

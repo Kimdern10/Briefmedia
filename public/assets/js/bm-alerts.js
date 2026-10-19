@@ -2,9 +2,33 @@
    BriefMedia — SweetAlert2 helpers shared by the public site and the admin panel
    window.bmToast(message, tone)   small corner notification
    window.bmConfirm(options)       "Are you sure?" dialog, resolves to true / false
+
+   The public site doesn't load SweetAlert with the page (it's only needed when a message
+   shows): it is fetched the first time one of these is used. The admin loads it up front.
    ========================================================================== */
 (function () {
     'use strict';
+
+    const SWEETALERT = 'https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js';
+
+    let loading = null;
+    function withSwal() {
+        if (window.Swal) { return Promise.resolve(window.Swal); }
+        if (!loading) {
+            loading = (window.BM && window.BM.loadScript
+                ? window.BM.loadScript(SWEETALERT)
+                : new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = SWEETALERT;
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                })
+            ).then(() => window.Swal).catch(() => { loading = null; return null; });
+        }
+
+        return loading;
+    }
 
     const css = (name, fallback) => {
         const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -22,22 +46,24 @@
     const icons = { success: 'success', error: 'error', warning: 'warning', info: 'info' };
 
     window.bmToast = function (message, tone = 'success', duration = 4000) {
-        if (!window.Swal) { return; }
-        const colors = palette();
-        window.Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: icons[tone] || 'success',
-            title: String(message),
-            showConfirmButton: false,
-            timer: typeof duration === 'number' ? duration : 4000,
-            timerProgressBar: true,
-            background: colors.background,
-            color: colors.color,
-            didOpen: (toast) => {
-                toast.addEventListener('mouseenter', window.Swal.stopTimer);
-                toast.addEventListener('mouseleave', window.Swal.resumeTimer);
-            },
+        withSwal().then((Swal) => {
+            if (!Swal) { return; }
+            const colors = palette();
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: icons[tone] || 'success',
+                title: String(message),
+                showConfirmButton: false,
+                timer: typeof duration === 'number' ? duration : 4000,
+                timerProgressBar: true,
+                background: colors.background,
+                color: colors.color,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer);
+                    toast.addEventListener('mouseleave', Swal.resumeTimer);
+                },
+            });
         });
     };
 
@@ -50,25 +76,28 @@
      */
     window.bmConfirm = function (options = {}) {
         const text = options.confirmText || options.text || 'Are you sure?';
-        if (!window.Swal) { return Promise.resolve(window.confirm(text)); }
 
-        const colors = palette();
-        const danger = (options.tone || options.confirmTone || 'danger') === 'danger';
+        return withSwal().then((Swal) => {
+            if (!Swal) { return window.confirm(text); }
 
-        return window.Swal.fire({
-            icon: danger ? 'warning' : 'question',
-            title: options.confirmTitle || options.title || 'Are you sure?',
-            text: text,
-            showCancelButton: true,
-            confirmButtonText: options.confirmButton || options.button || 'Yes, continue',
-            cancelButtonText: 'Cancel',
-            reverseButtons: true,
-            focusCancel: danger,
-            confirmButtonColor: danger ? '#d63c3c' : colors.accent,
-            cancelButtonColor: colors.muted,
-            background: colors.background,
-            color: colors.color,
-        }).then((result) => result.isConfirmed);
+            const colors = palette();
+            const danger = (options.tone || options.confirmTone || 'danger') === 'danger';
+
+            return Swal.fire({
+                icon: danger ? 'warning' : 'question',
+                title: options.confirmTitle || options.title || 'Are you sure?',
+                text: text,
+                showCancelButton: true,
+                confirmButtonText: options.confirmButton || options.button || 'Yes, continue',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true,
+                focusCancel: danger,
+                confirmButtonColor: danger ? '#d63c3c' : colors.accent,
+                cancelButtonColor: colors.muted,
+                background: colors.background,
+                color: colors.color,
+            }).then((result) => result.isConfirmed);
+        });
     };
 
     // Plain forms with data-confirm-text ask first, then submit.

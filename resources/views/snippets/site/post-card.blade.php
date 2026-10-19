@@ -13,6 +13,7 @@
 <article class="bm-card bm-card--{{ $cardVariant }}">
     <a href="{{ route('posts.show', $post) }}" class="bm-card__media" aria-hidden="true" tabindex="-1">
         <img src="{{ $post->coverUrl($cardVariant === 'lead' ? 'full' : 'card') }}"
+             @if($cardVariant === 'lead' && ($leadSrcset = $post->coverSrcset())) srcset="{{ $leadSrcset }}" sizes="(max-width: 900px) 100vw, 640px" @endif
              alt="{{ $post->title }}" loading="lazy"
              onerror="this.onerror=null;this.src='{{ route('theme.asset', ['img', 'bm-placeholder.svg']) }}'">
         @if($post->video_url)
