@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Poll;
 use App\Models\Post;
+use App\Services\AutoTagger;
 use App\Services\ImageOptimizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -529,7 +530,12 @@ class PostController extends Controller
      */
     private function saveExtras(Request $request, Post $post): void
     {
-        $post->syncTags($request->input('tags'));
+        // Tags typed in the form are used as they are; an empty box means "pick them for me"
+        if (trim((string) $request->input('tags')) === '') {
+            AutoTagger::apply($post) ?: $post->syncTags('');
+        } else {
+            $post->syncTags($request->input('tags'));
+        }
         Poll::syncFor($post, $request->input('poll_question'), $this->pollOptionsFrom($request->input('poll_options')));
     }
 

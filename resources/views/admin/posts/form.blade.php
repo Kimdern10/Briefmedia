@@ -355,17 +355,18 @@
                     </div>
 
                     <div class="ad-field">
-                        <label class="ad-label" for="tags">Tags <small>Optional</small></label>
+                        <label class="ad-label" for="tags">Tags <small>Automatic if left empty</small></label>
                         <input type="text" name="tags" id="tags" maxlength="500" list="tag-suggestions" autocomplete="off"
                                class="ad-input @error('tags') is-invalid @enderror"
                                value="{{ old('tags', $editing ? $post->tagList() : '') }}"
-                               placeholder="Soludo, ASUU, Super Eagles">
+                               placeholder="Leave empty to pick tags from the story">
+
                         <datalist id="tag-suggestions">
                             @foreach(\App\Models\Tag::orderBy('name')->limit(200)->pluck('name') as $tagName)
                                 <option value="{{ $tagName }}">
                             @endforeach
                         </datalist>
-                        <div class="ad-help"><span>Separate with commas. Each tag gets its own page readers can browse.</span></div>
+                        <div class="ad-help"><span>Leave empty and up to {{ \App\Services\AutoTagger::MAX_TAGS }} tags are picked from the story (names, places, topics). Or type your own, separated by commas. To change automatic tags, edit them here.</span></div>
                         @error('tags') <span class="ad-error">{{ $message }}</span> @enderror
                     </div>
 
