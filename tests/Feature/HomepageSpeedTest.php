@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\UserController;
 use App\Models\Category;
 use App\Models\Comment;
 use App\Models\Post;
@@ -109,6 +110,44 @@ class HomepageSpeedTest extends TestCase
         });
     }
 
+    public function test_homepage_sends_the_first_two_sections_and_loads_the_rest_on_scroll(): void
+    {
+        $categories = collect(range(1, 4))->map(function (int $i) {
+            $category = Category::create(['name' => "Zz Block {$i}"]);
+            $this->makePost("Zz Block Story {$i}", ['category_id' => $category->id]);
+
+            return $category;
+        });
+
+        $shownWithPage = Category::whereHas('posts', fn ($query) => $query->where('status', 'published'))
+            ->get()
+            ->take(UserController::HOME_SECTIONS_WITH_PAGE);
+        $later = Category::whereHas('posts', fn ($query) => $query->where('status', 'published'))
+            ->get()
+            ->slice(UserController::HOME_SECTIONS_WITH_PAGE);
+        $this->assertNotEmpty($later);
+
+        $page = $this->get(url('/'))->assertOk()->assertSee('data-home-more="'.route('home', ['part' => 'more']).'"', false);
+        foreach ($shownWithPage as $category) {
+            $page->assertSee('<h2 class="bm-section__title">'.e($category->name).'</h2>', false);
+        }
+        foreach ($later as $category) {
+            // Not as a block yet, only as a link in the "More sections" list
+            $page->assertDontSee('<h2 class="bm-section__title">'.e($category->name).'</h2>', false)
+                ->assertSee(route('category.page', $category->slug), false);
+        }
+
+        $more = $this->get(route('home', ['part' => 'more']))->assertOk()->assertHeader('X-Robots-Tag', 'noindex')->assertDontSee('<html', false);
+        foreach ($later as $category) {
+            $more->assertSee('<h2 class="bm-section__title">'.e($category->name).'</h2>', false);
+        }
+        foreach ($shownWithPage as $category) {
+            $more->assertDontSee('<h2 class="bm-section__title">'.e($category->name).'</h2>', false);
+        }
+        $more->assertSee('Section '.str_pad((string) (UserController::HOME_SECTIONS_WITH_PAGE + 1), 2, '0', STR_PAD_LEFT));
+        $this->assertCount(4, $categories);
+    }
+
     public function test_like_button_remembers_what_the_reader_liked(): void
     {
         $liked = $this->makePost('Zz Liked By Reader');
@@ -117,9 +156,12 @@ class HomepageSpeedTest extends TestCase
 
         $this->get(url('/'))->assertOk();
 
-        $this->actingAs($reader)->get(url('/'))->assertOk()
-            ->assertViewHas('likedPostIds', fn ($ids) => in_array($liked->id, $ids, true))
-            ->assertSee('liked: true', false);
+        $page = $this->actingAs($reader)->get(url('/'))->assertOk()
+            ->assertViewHas('likedPostIds', fn ($ids) => in_array($liked->id, $ids, true));
+
+        // The story's category block may be one of the lower ones that load on scroll
+        $html = $page->getContent().$this->get(route('home', ['part' => 'more']))->assertOk()->getContent();
+        $this->assertStringContainsString('liked: true', $html);
     }
 
     public function test_card_share_menus_are_built_when_opened(): void

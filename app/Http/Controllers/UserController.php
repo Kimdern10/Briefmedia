@@ -185,9 +185,22 @@ class UserController extends Controller
         ]);
     }
 
-    public function blade()
+    public function blade(Request $request)
     {
+        // The homepage's lower category blocks, fetched by bm-site.js as the reader scrolls (/?part=more).
+        // Served from the homepage's own address so no extra route has to exist on the server.
+        if ($request->query('part') === 'more') {
+            return response()
+                ->view('snippets.site.home-more-sections')
+                ->header('X-Robots-Tag', 'noindex');
+        }
+
         // No need to query anything here since all variables come from AppServiceProvider
         return view('welcome');
     }
+
+    /**
+     * How many category blocks the homepage sends with the page; /?part=more serves the rest.
+     */
+    public const HOME_SECTIONS_WITH_PAGE = 2;
 }

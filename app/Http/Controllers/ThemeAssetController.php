@@ -36,7 +36,7 @@ class ThemeAssetController extends Controller
         abort_unless(isset(self::CONTENT_TYPES[$extension]) && is_file($path), 404);
 
         if ($extension === 'css') {
-            $path = $this->minifiedCopyOf($path);
+            $path = self::minifiedCopyOf($path);
         }
 
         return response()->file($path, [
@@ -47,10 +47,26 @@ class ThemeAssetController extends Controller
     }
 
     /**
+     * The minified stylesheet as text, for the site layout to put straight into the page
+     * (see layouts/app). Null if anything goes wrong, and the layout links the file instead.
+     */
+    public static function inlineStylesheet(string $file): ?string
+    {
+        try {
+            return file_get_contents(self::minifiedCopyOf(public_path("assets/css/{$file}"))) ?: null;
+        } catch (\Throwable $exception) {
+            // The page then links the stylesheet file instead, so a problem here never breaks a page
+            report($exception);
+
+            return null;
+        }
+    }
+
+    /**
      * The stylesheet without comments and extra spaces (about a quarter smaller), kept in
      * storage/framework/cache and made again whenever the original file changes.
      */
-    private function minifiedCopyOf(string $path): string
+    public static function minifiedCopyOf(string $path): string
     {
         $copy = storage_path('framework/cache/theme-'.md5($path).'-'.filemtime($path).'-v'.self::MINIFIER_VERSION.'.css');
 

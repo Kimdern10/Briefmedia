@@ -199,57 +199,34 @@
     @endif
 
     <!-- ================= CATEGORY SECTIONS ================= -->
-    @foreach ($categoriesWithPosts as $category)
-        @php
-            $categoryPosts = $category->posts->take(7);
-            $leadPost = $categoryPosts->first();
-            $otherPosts = $categoryPosts->slice(1);
-        @endphp
-
-        <section class="bm-section bm-section--lazy {{ $loop->first && $filteredTrending->isEmpty() ? '' : 'bm-section--tight' }}">
-            <div class="bm-container">
-                <div class="bm-section__head">
-                    <div>
-                        <span class="bm-section__eyebrow">Section {{ str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
-                        <h2 class="bm-section__title">{{ $category->name }}</h2>
-                    </div>
-                    <a href="{{ route('category.page', $category->slug) }}" class="bm-link-arrow">
-                        View all <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-
-                <div class="bm-cat-grid {{ $otherPosts->isEmpty() ? 'bm-cat-grid--solo' : '' }}">
-                    <div class="bm-reveal">
-                        @include('snippets.site.post-card', [
-                            'post' => $leadPost,
-                            'variant' => 'lead',
-                            'categoryName' => $category->name,
-                            'categorySlug' => $category->slug,
-                        ])
-                    </div>
-
-                    @if($otherPosts->isNotEmpty())
-                        <div class="bm-cat-grid__rest">
-                            @foreach($otherPosts as $post)
-                                <div class="bm-reveal" style="transition-delay: {{ $loop->index * 60 }}ms;">
-                                    @include('snippets.site.post-card', [
-                                        'post' => $post,
-                                        'variant' => 'compact',
-                                        'categoryName' => $category->name,
-                                        'categorySlug' => $category->slug,
-                                    ])
-                                </div>
-                            @endforeach
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </section>
+    {{-- The first blocks come with the page; the rest load as the reader scrolls towards them,
+         so phones lay out a much smaller page at first (each block is ~200 elements) --}}
+    @php $sectionsWithPage = \App\Http\Controllers\UserController::HOME_SECTIONS_WITH_PAGE; @endphp
+    @foreach ($categoriesWithPosts->take($sectionsWithPage) as $category)
+        @include('snippets.site.home-category-section', [
+            'category' => $category,
+            'sectionNumber' => $loop->iteration,
+            'tight' => ! ($loop->first && $filteredTrending->isEmpty()),
+        ])
 
         @if($loop->iteration === 2)
             <div class="bm-container">@include('snippets.site.ad-slot', ['placement' => 'home_between'])</div>
         @endif
     @endforeach
+
+    @if($categoriesWithPosts->count() > $sectionsWithPage)
+        {{-- Replaced by the next blocks; until then (and without JavaScript) it links to each section --}}
+        <div class="bm-container bm-home-more" data-home-more="{{ route('home', ['part' => 'more']) }}">
+            <nav class="bm-section bm-section--tight" aria-label="More sections">
+                <span class="bm-section__eyebrow">More sections</span>
+                <p class="bm-meta" style="margin-top: 8px;">
+                    @foreach($categoriesWithPosts->slice($sectionsWithPage) as $category)
+                        <a href="{{ route('category.page', $category->slug) }}" class="bm-chip">{{ $category->name }}</a>
+                    @endforeach
+                </p>
+            </nav>
+        </div>
+    @endif
 
 </main>
 @endsection
