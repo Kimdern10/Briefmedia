@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Post;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
@@ -73,9 +74,15 @@ class UserController extends Controller
         }
     }
 
-    public function user_dashboard()
+    /**
+     * Old /user/dashboard address (saved in browsers' history and suggestions): sends everyone to the news homepage.
+     */
+    public function user_dashboard(Request $request): RedirectResponse
     {
-        return view('welcome');
+        // Keep a message like "Logged in successfully" for the homepage
+        $request->session()->reflash();
+
+        return redirect()->route('home');
     }
 
     public function showOtpForm($email)

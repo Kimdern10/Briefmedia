@@ -65,6 +65,14 @@ class NewsFirstTest extends TestCase
         $this->actingAs($this->reader())->get('/home')->assertRedirect(route('home'));
     }
 
+    public function test_the_old_reader_dashboard_address_shows_the_news_instead_of_the_login_page(): void
+    {
+        // Browsers suggest this address from history, so guests must not land on the login form
+        $this->get('/user/dashboard')->assertRedirect(route('home'));
+
+        $this->actingAs($this->reader())->get('/user/dashboard')->assertRedirect(route('home'));
+    }
+
     public function test_readers_land_on_the_news_after_signing_in(): void
     {
         $reader = $this->reader();

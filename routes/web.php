@@ -201,9 +201,10 @@ Route::middleware(['auth', 'isAdmin'])->prefix('admin')->group(function () {
 
 });
 
-Route::middleware(['auth'])->prefix('user')->group(function () {
-    Route::get('dashboard', [UserController::class, 'user_dashboard'])->name('user.dashboard');
+// Old reader landing page (readers used to arrive here after logging in): open to everyone, leads to the news
+Route::get('/user/dashboard', [UserController::class, 'user_dashboard'])->name('user.dashboard');
 
+Route::middleware(['auth'])->prefix('user')->group(function () {
     Route::get('/profile', [ProfileController::class, 'profile'])->name('profile');
 
     Route::put('/update', [ProfileController::class, 'update'])->name('update');
