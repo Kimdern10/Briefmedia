@@ -15,7 +15,7 @@
 @php
     // Slider photo width: the screen less its side margins on phones and tablets (so most phones take the
     // 640px photo), about two-thirds of the page on laptops
-    $heroSizes = '(max-width: 900px) 92vw, 760px';
+    $heroSizes = '(max-width: 900px) 88vw, 760px';
 @endphp
 @if(($firstSlide = $sliderPosts->first()) && $firstSlide->featured_image_1)
     @push('head')

@@ -14,8 +14,8 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * Runs after the session has started, so each visitor still gets their own security token: it is
  * swapped into the saved HTML on the way out. Logged-in readers, pages carrying a one-off message
- * (e.g. "Subscribed!") and any other query string always get a freshly built page. Saved for a
- * minute, and Post::forgetHomeCache() clears it as soon as a story or category changes.
+ * (e.g. "Subscribed!") and any other query string always get a freshly built page. Saved for five
+ * minutes, and Post::forgetHomeCache() clears it as soon as a story or category changes.
  */
 class CacheGuestHomepage
 {
@@ -24,7 +24,7 @@ class CacheGuestHomepage
      */
     private const TOKEN_PLACEHOLDER = '__BM_CSRF_TOKEN__';
 
-    public const SECONDS = 60;
+    public const SECONDS = 300;
 
     /**
      * @param  Closure(Request): (Response)  $next
