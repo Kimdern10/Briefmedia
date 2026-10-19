@@ -14,6 +14,11 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class ThemeAssetController extends Controller
 {
     /**
+     * Raise when the minifying rules change, so cached copies are made again.
+     */
+    private const MINIFIER_VERSION = 2;
+
+    /**
      * @var array<string, string>
      */
     private const CONTENT_TYPES = [
@@ -30,10 +35,35 @@ class ThemeAssetController extends Controller
 
         abort_unless(isset(self::CONTENT_TYPES[$extension]) && is_file($path), 404);
 
+        if ($extension === 'css') {
+            $path = $this->minifiedCopyOf($path);
+        }
+
         return response()->file($path, [
             'Content-Type' => self::CONTENT_TYPES[$extension],
             // URLs carry ?v=<file modified time>, so browsers can cache them for a long time.
             'Cache-Control' => 'public, max-age=31536000, immutable',
         ]);
+    }
+
+    /**
+     * The stylesheet without comments and extra spaces (about a quarter smaller), kept in
+     * storage/framework/cache and made again whenever the original file changes.
+     */
+    private function minifiedCopyOf(string $path): string
+    {
+        $copy = storage_path('framework/cache/theme-'.md5($path).'-'.filemtime($path).'-v'.self::MINIFIER_VERSION.'.css');
+
+        if (! is_file($copy)) {
+            $css = preg_replace('~/\*.*?\*/~s', '', file_get_contents($path));
+            $css = preg_replace('~\s+~', ' ', $css);
+            $css = preg_replace('~\s*([{};,>])\s*~', '$1', $css);
+            $css = preg_replace(['~:\s+~', '~\s+!important~'], [':', '!important'], $css);
+            $css = str_replace(';}', '}', trim($css));
+
+            file_put_contents($copy, $css, LOCK_EX);
+        }
+
+        return $copy;
     }
 }

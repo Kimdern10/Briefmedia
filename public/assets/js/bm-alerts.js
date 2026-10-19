@@ -43,6 +43,14 @@
         muted: css('--bm-muted', '') || css('--ad-muted', '#7a7a88'),
     });
 
+    // On dark pages SweetAlert's light grey backdrop and borderless box blend into the page:
+    // darken the backdrop and give pop-ups and toasts a visible edge.
+    const darkStyle = document.createElement('style');
+    darkStyle.textContent =
+        '[data-theme="dark"] div:where(.swal2-container).swal2-backdrop-show { background: rgba(0, 0, 0, .72); }' +
+        '[data-theme="dark"] div:where(.swal2-popup) { border: 1px solid rgba(255, 255, 255, .14); box-shadow: 0 24px 60px rgba(0, 0, 0, .6); }';
+    document.head.appendChild(darkStyle);
+
     const icons = { success: 'success', error: 'error', warning: 'warning', info: 'info' };
 
     window.bmToast = function (message, tone = 'success', duration = 4000) {

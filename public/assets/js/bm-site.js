@@ -334,8 +334,20 @@
 
         hero.style.setProperty('--bm-hero-delay', delay + 'ms');
 
+        // Photos of the hidden slides wait (data-src) so the first one has the connection to itself
+        const loadPhoto = (slide) => {
+            const img = slide && $('img[data-src]', slide);
+            if (!img) { return; }
+            if (img.dataset.srcset) { img.srcset = img.dataset.srcset; }
+            img.src = img.dataset.src;
+            img.removeAttribute('data-src');
+        };
+        const loadAllPhotos = () => slides.forEach(loadPhoto);
+        if (document.readyState === 'complete') { loadAllPhotos(); } else { window.addEventListener('load', loadAllPhotos, { once: true }); }
+
         const show = (next) => {
             index = (next + slides.length) % slides.length;
+            loadPhoto(slides[index]);
             [slides, items, dots].forEach((group) => group.forEach((el, i) => {
                 el.classList.toggle('is-active', i === index);
                 if (el.hasAttribute('aria-selected')) { el.setAttribute('aria-selected', String(i === index)); }

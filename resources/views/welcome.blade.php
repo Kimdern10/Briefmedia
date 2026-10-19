@@ -40,9 +40,16 @@
                         @foreach($sliderPosts as $index => $post)
                             <article class="bm-hero__slide {{ $index === 0 ? 'is-active' : '' }}" aria-roledescription="slide"
                                      aria-label="{{ $index + 1 }} of {{ $sliderPosts->count() }}">
-                                <img class="bm-hero__img" src="{{ $imageFor($post, 'full') }}" alt="{{ $post->title }}" decoding="async"
-                                     @if($srcset = $post->coverSrcset()) srcset="{{ $srcset }}" sizes="{{ $heroSizes }}" @endif
-                                     @if($index > 0) loading="lazy" @else fetchpriority="high" @endif
+                                {{-- Only the first photo downloads with the page; bm-site.js fills in the others once it has loaded --}}
+                                @php $srcset = $post->coverSrcset(); @endphp
+                                <img class="bm-hero__img" alt="{{ $post->title }}" decoding="async"
+                                     @if($index === 0)
+                                         src="{{ $imageFor($post, 'full') }}" fetchpriority="high"
+                                         @if($srcset) srcset="{{ $srcset }}" sizes="{{ $heroSizes }}" @endif
+                                     @else
+                                         data-src="{{ $imageFor($post, 'full') }}"
+                                         @if($srcset) data-srcset="{{ $srcset }}" sizes="{{ $heroSizes }}" @endif
+                                     @endif
                                      onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
                                 <div class="bm-hero__content">
                                     @if($post->isLive())

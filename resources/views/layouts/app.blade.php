@@ -17,7 +17,7 @@
         })();
     </script>
 
-    {{-- AdSense and Google Analytics start once the page has shown (6 seconds after it loads, or
+    {{-- AdSense, Google Analytics and the OneSignal alerts SDK start once the page has shown (6 seconds after it loads, or
          at the reader's first scroll/tap/key), so they don't slow phones down while the page appears.
          Ads and page views still work for every visitor: both queue their work until then. --}}
     <script>
@@ -26,6 +26,9 @@
                 { src: 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6884205395656406', crossorigin: 'anonymous' }
                 @if(!empty($globalSeo?->google_analytics_id))
                     , { src: 'https://www.googletagmanager.com/gtag/js?id={{ $globalSeo->google_analytics_id }}' }
+                @endif
+                @if(config('services.onesignal.app_id'))
+                    , { src: 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js' }
                 @endif
             ];
             var started = false;
@@ -177,10 +180,10 @@
         };
     </script>
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" onload="bmUseStylesheet(this)">
-    <link rel="preload" as="style" href="{{ asset('assets/css/font/bootstrap-icons.css') }}" onload="bmUseStylesheet(this)">
+    <link rel="preload" as="style" href="{{ route('theme.asset', ['css', 'bm-icons.css']) }}?v={{ filemtime(public_path('assets/css/bm-icons.css')) }}" onload="bmUseStylesheet(this)">
     <noscript>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap">
-        <link rel="stylesheet" href="{{ asset('assets/css/font/bootstrap-icons.css') }}">
+        <link rel="stylesheet" href="{{ route('theme.asset', ['css', 'bm-icons.css']) }}?v={{ filemtime(public_path('assets/css/bm-icons.css')) }}">
     </noscript>
     <link rel="stylesheet" href="{{ route('theme.asset', ['css', 'bm-site.css']) }}?v={{ filemtime(public_path('assets/css/bm-site.css')) }}">
     @stack('styles')
@@ -223,9 +226,9 @@
 
     @livewireScripts
 
-    {{-- Breaking news push alerts (OneSignal). Only loads once ONESIGNAL_APP_ID is set in .env --}}
+    {{-- Breaking news push alerts (OneSignal). Only loads once ONESIGNAL_APP_ID is set in .env. The SDK itself
+         starts with the ads (see the head); this setup waits in OneSignalDeferred until then. --}}
     @if (config('services.onesignal.app_id'))
-        <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer data-navigate-once></script>
         <script data-navigate-once>
             window.OneSignalDeferred = window.OneSignalDeferred || [];
             OneSignalDeferred.push(async (OneSignal) => {
