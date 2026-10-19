@@ -40,7 +40,7 @@
             </div>
 
             <div>
-                <h6 class="bm-footer__title">Sections</h6>
+                <h2 class="bm-footer__title">Sections</h2>
                 <ul class="bm-footer__links">
                     @foreach($navCategories->concat($moreCategories)->take(7) as $footerCategory)
                         <li><a href="{{ route('category.page', $footerCategory->slug) }}">{{ $footerCategory->name }}</a></li>
@@ -49,7 +49,7 @@
             </div>
 
             <div>
-                <h6 class="bm-footer__title">Company</h6>
+                <h2 class="bm-footer__title">Company</h2>
                 <ul class="bm-footer__links">
                     <li><a href="{{ route('contact') }}">Contact us</a></li>
                     <li><a href="{{ route('terms') }}">Terms &amp; Conditions</a></li>

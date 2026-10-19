@@ -114,4 +114,19 @@ class SeoTagsTest extends TestCase
         $this->assertStringNotContainsString('<link href="https://fonts.googleapis.com/css2', $html);
         $this->assertStringContainsString('window.bmUseStylesheet', $html);
     }
+
+    public function test_ads_and_analytics_start_after_the_page_has_shown(): void
+    {
+        SeoSetting::query()->update(['google_analytics_id' => 'G-ZZTEST']);
+        View::share('globalSeo', SeoSetting::query()->first());
+
+        $html = $this->get(url('/'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('window.bmStartThirdParty', $html);
+        $this->assertStringNotContainsString('<script async src="https://pagead2.googlesyndication.com', $html);
+        $this->assertStringNotContainsString('<script async src="https://www.googletagmanager.com', $html);
+        // Page views still queue up straight away
+        $this->assertStringContainsString("gtag('config', 'G-ZZTEST')", $html);
+        $this->assertStringContainsString('googletagmanager.com/gtag/js?id=G-ZZTEST', $html);
+    }
 }

@@ -1916,3 +1916,28 @@ body.bm { max-width: 100%; }
     .bm-search-form__actions .bm-btn { flex: 1; justify-content: center; }
 }
 .bm-search__by-date { display: inline-flex; align-items: center; gap: 6px; margin-left: 6px; color: var(--bm-accent); font-weight: 600; }
+
+/* ======================================================================
+   Mobile speed: cheap animations and effects
+   ====================================================================== */
+/* Slider progress bar: grow with a transform. Animating "width" made the phone re-measure the
+   whole page on every frame for as long as the slider ran (most of the "Style & Layout" time). */
+.bm-hero__progress { width: 100%; transform: scaleX(0); transform-origin: left center; will-change: transform; }
+@keyframes bm-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* The news ticker slides on its own layer */
+.bm-ticker__items { will-change: transform; }
+
+/* Frosted-glass header blur is expensive while scrolling on phones: solid header there */
+@media (max-width: 900px) {
+    .bm-header { background: var(--bm-bg); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+
+/* Slider dots: bigger tap targets for fingers (same look) */
+.bm-hero__dots { gap: 0; top: 14px; right: 14px; }
+.bm-hero__dot { box-sizing: content-box; padding: 8px; background-clip: content-box; }
+
+/* Small pink labels: a little darker so they're easy to read on light backgrounds */
+:root:not([data-theme="dark"]) .bm-section__eyebrow,
+:root:not([data-theme="dark"]) .bm-meta .bm-chip:not(.bm-chip--live):not(.bm-chip--breaking) { color: #b8195a; }
+.bm-trend__featured { background: #b8195a !important; color: #fff !important; }

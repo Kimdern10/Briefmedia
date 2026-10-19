@@ -17,8 +17,36 @@
         })();
     </script>
 
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6884205395656406"
-            crossorigin="anonymous"></script>
+    {{-- AdSense and Google Analytics start once the page has shown (shortly after it loads, or
+         at the reader's first scroll/tap/key), so they don't slow phones down while the page appears.
+         Ads and page views still work for every visitor: both queue their work until then. --}}
+    <script>
+        (function () {
+            var thirdParty = [
+                { src: 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6884205395656406', crossorigin: 'anonymous' }
+                @if(!empty($globalSeo?->google_analytics_id))
+                    , { src: 'https://www.googletagmanager.com/gtag/js?id={{ $globalSeo->google_analytics_id }}' }
+                @endif
+            ];
+            var started = false;
+            function start() {
+                if (started) { return; }
+                started = true;
+                thirdParty.forEach(function (item) {
+                    var script = document.createElement('script');
+                    script.async = true;
+                    script.src = item.src;
+                    if (item.crossorigin) { script.crossOrigin = item.crossorigin; }
+                    document.head.appendChild(script);
+                });
+            }
+            window.bmStartThirdParty = start;
+            ['scroll', 'pointerdown', 'keydown', 'touchstart'].forEach(function (name) {
+                window.addEventListener(name, start, { once: true, passive: true });
+            });
+            window.addEventListener('load', function () { setTimeout(start, 2500); }, { once: true });
+        })();
+    </script>
 
     <!-- ================= PAGE SEO OVERRIDE ================= -->
     @yield('meta_tags')
@@ -94,7 +122,7 @@
 
     <!-- ================= GOOGLE ANALYTICS ================= -->
     @if(!empty($globalSeo?->google_analytics_id))
-        <script async src="https://www.googletagmanager.com/gtag/js?id={{ $globalSeo->google_analytics_id }}"></script>
+        {{-- gtag.js itself starts with AdSense above; page views wait in the queue until then --}}
         <script>
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
