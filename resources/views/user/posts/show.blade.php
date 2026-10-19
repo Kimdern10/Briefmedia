@@ -1,9 +1,12 @@
 @extends('layouts.app')
 
 @php
-    $postUrl = url()->current();
+    $postUrl = route('posts.show', $post);
     $postTitle = $post->title;
-    $postDescription = Str::limit(strip_tags($post->content ?? $post->excerpt), 160);
+    // The summary describes the story best; otherwise the start of the story
+    $postDescription = Str::limit(trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($post->excerpt ?: $post->content)))), 160);
+    $postRobots = ($post->no_index ? 'noindex' : 'index').', '.($post->no_follow ? 'nofollow' : 'follow')
+        .($post->no_index ? '' : ', max-image-preview:large, max-snippet:-1');
     $postImage = $post->shareImageUrl();
     $postImageType = str_ends_with(strtolower($postImage), '.png') ? 'image/png' : (str_ends_with(strtolower($postImage), '.webp') ? 'image/webp' : 'image/jpeg');
     $placeholderImage = route('theme.asset', ['img', 'bm-placeholder.svg']);
@@ -27,17 +30,23 @@
 
 @section('meta_tags')
 
-<title>{{ $post->title }}</title>
+<title>{{ $post->title }} | {{ $globalSeo->site_name ?? config('app.name') }}</title>
 
 <meta name="description" content="{{ $postDescription }}">
+<meta name="robots" content="{{ $postRobots }}">
 <link rel="canonical" href="{{ $postUrl }}">
+
+{{-- The cover photo is the biggest thing on the page: start downloading it straight away --}}
+@if($post->featured_image_1)
+<link rel="preload" as="image" href="{{ $post->coverUrl() }}" fetchpriority="high">
+@endif
 
 <meta property="og:title" content="{{ $postTitle }}">
 <meta property="og:description" content="{{ $postDescription }}">
 <meta property="og:type" content="article">
 <meta property="og:url" content="{{ $postUrl }}">
-<meta property="og:site_name" content="BriefMedia">
-<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="{{ $globalSeo->site_name ?? config('app.name') }}">
+<meta property="og:locale" content="en_NG">
 
 <meta property="og:image" content="{{ $postImage }}">
 <meta property="og:image:secure_url" content="{{ $postImage }}">
@@ -61,6 +70,17 @@
 
 {{-- Google News: NewsArticle (or LiveBlogPosting) structured data. A custom schema saved on the post wins. --}}
 <script type="application/ld+json">{!! $post->customSchemaMarkup() ?: json_encode($post->newsArticleSchema(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
+
+{{-- Breadcrumb shown under the result in Google: BriefMedia › Category › Story --}}
+<script type="application/ld+json">{!! json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'BreadcrumbList',
+    'itemListElement' => array_values(array_filter([
+        ['@type' => 'ListItem', 'position' => 1, 'name' => 'Home', 'item' => url('/')],
+        $post->category ? ['@type' => 'ListItem', 'position' => 2, 'name' => $post->category->name, 'item' => route('category.page', $post->category->slug)] : null,
+        ['@type' => 'ListItem', 'position' => $post->category ? 3 : 2, 'name' => $post->title, 'item' => $postUrl],
+    ])),
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
 
 @endsection
 

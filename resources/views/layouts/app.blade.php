@@ -24,40 +24,65 @@
     @yield('meta_tags')
 
     @if (!View::hasSection('meta_tags'))
+        @php
+            // Each page's own title/description (sections 'title' and 'meta_description'), falling
+            // back to Admin → SEO settings. Section content is already escaped by Blade.
+            $seoIsHome = request()->is('/');
+            $seoSiteName = $globalSeo->site_name ?? config('app.name');
+            $seoTitle = View::hasSection('title') ? trim(View::yieldContent('title')) : e($globalSeo->default_title ?? $seoSiteName);
+            $seoDescription = trim(View::yieldContent('meta_description')) ?: e($globalSeo->meta_description ?? '');
+            $seoShareTitle = $seoIsHome && !empty($globalSeo?->og_title) ? e($globalSeo->og_title) : $seoTitle;
+            $seoShareDescription = $seoIsHome && !empty($globalSeo?->og_description) ? e($globalSeo->og_description) : $seoDescription;
+
+            // Every page is its own canonical address (page 2, 3… of a list keep their number)
+            $seoPage = (int) request()->query('page', 1);
+            $seoCanonical = $seoIsHome ? url('/') : url()->current().($seoPage > 1 ? '?page='.$seoPage : '');
+
+            // Let Google show big photos and full snippets (Discover, Top Stories), unless the page is noindex
+            $seoRobots = trim(View::yieldContent('robots')) ?: ($globalSeo->robots_meta ?? 'index, follow');
+            if (! str_contains($seoRobots, 'noindex') && ! str_contains($seoRobots, 'max-image-preview')) {
+                $seoRobots .= ', max-image-preview:large, max-snippet:-1';
+            }
+
+            $seoImage = !empty($globalSeo?->og_image) ? url('storage/'.$globalSeo->og_image) : null;
+            $seoTwitterImage = !empty($globalSeo?->twitter_image) ? url('storage/'.$globalSeo->twitter_image) : $seoImage;
+        @endphp
+
         <!-- ================= TITLE ================= -->
-        <title>@hasSection('title')@yield('title')@else{{ $globalSeo->default_title ?? config('app.name') }}@endif</title>
+        <title>{!! $seoTitle !!}</title>
 
         <!-- ================= BASIC SEO ================= -->
-        <meta name="description" content="{{ $globalSeo->meta_description ?? '' }}">
-        <meta name="keywords" content="{{ $globalSeo->meta_keywords ?? '' }}">
-        <meta name="author" content="{{ $globalSeo->author ?? '' }}">
-        <meta name="robots" content="{{ $globalSeo->robots_meta ?? 'index, follow' }}">
-        <link rel="canonical" href="{{ $globalSeo->canonical_url ?? url()->current() }}">
+        <meta name="description" content="{!! $seoDescription !!}">
+        <meta name="author" content="{{ $globalSeo->author ?? $seoSiteName }}">
+        <meta name="robots" content="{{ $seoRobots }}">
+        <link rel="canonical" href="{{ $seoCanonical }}">
 
         <!-- ================= OPEN GRAPH ================= -->
-        <meta property="og:title" content="{{ $globalSeo->og_title ?? $globalSeo->default_title ?? config('app.name') }}">
-        <meta property="og:description" content="{{ $globalSeo->og_description ?? $globalSeo->meta_description ?? '' }}">
+        <meta property="og:site_name" content="{{ $seoSiteName }}">
+        <meta property="og:locale" content="en_NG">
+        <meta property="og:title" content="{!! $seoShareTitle !!}">
+        <meta property="og:description" content="{!! $seoShareDescription !!}">
         <meta property="og:type" content="website">
-        <meta property="og:url" content="{{ url()->current() }}">
-
-        @if(!empty($globalSeo?->og_image))
-            <meta property="og:image" content="{{ asset('storage/'.$globalSeo->og_image) }}">
-            <meta property="og:image:secure_url" content="{{ asset('storage/'.$globalSeo->og_image) }}">
+        <meta property="og:url" content="{{ $seoCanonical }}">
+        @if($seoImage)
+            <meta property="og:image" content="{{ $seoImage }}">
+            <meta property="og:image:secure_url" content="{{ $seoImage }}">
         @endif
 
         <!-- ================= TWITTER CARD ================= -->
         <meta name="twitter:card" content="summary_large_image">
-        <meta name="twitter:title" content="{{ $globalSeo->twitter_title ?? $globalSeo->default_title ?? config('app.name') }}">
-        <meta name="twitter:description" content="{{ $globalSeo->twitter_description ?? $globalSeo->meta_description ?? '' }}">
-
-        @if(!empty($globalSeo?->twitter_image))
-            <meta name="twitter:image" content="{{ asset('storage/'.$globalSeo->twitter_image) }}">
-        @elseif(!empty($globalSeo?->og_image))
-            <meta name="twitter:image" content="{{ asset('storage/'.$globalSeo->og_image) }}">
+        <meta name="twitter:title" content="{!! $seoIsHome && !empty($globalSeo?->twitter_title) ? e($globalSeo->twitter_title) : $seoShareTitle !!}">
+        <meta name="twitter:description" content="{!! $seoIsHome && !empty($globalSeo?->twitter_description) ? e($globalSeo->twitter_description) : $seoShareDescription !!}">
+        @if($seoTwitterImage)
+            <meta name="twitter:image" content="{{ $seoTwitterImage }}">
         @endif
-
-        <meta name="twitter:site" content="{{ $globalSeo->twitter_site ?? '' }}">
+        @if(!empty($globalSeo?->twitter_site))
+            <meta name="twitter:site" content="{{ $globalSeo->twitter_site }}">
+        @endif
     @endif
+
+    {{-- Things a page wants loaded early, e.g. its main photo (@push('head')) --}}
+    @stack('head')
 
     <!-- ================= FAVICON ================= -->
     @include('snippets.site.favicon')
@@ -78,24 +103,57 @@
         </script>
     @endif
 
-    <!-- ================= ORGANIZATION SCHEMA ================= -->
-    @if(!empty($globalSeo?->site_logo))
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "{{ $globalSeo->site_name ?? config('app.name') }}",
-        "url": "{{ url('/') }}",
-        "logo": "{{ asset('storage/'.$globalSeo->site_logo) }}"
-    }
-    </script>
-    @endif
+    <!-- ================= ORGANIZATION & SITE SEARCH SCHEMA ================= -->
+    @php
+        $siteSchema = [array_filter([
+            '@context' => 'https://schema.org',
+            '@type' => 'NewsMediaOrganization',
+            'name' => $globalSeo->site_name ?? config('app.name'),
+            'url' => url('/'),
+            'logo' => !empty($globalSeo?->site_logo) ? url('storage/'.$globalSeo->site_logo) : null,
+        ])];
+        if (request()->is('/')) {
+            // Lets Google show a search box for the site in results
+            $siteSchema[] = [
+                '@context' => 'https://schema.org',
+                '@type' => 'WebSite',
+                'name' => $globalSeo->site_name ?? config('app.name'),
+                'url' => url('/'),
+                'potentialAction' => [
+                    '@type' => 'SearchAction',
+                    'target' => route('user.posts.search').'?query={search_term_string}',
+                    'query-input' => 'required name=search_term_string',
+                ],
+            ];
+        }
+    @endphp
+    @foreach($siteSchema as $schemaItem)
+        <script type="application/ld+json">{!! json_encode($schemaItem, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
+    @endforeach
 
     <!-- ================= STYLES ================= -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ asset('assets/css/font/bootstrap-icons.css') }}">
+    {{-- Fonts and icons load in the background so they don't hold up the first paint on phones
+         (text shows in the system font for a moment, then switches). The helper turns a loaded
+         preload into a stylesheet once, so page navigation never adds the same file twice. --}}
+    <script>
+        window.bmUseStylesheet = function (link) {
+            link.onload = null;
+            var sheets = document.querySelectorAll('link[rel="stylesheet"]');
+            for (var i = 0; i < sheets.length; i++) {
+                if (sheets[i].href === link.href) { link.parentNode && link.parentNode.removeChild(link); return; }
+            }
+            link.rel = 'stylesheet';
+        };
+    </script>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" onload="bmUseStylesheet(this)">
+    <link rel="preload" as="style" href="{{ asset('assets/css/font/bootstrap-icons.css') }}" onload="bmUseStylesheet(this)">
+    <link rel="preload" as="font" type="font/woff2" href="{{ asset('assets/css/font/fonts/bootstrap-icons0107.woff2') }}?dd67030699838ea613ee6dbda90effa6" crossorigin>
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap">
+        <link rel="stylesheet" href="{{ asset('assets/css/font/bootstrap-icons.css') }}">
+    </noscript>
     <link rel="stylesheet" href="{{ route('theme.asset', ['css', 'bm-site.css']) }}?v={{ filemtime(public_path('assets/css/bm-site.css')) }}">
     @stack('styles')
 
@@ -105,13 +163,8 @@
 
 <body class="bm">
 
-    <!-- ================= PAGE LOADER ================= -->
-    <div class="bm-loader" aria-hidden="true">
-        <span class="bm-logo">
-            <span class="bm-logo__mark">B</span>
-            <span class="bm-logo__text">Brief<b>Media</b></span>
-        </span>
-    </div>
+    {{-- No full-screen loader: it hid the page until every photo had downloaded, which made
+         first visits feel slow on phones. The page now shows as soon as it arrives. --}}
 
     <!-- ================= HEADER ================= -->
     @include('snippets.header')

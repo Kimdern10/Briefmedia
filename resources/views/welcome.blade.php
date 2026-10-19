@@ -11,7 +11,16 @@
     $mostReadToday ??= \App\Models\Post::mostReadToday(5);
 @endphp
 
+{{-- The first slider photo is the biggest thing on the page: start downloading it straight away --}}
+@if(($firstSlide = $sliderPosts->first()) && $firstSlide->featured_image_1)
+    @push('head')
+        <link rel="preload" as="image" href="{{ $firstSlide->coverUrl() }}" fetchpriority="high">
+    @endpush
+@endif
+
 <main>
+    {{-- Main heading for search engines and screen readers (the design shows the logo instead) --}}
+    <h1 class="bm-visually-hidden">{{ $globalSeo->site_name ?? config('app.name') }}: latest news, politics, sports and entertainment</h1>
 
     <!-- ================= FEATURED (rotating hero) ================= -->
     @if($sliderPosts->isNotEmpty())
@@ -181,7 +190,7 @@
             $otherPosts = $categoryPosts->slice(1);
         @endphp
 
-        <section class="bm-section {{ $loop->first && $filteredTrending->isEmpty() ? '' : 'bm-section--tight' }}">
+        <section class="bm-section bm-section--lazy {{ $loop->first && $filteredTrending->isEmpty() ? '' : 'bm-section--tight' }}">
             <div class="bm-container">
                 <div class="bm-section__head">
                     <div>

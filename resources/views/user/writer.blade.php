@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', $writerName . ' | ' . ($globalSeo->site_name ?? config('app.name')))
+@section('meta_description', 'Stories written by ' . $writerName . ' for ' . ($globalSeo->site_name ?? config('app.name')) . '.')
 
 @section('content')
 <main>

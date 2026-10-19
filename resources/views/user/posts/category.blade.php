@@ -1,6 +1,18 @@
 @extends('layouts.app')
 
-@section('title', $category->name . ' | ' . ($globalSeo->site_name ?? config('app.name')))
+@section('title', $category->name . ' News | ' . ($globalSeo->site_name ?? config('app.name')))
+@section('meta_description', Str::limit(trim(strip_tags($category->description ?? '')) ?: 'The latest ' . $category->name . ' news, stories and updates from ' . ($globalSeo->site_name ?? config('app.name')) . '.', 160))
+
+@push('head')
+<script type="application/ld+json">{!! json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'BreadcrumbList',
+    'itemListElement' => [
+        ['@type' => 'ListItem', 'position' => 1, 'name' => 'Home', 'item' => url('/')],
+        ['@type' => 'ListItem', 'position' => 2, 'name' => $category->name, 'item' => route('category.page', $category->slug)],
+    ],
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
+@endpush
 
 @section('content')
 @php

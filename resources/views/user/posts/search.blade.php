@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
 @section('title', 'Search: ' . $query . ' | ' . ($globalSeo->site_name ?? config('app.name')))
+{{-- Search results aren't pages Google should list (they'd compete with the stories) --}}
+@section('robots', 'noindex, follow')
 
 @section('content')
 <main>

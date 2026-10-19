@@ -1875,3 +1875,7 @@ body.bm { max-width: 100%; }
 @media (prefers-reduced-motion: reduce) {
     .bm-viewer, .bm-viewer__stage img { transition: none; }
 }
+
+/* ---------- Faster first screen on phones ---------- */
+/* Homepage category sections further down are only drawn when the reader scrolls near them */
+.bm-section--lazy { content-visibility: auto; contain-intrinsic-size: auto 900px; }
