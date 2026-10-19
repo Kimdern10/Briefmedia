@@ -42,6 +42,17 @@ class ThemeAssetTest extends TestCase
             ->assertDontSee('assets/css/font/bootstrap-icons.css', false);
     }
 
+    public function test_the_small_icon_font_has_every_icon_in_use(): void
+    {
+        // Missing ones still show (from the full font), just slower. To rebuild the small font, run the
+        // subset-font npm tool on bootstrap-icons0107.woff2 with the characters in bm-icons.css.
+        preg_match_all('/content:"\\\\([0-9a-f]+)"/', file_get_contents(public_path('assets/css/bm-icons.css')), $used);
+        $inSmallFont = json_decode(file_get_contents(public_path('assets/css/bm-icons-subset.json')), true);
+
+        $this->assertNotEmpty($used[1]);
+        $this->assertSame([], array_values(array_diff($used[1], $inSmallFont)));
+    }
+
     public function test_the_page_links_the_stylesheet_file_when_the_styles_cannot_go_inline(): void
     {
         $this->assertNull(ThemeAssetController::inlineStylesheet('bm-does-not-exist.css'));

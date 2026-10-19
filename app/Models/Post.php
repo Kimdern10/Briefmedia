@@ -506,6 +506,9 @@ class Post extends Model
         Cache::forget(self::HOME_CACHE_PREFIX.'home');
         Cache::forget(self::HOME_CACHE_PREFIX.'nav');
         Cache::forget(self::HOME_CACHE_PREFIX.'years');
+        // Finished homepage HTML kept for guests (CacheGuestHomepage)
+        Cache::forget(self::HOME_CACHE_PREFIX.'page:home');
+        Cache::forget(self::HOME_CACHE_PREFIX.'page:more');
     }
 
     /**

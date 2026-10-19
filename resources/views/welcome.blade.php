@@ -13,8 +13,9 @@
 
 {{-- The first slider photo is the biggest thing on the page: start downloading it straight away --}}
 @php
-    // Slider photo width: the whole screen on phones and tablets, about two-thirds of the page on laptops
-    $heroSizes = '(max-width: 900px) 100vw, 760px';
+    // Slider photo width: the screen less its side margins on phones and tablets (so most phones take the
+    // 640px photo), about two-thirds of the page on laptops
+    $heroSizes = '(max-width: 900px) 92vw, 760px';
 @endphp
 @if(($firstSlide = $sliderPosts->first()) && $firstSlide->featured_image_1)
     @push('head')

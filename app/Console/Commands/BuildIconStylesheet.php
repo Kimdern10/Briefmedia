@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\File;
 
 /**
  * Writes public/assets/css/bm-icons.css: the Bootstrap Icons stylesheet cut down to the icons the
- * site actually uses (about 110 of the 2,000+), so phones download a few KB instead of 98 KB.
+ * site actually uses (about 110 of the 2,000+), so phones download a few KB instead of 98 KB, plus a
+ * small built-in font with just those icons (see smallFontFace).
  *
  * Run it again after using a new icon in a view. `--check` only reports whether the file is out
  * of date (the test suite runs it, so a missing icon is caught before it ships).
@@ -89,15 +90,42 @@ class BuildIconStylesheet extends Command
     /**
      * @param  array<string, string>  $icons  class name => glyph code, e.g. ['bi-eye' => '\f341']
      */
+    /**
+     * The small icon font (public/assets/css/bm-icons-subset.woff2, ~10 KB instead of 130 KB) built
+     * into the stylesheet. Browsers try the last @font-face first for the characters in its
+     * unicode-range, so the full font above is only downloaded for an icon the small one lacks.
+     * The small font is made outside Laravel with the subset-font npm tool, from the icons in
+     * bm-icons.css; its .json file lists the characters it holds.
+     */
+    private function smallFontFace(): string
+    {
+        $font = public_path('assets/css/bm-icons-subset.woff2');
+        $characters = public_path('assets/css/bm-icons-subset.json');
+
+        if (! File::exists($font) || ! File::exists($characters)) {
+            return '';
+        }
+
+        $range = collect(json_decode(File::get($characters), true))
+            ->map(fn (string $code): string => 'U+'.strtoupper($code))
+            ->implode(',');
+
+        return '@font-face{font-display:block;font-family:"bootstrap-icons";src:url("data:font/woff2;base64,'
+            .base64_encode(File::get($font)).'") format("woff2");unicode-range:'.$range.'}';
+    }
+
     private function stylesheet(array $icons): string
     {
         $rules = collect($icons)
             ->map(fn (string $glyph, string $icon): string => ".{$icon}::before{content:\"{$glyph}\"}")
             ->implode("\n");
 
+        $smallFont = $this->smallFontFace();
+
         return <<<CSS
 /* Bootstrap Icons v1.11.3 (MIT), only the icons the site uses. Built by `php artisan icons:build`, don't edit by hand. */
 @font-face{font-display:block;font-family:"bootstrap-icons";src:url("/assets/css/font/fonts/bootstrap-icons0107.woff2?dd67030699838ea613ee6dbda90effa6") format("woff2"),url("/assets/css/font/fonts/bootstrap-icons0107.woff?dd67030699838ea613ee6dbda90effa6") format("woff")}
+{$smallFont}
 .bi::before,[class^="bi-"]::before,[class*=" bi-"]::before{display:inline-block;font-family:bootstrap-icons!important;font-style:normal;font-weight:normal!important;font-variant:normal;text-transform:none;line-height:1;vertical-align:-.125em;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 {$rules}
 

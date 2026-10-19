@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Middleware\CacheGuestHomepage;
 use App\Mail\OtpMail;
 use App\Models\Category;
 use App\Models\Post;
@@ -16,7 +17,12 @@ use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
-    //
+    public function __construct()
+    {
+        // Guests get the saved homepage HTML (set here, not on the route, so no route change is needed)
+        $this->middleware(CacheGuestHomepage::class)->only('blade');
+    }
+
     public function signUp()
     {
         return view('auth.register');
