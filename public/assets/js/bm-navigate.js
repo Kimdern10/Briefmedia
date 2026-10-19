@@ -113,7 +113,10 @@
         const url = new URL(form.getAttribute('action') || location.href, location.href);
         if (!canNavigateTo(url)) { return; }
 
-        url.search = new URLSearchParams(new FormData(form)).toString();
+        // Leave out empty fields so the address stays short (?month=3&year=2026, not ?query=&month=3…)
+        const params = new URLSearchParams();
+        new FormData(form).forEach((value, name) => { if (String(value).trim() !== '') { params.append(name, value); } });
+        url.search = params.toString();
         event.preventDefault();
         navigate(url.href);
     });

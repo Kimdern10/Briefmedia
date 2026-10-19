@@ -34,6 +34,9 @@
             @endif
         </div>
     @else
-        <div class="bm-search__hint">Type at least 2 letters to see stories · <kbd>Enter</kbd> for all results · <kbd>Esc</kbd> to close</div>
+        <div class="bm-search__hint">
+            Type at least 2 letters to see stories · <kbd>Enter</kbd> for all results · <kbd>Esc</kbd> to close
+            <a href="{{ route('user.posts.search') }}" class="bm-search__by-date"><i class="bi bi-calendar3"></i> Search by date</a>
+        </div>
     @endif
 </div>

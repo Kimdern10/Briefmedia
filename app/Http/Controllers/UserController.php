@@ -3,22 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Mail\OtpMail;
+use App\Models\Category;
+use App\Models\Post;
 use App\Models\User;
 use Carbon\Carbon;
-use App\Models\Post;
-use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
     //
     public function signUp()
     {
-        return view ('auth.register');
+        return view('auth.register');
     }
 
     public function createUser(Request $request)
@@ -28,16 +29,16 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email|max:255|string',
             'password' => 'required|min:5|max:40',
             'confirm_password' => 'required|min:5|max:40|same:password',
-             'terms' => 'accepted',
+            'terms' => 'accepted',
         ], [
-            "email.unique" => "This email is already registered, please sign in or use a different email",
+            'email.unique' => 'This email is already registered, please sign in or use a different email',
         ]);
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        $user = new User();
+        $user = new User;
         $user->name = $request->name;
         $user->email = $request->email;
         $user->password = Hash::make($request->password);
@@ -52,11 +53,11 @@ class UserController extends Controller
                 Mail::to($user->email)->send(new OtpMail($user->email_verification_otp));
             } catch (\Exception $e) {
                 // Log the error
-                Log::error("Failed to send OTP email: " . $e->getMessage());
+                Log::error('Failed to send OTP email: '.$e->getMessage());
 
                 // Redirect user with a friendly message
                 return redirect()->route('verify.otp', ['email' => $user->email])
-                                 ->with('warning', 'Registered successfully but OTP email could not be sent. Please check your network connection and request a new OTP.');
+                    ->with('warning', 'Registered successfully but OTP email could not be sent. Please check your network connection and request a new OTP.');
             }
 
             return redirect()->route('verify.otp', ['email' => $user->email]);
@@ -74,7 +75,7 @@ class UserController extends Controller
     {
         $user = User::where('email', $email)->first();
 
-        if (!$user || !$user->otp_expires_at) {
+        if (! $user || ! $user->otp_expires_at) {
             return redirect()->route('login')->with('error', 'Invalid request. Please register again.');
         }
 
@@ -86,12 +87,12 @@ class UserController extends Controller
     public function submitOtp(Request $request, $email)
     {
         $request->validate([
-            'otp' => 'required|numeric|digits:6'
+            'otp' => 'required|numeric|digits:6',
         ]);
 
         $user = User::where('email', $email)->first();
 
-        if (!$user) {
+        if (! $user) {
             return redirect()->route('login')->with('error', 'User not found.');
         }
 
@@ -123,7 +124,8 @@ class UserController extends Controller
             try {
                 Mail::to($user->email)->send(new OtpMail($user->email_verification_otp));
             } catch (\Exception $e) {
-                Log::error("Failed to resend OTP email: " . $e->getMessage());
+                Log::error('Failed to resend OTP email: '.$e->getMessage());
+
                 return redirect()->back()->with('warning', 'Could not send OTP email. Please check your network connection and try again later.');
             }
 
@@ -134,30 +136,53 @@ class UserController extends Controller
     }
 
     /**
-     * Search posts by keyword (simple version)
+     * Search published stories by keyword and/or date: a year, a month (of any year or of the
+     * chosen year) or an exact day. Any of them can be used on its own.
      */
     public function searchPosts(Request $request)
     {
-        // Get the search query
-        $query = $request->input('query');
+        $query = trim((string) $request->input('query'));
 
-        // If no query, redirect back or show all posts
-        if (empty($query)) {
-            return redirect()->back()->with('error', 'Please enter a search term');
+        $year = (int) $request->input('year');
+        $year = $year >= 2000 && $year <= (int) now()->year + 1 ? $year : null;
+
+        $month = (int) $request->input('month');
+        $month = $month >= 1 && $month <= 12 ? $month : null;
+
+        $day = null;
+        if ($request->filled('date')) {
+            try {
+                $day = \Illuminate\Support\Carbon::createFromFormat('Y-m-d', (string) $request->input('date'))->startOfDay();
+            } catch (\Throwable) {
+                $day = null;
+            }
         }
 
+        $hasFilter = $query !== '' || $year || $month || $day;
+
         // Search published posts only (drafts must not leak into results)
-        $posts = Post::with(['category', 'admin', 'likedByUsers'])
-                      ->published()
-                      ->search($query)
-                      ->latest()
-                      ->paginate(12);
+        $posts = $hasFilter
+            ? Post::with(['category', 'admin', 'likedByUsers'])
+                ->withCount(['comments', 'likedByUsers'])
+                ->published()
+                ->when($query !== '', fn ($posts) => $posts->search($query))
+                ->when($day, fn ($posts) => $posts->whereDate('created_at', $day->toDateString()))
+                ->when(! $day && $year, fn ($posts) => $posts->whereYear('created_at', $year))
+                ->when(! $day && $month, fn ($posts) => $posts->whereMonth('created_at', $month))
+                ->latest()
+                ->paginate(12)
+            : new LengthAwarePaginator([], 0, 12);
 
-        // Get categories for sidebar if needed
-        $categories = Category::all();
-
-        // Return view with results
-        return view('user.posts.search', compact('posts', 'query', 'categories'));
+        return view('user.posts.search', [
+            'posts' => $posts,
+            'query' => $query,
+            'year' => $year,
+            'month' => $month,
+            'day' => $day,
+            'hasFilter' => $hasFilter,
+            'years' => Post::publishedYears(),
+            'categories' => Category::all(),
+        ]);
     }
 
     public function blade()

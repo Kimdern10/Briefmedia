@@ -505,6 +505,7 @@ class Post extends Model
     {
         Cache::forget(self::HOME_CACHE_PREFIX.'home');
         Cache::forget(self::HOME_CACHE_PREFIX.'nav');
+        Cache::forget(self::HOME_CACHE_PREFIX.'years');
     }
 
     /**
@@ -870,6 +871,23 @@ class Post extends Model
             });
 
         return [$name, $query];
+    }
+
+    /**
+     * Years that have published stories, newest first (for "search by date").
+     *
+     * @return array<int, int>
+     */
+    public static function publishedYears(): array
+    {
+        return Cache::remember(self::HOME_CACHE_PREFIX.'years', 3600, fn () => static::query()
+            ->where('status', 'published')
+            ->whereNotNull('created_at')
+            ->selectRaw('DISTINCT YEAR(created_at) as year')
+            ->orderByDesc('year')
+            ->pluck('year')
+            ->map(fn ($year) => (int) $year)
+            ->all());
     }
 
     /**
