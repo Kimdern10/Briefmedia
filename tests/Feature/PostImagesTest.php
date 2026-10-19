@@ -84,6 +84,28 @@ class PostImagesTest extends TestCase
             ->assertSee(asset('storage/'.preg_replace('/\.webp$/', '-640.webp', $old->featured_image_1)), false);
     }
 
+    public function test_photos_load_from_the_photo_cdn_once_it_is_set(): void
+    {
+        $post = $this->postWithOldPhoto('Zz Cdn Photo Story');
+        $this->artisan('images:optimize')->assertSuccessful();
+        $post->refresh();
+        $card = preg_replace('/\.webp$/', '-640.webp', $post->featured_image_1);
+
+        // Not set: photos come from this site
+        $this->assertSame(asset('storage/'.$post->featured_image_1), $post->coverUrl());
+
+        config(['services.image_cdn.url' => 'https://briefmedia.b-cdn.net/']);
+
+        $this->assertSame('https://briefmedia.b-cdn.net/storage/'.$post->featured_image_1, $post->coverUrl());
+        $this->assertSame('https://briefmedia.b-cdn.net/storage/'.$card, $post->coverUrl('card'));
+        $this->assertStringContainsString('https://briefmedia.b-cdn.net/storage/'.$card.' 640w', $post->coverSrcset());
+
+        Cache::flush();
+        $this->get(route('posts.show', $post))->assertOk()
+            ->assertSee('<link rel="preconnect" href="https://briefmedia.b-cdn.net">', false)
+            ->assertSee('https://briefmedia.b-cdn.net/storage/'.$post->featured_image_1, false);
+    }
+
     public function test_command_shrinks_old_photos_and_keeps_the_originals(): void
     {
         $post = $this->postWithOldPhoto('Zz Shrink Me');

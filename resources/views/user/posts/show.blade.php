@@ -178,7 +178,7 @@
 
                 @if($post->featured_image_2)
                     <figure class="bm-figure" style="margin-top: 0;">
-                        <img src="{{ asset('storage/' . $post->featured_image_2) }}" alt="{{ $post->title }}" loading="lazy"
+                        <img src="{{ \App\Models\Post::photoUrl($post->featured_image_2) }}" alt="{{ $post->title }}" loading="lazy"
                              onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
                     </figure>
                 @endif
@@ -217,7 +217,7 @@
                 @if($extraImages->isNotEmpty())
                     <div class="bm-gallery {{ $extraImages->count() === 1 ? 'bm-gallery--single' : '' }}">
                         @foreach($extraImages as $extraImage)
-                            <img src="{{ asset('storage/' . $extraImage) }}" alt="{{ $post->title }}" loading="lazy"
+                            <img src="{{ \App\Models\Post::photoUrl($extraImage) }}" alt="{{ $post->title }}" loading="lazy"
                                  onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
                         @endforeach
                     </div>

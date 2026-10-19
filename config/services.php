@@ -37,6 +37,12 @@ return [
         'channel_id' => env('TELEGRAM_CHANNEL_ID'),
     ],
 
+    // Photo CDN for story photos (e.g. a Bunny CDN pull zone with briefmediablog.com as its origin),
+    // like https://briefmedia.b-cdn.net. Empty: photos load from this site as before.
+    'image_cdn' => [
+        'url' => env('IMAGE_CDN_URL'),
+    ],
+
     // Breaking news push alerts (free account at onesignal.com, "Web" platform)
     'onesignal' => [
         'app_id' => env('ONESIGNAL_APP_ID'),

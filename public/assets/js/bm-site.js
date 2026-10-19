@@ -343,7 +343,12 @@
             img.removeAttribute('data-src');
         };
         const loadAllPhotos = () => slides.forEach(loadPhoto);
-        if (document.readyState === 'complete') { loadAllPhotos(); } else { window.addEventListener('load', loadAllPhotos, { once: true }); }
+        // Start as soon as the first photo is in (not after the whole page), so the next slides are ready in time
+        const firstPhoto = $('.bm-hero__img', slides[0] || hero);
+        if (!firstPhoto || firstPhoto.complete) { loadAllPhotos(); } else {
+            firstPhoto.addEventListener('load', loadAllPhotos, { once: true });
+            firstPhoto.addEventListener('error', loadAllPhotos, { once: true });
+        }
 
         const show = (next) => {
             index = (next + slides.length) % slides.length;

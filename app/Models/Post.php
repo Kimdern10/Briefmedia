@@ -212,7 +212,7 @@ class Post extends Model
         for ($i = 1; $i <= 4; $i++) {
             $field = "featured_image_{$i}";
             if ($this->$field) {
-                $images[$i] = asset('storage/'.$this->$field);
+                $images[$i] = static::photoUrl($this->$field);
             }
         }
 
@@ -637,6 +637,18 @@ class Post extends Model
     }
 
     /**
+     * Web address of an uploaded photo shown on the site. With IMAGE_CDN_URL set (e.g. a Bunny CDN
+     * pull zone that copies from this site), photos come from the CDN, which keeps copies near
+     * readers; without it they load from this site as before.
+     */
+    public static function photoUrl(string $path): string
+    {
+        $cdn = config('services.image_cdn.url');
+
+        return $cdn ? rtrim($cdn, '/').'/storage/'.ltrim($path, '/') : asset('storage/'.$path);
+    }
+
+    /**
      * Cover photo for the site: "card" is the small 640px version used on story cards and lists
      * (falls back to the full photo when an old upload hasn't been optimised yet).
      */
@@ -650,10 +662,10 @@ class Post extends Model
 
         if ($size === 'card' && ($cardPath = ImageOptimizer::cardPathFor($path))
             && Storage::disk('public')->exists($cardPath)) {
-            return asset('storage/'.$cardPath);
+            return static::photoUrl($cardPath);
         }
 
-        return asset('storage/'.$path);
+        return static::photoUrl($path);
     }
 
     /**
@@ -672,7 +684,7 @@ class Post extends Model
         $fullWidth = ImageOptimizer::widthOf($path) ?? ImageOptimizer::MAX_WIDTH;
         $cardWidth = min(ImageOptimizer::CARD_WIDTH, $fullWidth);
 
-        return asset('storage/'.$cardPath).' '.$cardWidth.'w, '.asset('storage/'.$path).' '.$fullWidth.'w';
+        return static::photoUrl($cardPath).' '.$cardWidth.'w, '.static::photoUrl($path).' '.$fullWidth.'w';
     }
 
     /**

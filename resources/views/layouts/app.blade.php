@@ -164,6 +164,10 @@
     @endforeach
 
     <!-- ================= STYLES ================= -->
+    @if(config('services.image_cdn.url'))
+        {{-- Photos come from the photo CDN (Post::photoUrl): connect to it straight away --}}
+        <link rel="preconnect" href="{{ rtrim(config('services.image_cdn.url'), '/') }}">
+    @endif
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     {{-- Fonts and icons load in the background so they don't hold up the first paint on phones

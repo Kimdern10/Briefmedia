@@ -1293,7 +1293,8 @@ body.bm {
 @keyframes bm-pulse { 50% { opacity: .55; transform: scale(.97); } }
 
 /* ---------- Reveal on scroll ---------- */
-.bm-reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
+/* Cards are visible straight away (photos show as soon as they arrive) and only slide up a little */
+.bm-reveal { transform: translateY(12px); transition: transform .35s ease; }
 .bm-reveal.is-in { opacity: 1; transform: none; }
 
 @media (prefers-reduced-motion: reduce) {
