@@ -10,6 +10,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -114,6 +115,14 @@ class UserController extends Controller
         $user->email_verification_otp = null;
         $user->otp_expires_at = null;
         $user->save();
+
+        // Readers go straight to the news, signed in; anyone else (banned, staff) signs in as usual
+        if ((int) $user->active !== 0 && (string) $user->role_as === '0') {
+            Auth::login($user);
+            $request->session()->regenerate();
+
+            return redirect()->route('home')->with('success', 'Email verified, welcome to BriefMedia!');
+        }
 
         return redirect()->route('login')->with('message', 'Email verified successfully, please login');
     }
