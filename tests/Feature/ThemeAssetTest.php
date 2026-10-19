@@ -49,12 +49,11 @@ class ThemeAssetTest extends TestCase
         $this->get('/theme/other/bm-site.css')->assertNotFound();
     }
 
-    public function test_layouts_put_the_site_styles_in_the_page_and_load_scripts_through_the_theme_route(): void
+    public function test_layouts_load_design_files_through_the_theme_route(): void
     {
         $this->get(url('/'))
             ->assertOk()
-            ->assertSee('<style id="bm-site-css">', false)
-            ->assertSee('.bm-hero__slide.is-active{opacity:1;visibility:visible}', false)
+            ->assertSee('/theme/css/bm-site.css?v=', false)
             ->assertSee('/theme/js/bm-site.js?v=', false)
             ->assertDontSee('assets/css/bm-site.css', false);
     }

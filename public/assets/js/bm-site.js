@@ -401,34 +401,6 @@
         reveals.forEach((el) => observer.observe(el));
     }
 
-    /* ---------- Homepage: lower sections load on the way down ---------- */
-    function setUpHomeMore() {
-        const slot = $('[data-home-more]');
-        if (!slot) { return; }
-
-        let loading = false;
-        const load = () => {
-            if (loading) { return; }
-            loading = true;
-            fetch(slot.dataset.homeMore, { headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'text/html' } })
-                .then((response) => (response.ok ? response.text() : Promise.reject(response.status)))
-                .then((html) => {
-                    if (!slot.isConnected) { return; }
-                    slot.insertAdjacentHTML('beforebegin', html);
-                    slot.remove();
-                    setUpReveal();
-                })
-                // The section links stay in place if it fails
-                .catch(() => { loading = false; });
-        };
-
-        if (!('IntersectionObserver' in window)) { load(); return; }
-        const observer = new IntersectionObserver((entries) => {
-            if (entries.some((entry) => entry.isIntersecting)) { observer.disconnect(); load(); }
-        }, { rootMargin: '1500px 0px' });
-        observer.observe(slot);
-    }
-
     /* ---------- Page loader ---------- */
     function setUpLoader(firstPage) {
         const loader = $('.bm-loader');
@@ -452,7 +424,6 @@
         setUpLoader(firstPage);
         setUpHero();
         setUpReveal();
-        setUpHomeMore();
         const toTop = $('#bm-to-top');
         toTop && toTop.classList.toggle('is-visible', window.scrollY > 500);
     });

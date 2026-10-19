@@ -51,7 +51,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Homepage data (only the homepage needs it). Cached for a minute so busy moments
         // (election night) don't hit the database on every visit; any post change clears it.
-        View::composer(['welcome', 'snippets.site.home-more-sections'], function ($view) {
+        View::composer('welcome', function ($view) {
             $home = Cache::remember(Post::HOME_CACHE_PREFIX.'home', 60, function () {
                 // Cards show likes and comments, so count them in the same query
                 $forCards = fn () => Post::with(['category', 'admin'])
