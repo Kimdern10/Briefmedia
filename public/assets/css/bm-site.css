@@ -1693,6 +1693,7 @@ body.bm {
 .bm-poll__result { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 46px; padding: 0 14px; border-radius: var(--bm-radius-sm); background: var(--bm-surface-2); overflow: hidden; }
 .bm-poll__bar { position: absolute; inset: 0 auto 0 0; background: var(--bm-accent-soft); border-right: 3px solid var(--bm-accent); transition: width .6s ease; }
 .bm-poll__label, .bm-poll__percent { position: relative; color: var(--bm-ink); font-weight: 600; }
+.bm-poll__leader { position: relative; padding: 2px 8px; border-radius: 999px; background: var(--bm-accent); color: var(--bm-accent-ink); font-size: 11px; font-weight: 800; line-height: 1.5; white-space: nowrap; }
 .bm-poll__percent { font-variant-numeric: tabular-nums; }
 .bm-poll__total { margin: 12px 0 0 !important; color: var(--bm-muted); font-size: 13px; }
 .bm-poll__actions .bm-poll__total { margin: 0 !important; }
