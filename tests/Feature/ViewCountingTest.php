@@ -98,6 +98,27 @@ class ViewCountingTest extends TestCase
         $this->assertSame(1, (int) $other->fresh()->views);
     }
 
+    public function test_admin_and_staff_visits_are_not_counted_but_readers_are(): void
+    {
+        $post = $this->makePost('Zz Staff Visit Story');
+
+        foreach (['1', '2', '3'] as $role) {
+            $staff = User::factory()->create(['password' => 'password']);
+            $staff->forceFill(['role_as' => $role])->save();
+
+            $this->actingAs($staff)->get(route('posts.show', $post))->assertOk();
+        }
+
+        $this->assertSame(0, (int) $post->fresh()->views);
+        $this->assertDatabaseMissing('post_daily_views', ['post_id' => $post->id]);
+
+        $reader = User::factory()->create(['password' => 'password']);
+        $reader->forceFill(['role_as' => '0'])->save();
+        $this->actingAs($reader)->get(route('posts.show', $post))->assertOk();
+
+        $this->assertSame(1, (int) $post->fresh()->views);
+    }
+
     public function test_a_damaged_cookie_is_ignored(): void
     {
         $post = $this->makePost('Zz Damaged Cookie Story');

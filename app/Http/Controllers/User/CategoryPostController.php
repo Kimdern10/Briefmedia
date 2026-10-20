@@ -21,10 +21,16 @@ class CategoryPostController extends Controller
 
     /**
      * Counts a view once per reader: logged-in readers by account, guests by a 30-day cookie.
+     * Admin and staff accounts (roles 1–3) are never counted.
      */
     public static function recordView(Post $post): void
     {
         $user = Auth::user();
+
+        // Admins and staff checking stories aren't readers: their visits aren't counted
+        if ($user && in_array((string) $user->role_as, ['1', '2', '3'], true)) {
+            return;
+        }
 
         if ($user) {
             if (! $post->viewedByUsers()->where('user_id', $user->id)->exists()) {
