@@ -55,6 +55,7 @@ Route::get('/OneSignalSDKWorker.js', fn () => response(
     ['Content-Type' => 'application/javascript; charset=utf-8', 'Cache-Control' => 'public, max-age=86400']
 ))->name('push.worker');
 
+Route::view('/about', 'pages.about')->name('about');
 Route::view('/terms', 'pages.terms')->name('terms');
 Route::view('/privacy', 'pages.privacy')->name('privacy');
 // register view

@@ -58,6 +58,19 @@ class NewsFirstTest extends TestCase
         }
     }
 
+    public function test_the_about_page_and_adsense_ownership_tag_are_there_for_reviewers(): void
+    {
+        $this->get(route('about'))->assertOk()
+            ->assertSee('<h1>About BriefMedia</h1>', false)
+            ->assertSee('<title>About BriefMedia</title>', false);
+
+        $this->get(url('/'))->assertOk()
+            ->assertSee('<meta name="google-adsense-account" content="ca-pub-6884205395656406">', false)
+            ->assertSee('href="'.route('about').'"', false);
+
+        $this->get(route('sitemap'))->assertOk()->assertSee('<loc>'.route('about').'</loc>', false);
+    }
+
     public function test_the_old_home_address_shows_the_news_to_guests_and_readers(): void
     {
         $this->get('/home')->assertRedirect(route('home'));

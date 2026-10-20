@@ -35,6 +35,11 @@
     </url>
 @endforeach
     <url>
+        <loc>{{ route('about') }}</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.4</priority>
+    </url>
+    <url>
         <loc>{{ route('contact') }}</loc>
         <changefreq>yearly</changefreq>
         <priority>0.3</priority>

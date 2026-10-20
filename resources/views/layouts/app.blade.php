@@ -123,6 +123,8 @@
     @if(!empty($globalSeo?->google_verification))
         <meta name="google-site-verification" content="{{ $globalSeo->google_verification }}">
     @endif
+    {{-- AdSense site ownership: the ads script itself loads late (see the head), so the reviewer finds the account here --}}
+    <meta name="google-adsense-account" content="ca-pub-6884205395656406">
 
     <!-- ================= GOOGLE ANALYTICS ================= -->
     @if(!empty($globalSeo?->google_analytics_id))

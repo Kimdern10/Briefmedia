@@ -51,6 +51,7 @@
             <div>
                 <h2 class="bm-footer__title">Company</h2>
                 <ul class="bm-footer__links">
+                    <li><a href="{{ route('about') }}">About us</a></li>
                     <li><a href="{{ route('contact') }}">Contact us</a></li>
                     <li><a href="{{ route('terms') }}">Terms &amp; Conditions</a></li>
                     <li><a href="{{ route('privacy') }}">Privacy Policy</a></li>
@@ -65,6 +66,7 @@
         <div class="bm-footer__bottom">
             <span>© {{ date('Y') }} BriefMedia. All rights reserved.</span>
             <nav>
+                <a href="{{ route('about') }}">About</a>
                 <a href="{{ route('terms') }}">Terms</a>
                 <a href="{{ route('privacy') }}">Privacy</a>
                 <a href="{{ route('contact') }}">Contact</a>
