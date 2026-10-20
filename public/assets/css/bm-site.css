@@ -1682,6 +1682,7 @@ body.bm {
 .bm-poll { margin-top: 32px; padding: 22px; border: 1px solid var(--bm-line); border-radius: var(--bm-radius); background: var(--bm-surface); }
 .bm-poll__eyebrow { display: inline-flex; align-items: center; gap: 6px; color: var(--bm-accent); font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .bm-poll__question { margin: 8px 0 16px; font-family: var(--bm-serif); font-size: 22px; line-height: 1.3; color: var(--bm-ink); }
+.bm-poll__standings-title { margin: 0 0 8px !important; color: var(--bm-muted); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .bm-poll__form { display: grid; gap: 8px; }
 .bm-poll__option { display: flex; align-items: center; gap: 12px; min-height: 46px; padding: 0 14px; border: 1px solid var(--bm-line); border-radius: var(--bm-radius-sm); background: var(--bm-bg); cursor: pointer; font-weight: 600; color: var(--bm-ink); transition: border-color .2s ease, background .2s ease; }
 .bm-poll__option:hover { border-color: var(--bm-accent); }

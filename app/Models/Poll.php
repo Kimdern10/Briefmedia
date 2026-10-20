@@ -45,7 +45,7 @@ class Poll extends Model
             return false;
         }
 
-        return DB::transaction(function () use ($optionId, $voterKey, $userId) {
+        $recorded = DB::transaction(function () use ($optionId, $voterKey, $userId) {
             $inserted = DB::table('poll_votes')->insertOrIgnore([
                 'poll_id' => $this->id,
                 'poll_option_id' => $optionId,
@@ -63,6 +63,13 @@ class Poll extends Model
 
             return true;
         });
+
+        if ($recorded) {
+            // Guest article pages are cached, so retire their copies when standings change.
+            Post::forgetHomeCache();
+        }
+
+        return $recorded;
     }
 
     /**
