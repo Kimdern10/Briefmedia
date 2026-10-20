@@ -12,7 +12,7 @@ use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 /**
- * A guest's view of a story counts once every 30 days, remembered in one small cookie.
+ * A guest's view of a story counts only once, remembered in one small cookie.
  */
 class ViewCountingTest extends TestCase
 {
@@ -64,19 +64,23 @@ class ViewCountingTest extends TestCase
         $this->assertSame(1, (int) $second->fresh()->views);
     }
 
-    public function test_the_same_guest_counts_again_after_30_days(): void
+    public function test_a_returning_guest_is_never_counted_again_and_the_cookie_is_renewed(): void
     {
-        $post = $this->makePost('Zz Month Later Story');
+        $post = $this->makePost('Zz Years Later Story');
 
         $seen = $this->seenCookieFrom($this->get(route('posts.show', $post)));
 
-        $this->travel(29)->days();
-        $this->withUnencryptedCookie(SeenStories::COOKIE, $seen)->get(route('posts.show', $post));
-        $this->assertSame(1, (int) $post->fresh()->views);
+        foreach ([1, 300, 3650] as $daysLater) {
+            $this->travel($daysLater)->days();
+            $again = $this->withUnencryptedCookie(SeenStories::COOKIE, $seen)->get(route('posts.show', $post))->assertOk();
 
-        $this->travel(2)->days();
-        $this->withUnencryptedCookie(SeenStories::COOKIE, $seen)->get(route('posts.show', $post));
-        $this->assertSame(2, (int) $post->fresh()->views);
+            // The browser is told to keep the cookie for another 400 days from this visit
+            $cookie = $again->getCookie(SeenStories::COOKIE, false);
+            $this->assertSame($seen, $cookie->getValue());
+            $this->assertEqualsWithDelta(now()->addDays(SeenStories::KEEP_DAYS)->getTimestamp(), $cookie->getExpiresTime(), 120);
+        }
+
+        $this->assertSame(1, (int) $post->fresh()->views);
     }
 
     public function test_readers_with_the_old_cookies_are_not_counted_twice_and_the_old_cookies_are_removed(): void

@@ -20,7 +20,7 @@ class CategoryPostController extends Controller
     }
 
     /**
-     * Counts a view once per reader: logged-in readers by account, guests by a 30-day cookie.
+     * Counts a view once per reader, for good: logged-in readers by account, guests by a cookie.
      * Admin and staff accounts (roles 1–3) are never counted.
      */
     public static function recordView(Post $post): void
@@ -41,7 +41,7 @@ class CategoryPostController extends Controller
             return;
         }
 
-        // One small cookie remembers the stories this guest was counted for in the last 30 days
+        // One small cookie remembers the stories this guest was already counted for
         if (SeenStories::firstViewOf(request(), $post->id)) {
             $post->countView();
         }

@@ -7,7 +7,12 @@ use Illuminate\Support\Facades\Cookie;
 
 /**
  * Remembers which stories a guest has already been counted for, in ONE small cookie ("bm_seen"),
- * so each story counts a guest's view once every 30 days.
+ * so each story counts a guest's view only once, however long they stay away.
+ *
+ * Browsers keep a cookie for at most about 400 days (Chrome's limit), so it is renewed on every
+ * story a guest opens: anyone who reads at least once a year keeps it for good. A guest is only
+ * counted again after clearing cookies, on another browser or device, in private mode, after more
+ * than ~400 days away, or for one of their oldest stories once they have read more than LIMIT.
  *
  * It replaces the old cookie per story ("viewed_post_123", about 300 bytes each, encrypted): those
  * piled up for keen readers and were sent with every request, photos included, which slows phones
@@ -22,14 +27,14 @@ class SeenStories
     public const COOKIE = 'bm_seen';
 
     /**
-     * A story counts again for the same reader after this many days.
+     * How long the browser keeps the cookie after the guest's last story (the longest browsers allow).
      */
-    public const DAYS = 30;
+    public const KEEP_DAYS = 400;
 
     /**
-     * Most stories remembered (the oldest are dropped first): about 2 KB at most.
+     * Most stories remembered (the oldest are dropped first): under 4 KB, the size limit for one cookie.
      */
-    public const LIMIT = 300;
+    public const LIMIT = 450;
 
     private const LEGACY_PREFIX = 'viewed_post_';
 
@@ -42,20 +47,18 @@ class SeenStories
     }
 
     /**
-     * True when this is the guest's first view of the story in the last 30 days; the cookie is
-     * updated either way (old per-story cookies are folded in and removed).
+     * True when this is the guest's first view of the story; the cookie is renewed either way
+     * (old per-story cookies are folded in and removed).
      */
     public static function firstViewOf(Request $request, int $postId): bool
     {
         $today = self::today();
-        $seen = self::read($request, $today);
-        $migrated = false;
+        $seen = self::read($request);
 
         foreach (array_keys($request->cookies->all()) as $name) {
             if (str_starts_with($name, self::LEGACY_PREFIX) && ctype_digit($legacyId = substr($name, strlen(self::LEGACY_PREFIX)))) {
                 $seen[(int) $legacyId] ??= $today;
                 Cookie::queue(Cookie::forget($name));
-                $migrated = true;
             }
         }
 
@@ -65,17 +68,16 @@ class SeenStories
             $seen[$postId] = $today;
         }
 
-        if ($isFirstView || $migrated) {
-            self::write($seen);
-        }
+        // Written on every story, so the browser's ~400-day clock restarts each time
+        self::write($seen);
 
         return $isFirstView;
     }
 
     /**
-     * @return array<int, int> story id => day counted, only the last 30 days
+     * @return array<int, int> story id => day counted
      */
-    private static function read(Request $request, int $today): array
+    private static function read(Request $request): array
     {
         $seen = [];
 
@@ -84,11 +86,7 @@ class SeenStories
                 continue;
             }
 
-            $day = (int) base_convert($parts[2], 36, 10);
-
-            if ($today - $day < self::DAYS) {
-                $seen[(int) base_convert($parts[1], 36, 10)] = $day;
-            }
+            $seen[(int) base_convert($parts[1], 36, 10)] = (int) base_convert($parts[2], 36, 10);
         }
 
         return $seen;
@@ -106,6 +104,6 @@ class SeenStories
             ->map(fn (int $day, int $postId): string => base_convert((string) $postId, 10, 36).'.'.base_convert((string) $day, 10, 36))
             ->implode('-');
 
-        Cookie::queue(self::COOKIE, $value, 60 * 24 * self::DAYS);
+        Cookie::queue(self::COOKIE, $value, 60 * 24 * self::KEEP_DAYS);
     }
 }
