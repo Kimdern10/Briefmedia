@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Poll;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -45,7 +46,7 @@ class PostPoll extends Component
     }
 
     /**
-     * Who is voting: the account when logged in, otherwise this browser (session + device).
+     * Who is voting: the account when logged in, otherwise this browser session.
      */
     private function voterKey(): string
     {
@@ -53,10 +54,12 @@ class PostPoll extends Component
             return 'user:'.auth()->id();
         }
 
-        $device = session()->get('poll_device');
+        // Use a random session ID: IP + user agent would make everyone on shared Wi-Fi
+        // look like the same guest and prevent them from voting.
+        $device = session()->get('poll_device_v2');
         if (! $device) {
-            $device = hash('sha256', request()->ip().'|'.request()->userAgent());
-            session()->put('poll_device', $device);
+            $device = Str::random(64);
+            session()->put('poll_device_v2', $device);
         }
 
         return 'guest:'.substr($device, 0, 64);

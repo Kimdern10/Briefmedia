@@ -1688,7 +1688,7 @@ body.bm {
 .bm-poll__option:hover { border-color: var(--bm-accent); }
 .bm-poll__option:has(input:checked) { border-color: var(--bm-accent); background: var(--bm-accent-soft); }
 .bm-poll__option input { width: 18px; height: 18px; accent-color: var(--bm-accent); flex-shrink: 0; }
-.bm-poll__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 6px; }
+.bm-poll__actions { display: flex; flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; }
 .bm-poll__error { margin: 0 !important; color: var(--bm-danger); font-size: 13.5px; }
 .bm-poll__results { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .bm-poll__result { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 46px; padding: 0 14px; border-radius: var(--bm-radius-sm); background: var(--bm-surface-2); overflow: hidden; }
@@ -1697,7 +1697,11 @@ body.bm {
 .bm-poll__leader { position: relative; padding: 2px 8px; border-radius: 999px; background: var(--bm-accent); color: var(--bm-accent-ink); font-size: 11px; font-weight: 800; line-height: 1.5; white-space: nowrap; }
 .bm-poll__percent { font-variant-numeric: tabular-nums; }
 .bm-poll__total { margin: 12px 0 0 !important; color: var(--bm-muted); font-size: 13px; }
-.bm-poll__actions .bm-poll__total { margin: 0 !important; }
+.bm-poll__actions .bm-poll__total { margin: 0 !important; white-space: nowrap; }
+@media (max-width: 900px) {
+    /* Keep the poll controls clear of the fixed mobile engagement rail. */
+    .bm-poll { margin-bottom: 96px; }
+}
 
 /* ---------- Ads ---------- */
 .bm-ad { display: block; margin: 24px auto; text-align: center; overflow: hidden; max-width: 100%; }
