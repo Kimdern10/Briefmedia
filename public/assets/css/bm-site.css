@@ -1699,8 +1699,8 @@ body.bm {
 .bm-poll__total { margin: 12px 0 0 !important; color: var(--bm-muted); font-size: 13px; }
 .bm-poll__actions .bm-poll__total { margin: 0 !important; white-space: nowrap; }
 @media (max-width: 900px) {
-    /* Keep the poll controls clear of the fixed mobile engagement rail. */
-    .bm-poll { margin-bottom: 96px; }
+    /* Let article content scroll clear of the fixed mobile engagement rail. */
+    .bm-article-layout article:has(.bm-poll) { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
 }
 
 /* ---------- Ads ---------- */
