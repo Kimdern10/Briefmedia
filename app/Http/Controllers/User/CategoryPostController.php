@@ -7,9 +7,9 @@ use App\Http\Middleware\CacheGuestPages;
 use App\Models\Category;
 use App\Models\Comment;
 use App\Models\Post;
+use App\Services\SeenStories;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cookie;
 
 class CategoryPostController extends Controller
 {
@@ -35,12 +35,9 @@ class CategoryPostController extends Controller
             return;
         }
 
-        $cookieName = 'viewed_post_'.$post->id;
-
-        if (! request()->hasCookie($cookieName)) {
+        // One small cookie remembers the stories this guest was counted for in the last 30 days
+        if (SeenStories::firstViewOf(request(), $post->id)) {
             $post->countView();
-            // Queue the cookie for 30 days
-            Cookie::queue($cookieName, true, 60 * 24 * 30);
         }
     }
 

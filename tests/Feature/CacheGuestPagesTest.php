@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Comment;
 use App\Models\Post;
 use App\Models\User;
+use App\Services\SeenStories;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
@@ -85,14 +86,16 @@ class CacheGuestPagesTest extends TestCase
 
         // A new reader (no "viewed" cookie) gets the saved page and is still counted
         $this->flushSession();
-        $this->get(route('posts.show', $post))
+        $seen = $this->get(route('posts.show', $post))
             ->assertOk()
             ->assertHeader('X-BM-Page-Cache', 'hit')
-            ->assertCookie('viewed_post_'.$post->id);
+            ->getCookie(SeenStories::COOKIE, false);
         $this->assertSame(2, (int) $post->fresh()->views);
 
         // The same reader again is not counted twice
-        $this->withCookie('viewed_post_'.$post->id, '1')->get(route('posts.show', $post))->assertHeader('X-BM-Page-Cache', 'hit');
+        $this->withUnencryptedCookie(SeenStories::COOKIE, $seen->getValue())
+            ->get(route('posts.show', $post))
+            ->assertHeader('X-BM-Page-Cache', 'hit');
         $this->assertSame(2, (int) $post->fresh()->views);
     }
 
