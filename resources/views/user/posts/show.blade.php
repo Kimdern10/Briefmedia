@@ -21,8 +21,25 @@
     $poll = $post->poll;
     $hasLiveCoverage = $post->isLive() || $post->liveUpdates()->exists();
 
-    // Article body, with the "in the middle" ad after the 3rd paragraph when one is switched on
+    // Article body. Photos 2–4 sit inside the text so readers meet them while reading: photo 2 early
+    // (after paragraph 2, or 1 in a short story), photos 3 and 4 side by side about two-thirds down.
+    // Anything a short story has no room for goes after the text.
     $articleBody = $post->formattedContent();
+    $paragraphCount = substr_count(strtolower($articleBody), '</p>');
+    $photoInText = fn (string $path) => '<img src="'.e(\App\Models\Post::photoUrl($path)).'" alt="'.e($post->title).'" loading="lazy" decoding="async"'
+        .' onerror="this.onerror=null;this.src=\''.e($placeholderImage).'\'">';
+    $photoBlocks = [];
+    if ($post->featured_image_2) {
+        $photoBlocks[$paragraphCount >= 4 ? 2 : 1] = '<figure class="bm-figure">'.$photoInText($post->featured_image_2).'</figure>';
+    }
+    if ($extraImages->isNotEmpty()) {
+        $galleryAfter = max((int) round($paragraphCount * 2 / 3), ($paragraphCount >= 4 ? 2 : 1) + 2);
+        $photoBlocks[$galleryAfter] = '<div class="bm-gallery'.($extraImages->count() === 1 ? ' bm-gallery--single' : '').'">'
+            .$extraImages->map($photoInText)->implode('').'</div>';
+    }
+    $articleBody = \App\Models\AdSlot::insertAfterParagraphs($articleBody, $photoBlocks);
+
+    // The "in the middle" ad after the 3rd paragraph when one is switched on
     if ($middleAd = trim(view('snippets.site.ad-slot', ['placement' => 'article_middle'])->render())) {
         $articleBody = \App\Models\AdSlot::insertAfterParagraph($articleBody, $middleAd);
     }
@@ -176,13 +193,6 @@
                     </div>
                 @endif
 
-                @if($post->featured_image_2)
-                    <figure class="bm-figure" style="margin-top: 0;">
-                        <img src="{{ \App\Models\Post::photoUrl($post->featured_image_2) }}" alt="{{ $post->title }}" loading="lazy"
-                             onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
-                    </figure>
-                @endif
-
                 @if($post->election)
                     <livewire:election-results :election="$post->election" />
                 @endif
@@ -212,15 +222,6 @@
                             <a href="{{ route('tag.show', $postTag) }}" class="bm-tag">#{{ $postTag->name }}</a>
                         @endforeach
                     </nav>
-                @endif
-
-                @if($extraImages->isNotEmpty())
-                    <div class="bm-gallery {{ $extraImages->count() === 1 ? 'bm-gallery--single' : '' }}">
-                        @foreach($extraImages as $extraImage)
-                            <img src="{{ \App\Models\Post::photoUrl($extraImage) }}" alt="{{ $post->title }}" loading="lazy"
-                                 onerror="this.onerror=null;this.src='{{ $placeholderImage }}'">
-                        @endforeach
-                    </div>
                 @endif
 
                 <!-- Share bar -->

@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Http\Controllers\User\CategoryPostController;
+use App\Livewire\PostPoll;
 use App\Models\Post;
 use Closure;
 use Illuminate\Http\Request;
@@ -86,6 +87,12 @@ class CacheGuestPages
 
         // A message from the last action (or form errors) is only meant for this visitor
         if (! empty($request->session()->get('_flash.old')) || $request->session()->has('errors')) {
+            return null;
+        }
+
+        // A guest who has voted in a poll sees their own "Thanks for voting" on stories, so they get
+        // fresh story pages (saved ones are only ever made for guests who haven't voted)
+        if ($request->route()?->named('posts.show') && PostPoll::guestHasVoterId($request)) {
             return null;
         }
 

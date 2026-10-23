@@ -19,6 +19,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\Client\Request as HttpRequest;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -247,6 +248,122 @@ class NewsroomFeaturesTest extends TestCase
 
         $this->assertSame(1, $poll->fresh()->totalVotes());
         $this->assertSame(1, $yes->fresh()->votes);
+    }
+
+    public function test_admin_and_staff_see_poll_results_but_cannot_vote(): void
+    {
+        $post = $this->makePost();
+        $poll = Poll::create(['post_id' => $post->id, 'question' => 'Zz Staff poll?']);
+        $yes = $poll->options()->create(['label' => 'Zz Yes', 'position' => 1]);
+        $poll->options()->create(['label' => 'Zz No', 'position' => 2]);
+
+        Livewire::actingAs($this->admin)
+            ->test(PostPoll::class, ['poll' => $poll])
+            ->assertSet('canVote', false)
+            ->assertSee("Admin and staff accounts can't vote", false)
+            ->assertDontSee('<input type="radio"', false)
+            ->set('choice', $yes->id)
+            ->call('vote');
+
+        $this->assertSame(0, $poll->fresh()->totalVotes());
+    }
+
+    public function test_a_guest_keeps_one_vote_after_the_login_session_ends(): void
+    {
+        $post = $this->makePost();
+        $poll = Poll::create(['post_id' => $post->id, 'question' => 'Zz Lasting vote?']);
+        $yes = $poll->options()->create(['label' => 'Zz Yes', 'position' => 1]);
+        $no = $poll->options()->create(['label' => 'Zz No', 'position' => 2]);
+
+        Livewire::test(PostPoll::class, ['poll' => $poll])
+            ->set('choice', $yes->id)
+            ->call('vote')
+            ->assertSet('voted', true);
+
+        $voterId = collect(Cookie::getQueuedCookies())
+            ->first(fn ($cookie) => $cookie->getName() === PostPoll::GUEST_VOTER_COOKIE);
+        $this->assertNotNull($voterId, 'the guest gets a lasting voter cookie');
+        $this->assertGreaterThan(now()->addDays(399)->getTimestamp(), $voterId->getExpiresTime());
+
+        // Hours later the session is gone, but the cookie still says they voted
+        $this->flushSession();
+        Livewire::withCookies([PostPoll::GUEST_VOTER_COOKIE => $voterId->getValue()])
+            ->test(PostPoll::class, ['poll' => $poll])
+            ->assertSet('voted', true)
+            ->set('choice', $no->id)
+            ->call('vote');
+
+        $this->assertSame(1, $poll->fresh()->totalVotes());
+    }
+
+    public function test_extra_story_photos_sit_inside_the_text(): void
+    {
+        $post = $this->makePost([
+            'content' => '<p>P1</p><p>P2</p><p>P3</p><p>P4</p><p>P5</p><p>P6</p>',
+            'featured_image_2' => 'posts/featured/zz-two.jpg',
+            'featured_image_3' => 'posts/featured/zz-three.jpg',
+            'featured_image_4' => 'posts/featured/zz-four.jpg',
+        ]);
+
+        // Only the story text (the page's hidden Google data lists every photo too)
+        $storyText = function (Post $story): string {
+            $html = $this->get(route('posts.show', $story))->assertOk()->getContent();
+
+            return substr($html, strpos($html, '<div class="bm-prose">'));
+        };
+
+        $text = $storyText($post);
+        $at = fn (string $needle) => strpos($text, $needle);
+
+        // Photo 2 after the second paragraph; photos 3 and 4 together after the fourth (two-thirds down)
+        $this->assertTrue($at('<p>P2</p>') < $at('zz-two.jpg') && $at('zz-two.jpg') < $at('<p>P3</p>'));
+        $this->assertTrue($at('<p>P4</p>') < $at('class="bm-gallery"') && $at('zz-four.jpg') < $at('<p>P5</p>'));
+        $this->assertTrue($at('zz-three.jpg') < $at('zz-four.jpg'));
+        $this->assertSame(1, substr_count($text, 'zz-two.jpg'));
+
+        // A two-paragraph story: photo 2 after the first paragraph, the pair after the text
+        $short = $this->makePost([
+            'content' => '<p>S1</p><p>S2</p>',
+            'featured_image_2' => 'posts/featured/zz-short-two.jpg',
+            'featured_image_3' => 'posts/featured/zz-short-three.jpg',
+        ]);
+        $text = $storyText($short);
+        $at = fn (string $needle) => strpos($text, $needle);
+
+        $this->assertTrue($at('<p>S1</p>') < $at('zz-short-two.jpg') && $at('zz-short-two.jpg') < $at('<p>S2</p>'));
+        $this->assertTrue($at('<p>S2</p>') < $at('zz-short-three.jpg'));
+        $this->assertStringContainsString('bm-gallery bm-gallery--single', $text);
+    }
+
+    public function test_saved_story_pages_never_show_one_guests_vote_to_another(): void
+    {
+        Cache::flush();
+        $post = $this->makePost(['title' => 'Zz Saved Poll Story']);
+        $poll = Poll::create(['post_id' => $post->id, 'question' => 'Zz Saved question?']);
+        $yes = $poll->options()->create(['label' => 'Zz Yes', 'position' => 1]);
+        $poll->options()->create(['label' => 'Zz No', 'position' => 2]);
+
+        // Just reading doesn't give a guest a voter ID, so the saved page is the same for everyone
+        $this->get(route('posts.show', $post))->assertOk()->assertHeader('X-BM-Page-Cache', 'miss');
+        $this->assertFalse(session()->has(PostPoll::GUEST_VOTER_SESSION_KEY));
+
+        $poll->vote($yes->id, 'guest:'.str_repeat('a', 64));
+
+        // A guest who voted gets a fresh page with their own "Thanks for voting"
+        $this->withSession([PostPoll::GUEST_VOTER_SESSION_KEY => str_repeat('a', 64)])
+            ->get(route('posts.show', $post))
+            ->assertOk()
+            ->assertHeaderMissing('X-BM-Page-Cache')
+            ->assertSee('Thanks for voting');
+
+        // Everyone else gets the voting form, both on the page rebuilt after the vote and on its saved copy
+        foreach (['miss', 'hit'] as $cacheState) {
+            $this->flushSession();
+            $this->get(route('posts.show', $post))
+                ->assertHeader('X-BM-Page-Cache', $cacheState)
+                ->assertDontSee('Thanks for voting')
+                ->assertSee('<label class="bm-poll__label">', false);
+        }
     }
 
     public function test_poll_needs_two_answers_and_rejects_foreign_options(): void

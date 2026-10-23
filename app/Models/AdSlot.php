@@ -74,6 +74,31 @@ class AdSlot extends Model
         return substr($html, 0, $offset).$insert.substr($html, $offset);
     }
 
+    /**
+     * Put several blocks inside a story, each after the given paragraph (blocks for a paragraph the
+     * story doesn't have, or for its very end, go after the text instead).
+     *
+     * @param  array<int, string>  $blocks  paragraph number => HTML
+     */
+    public static function insertAfterParagraphs(string $html, array $blocks): string
+    {
+        $atTheEnd = '';
+        krsort($blocks);
+
+        // From the last paragraph back, so earlier positions don't move
+        foreach ($blocks as $afterParagraph => $block) {
+            $withBlock = self::insertAfterParagraph($html, $block, $afterParagraph);
+
+            if ($withBlock === $html) {
+                $atTheEnd = $block.$atTheEnd;
+            }
+
+            $html = $withBlock;
+        }
+
+        return $html.$atTheEnd;
+    }
+
     public static function forgetCache(): void
     {
         Cache::forget(self::CACHE_KEY);
