@@ -296,6 +296,31 @@ class NewsroomFeaturesTest extends TestCase
         $this->assertSame(1, $poll->fresh()->totalVotes());
     }
 
+    public function test_a_guest_who_voted_cannot_vote_again_after_logging_in_and_is_remembered(): void
+    {
+        $post = $this->makePost();
+        $poll = Poll::create(['post_id' => $post->id, 'question' => 'Zz Login twice?']);
+        $yes = $poll->options()->create(['label' => 'Zz Yes', 'position' => 1]);
+        $no = $poll->options()->create(['label' => 'Zz No', 'position' => 2]);
+        $device = str_repeat('b', 64);
+        $poll->vote($yes->id, 'guest:'.$device);
+
+        // The same browser, now logged in: already voted, and the cookie is renewed for 400 days
+        Livewire::withCookies([PostPoll::GUEST_VOTER_COOKIE => $device])
+            ->actingAs($this->reader)
+            ->test(PostPoll::class, ['poll' => $poll])
+            ->assertSet('voted', true)
+            ->set('choice', $no->id)
+            ->call('vote');
+
+        $this->assertSame(1, $poll->fresh()->totalVotes());
+
+        $renewed = collect(Cookie::getQueuedCookies())
+            ->first(fn ($cookie) => $cookie->getName() === PostPoll::GUEST_VOTER_COOKIE);
+        $this->assertSame($device, $renewed->getValue());
+        $this->assertGreaterThan(now()->addDays(399)->getTimestamp(), $renewed->getExpiresTime());
+    }
+
     public function test_extra_story_photos_sit_inside_the_text(): void
     {
         $post = $this->makePost([

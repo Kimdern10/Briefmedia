@@ -13,7 +13,8 @@ use Livewire\Component;
 
 /**
  * Reader poll inside an article. One vote per account, or per device for visitors who aren't
- * logged in (remembered for 400 days, not just the 2-hour login session). Admin and staff accounts
+ * logged in (remembered for good: the cookie is renewed for 400 days on each visit), and a guest who
+ * voted can't vote again after logging in. Admin and staff accounts
  * see the results but can't vote. Results show as soon as you vote.
  */
 class PostPoll extends Component
@@ -53,10 +54,9 @@ class PostPoll extends Component
         $this->pollId = $poll->id;
         $this->canVote = ! $this->isStaff();
 
-        // Only look the guest up here; they get a voter ID when they actually vote (keeps saved pages
+        // Only look the reader up here; guests get a voter ID when they actually vote (keeps saved pages
         // for guests who never voted identical for everyone, see CacheGuestPages)
-        $voterKey = $this->voterKey(create: false);
-        $this->voted = $voterKey !== null && $poll->hasVoted($voterKey);
+        $this->voted = $this->hasAlreadyVoted($poll);
     }
 
     public function vote(): void
@@ -76,8 +76,25 @@ class PostPoll extends Component
         RateLimiter::hit($rateKey, 3600);
 
         $poll = Poll::findOrFail($this->pollId);
-        $poll->vote($this->choice, $this->voterKey(), auth()->id());
+
+        // One vote per person: not again from this account, nor from this browser before logging in
+        if (! $this->hasAlreadyVoted($poll)) {
+            $voterKey = auth()->check() ? 'user:'.auth()->id() : 'guest:'.$this->guestDevice(create: true);
+            $poll->vote($this->choice, $voterKey, auth()->id());
+        }
+
         $this->voted = true;
+    }
+
+    /**
+     * True when this reader voted in the poll with their account or, as a guest, from this browser.
+     */
+    private function hasAlreadyVoted(Poll $poll): bool
+    {
+        $device = $this->guestDevice(create: false);
+
+        return (auth()->check() && $poll->hasVoted('user:'.auth()->id()))
+            || ($device !== null && $poll->hasVoted('guest:'.$device));
     }
 
     /**
@@ -89,15 +106,12 @@ class PostPoll extends Component
     }
 
     /**
-     * Who is voting: the account when logged in, otherwise this browser (null for a guest who has
-     * never voted, unless $create gives them an ID).
+     * This browser's guest voter ID (null when it has never voted, unless $create gives it one).
+     * Every time it's seen, the cookie is renewed for another 400 days, so a returning voter is
+     * remembered for good.
      */
-    private function voterKey(bool $create = true): ?string
+    private function guestDevice(bool $create): ?string
     {
-        if (auth()->check()) {
-            return 'user:'.auth()->id();
-        }
-
         // A random ID per browser: IP + user agent would make everyone on shared Wi-Fi or the same
         // mobile network look like one guest and stop them from voting.
         $device = request()->cookie(self::GUEST_VOTER_COOKIE) ?: session()->get(self::GUEST_VOTER_SESSION_KEY);
@@ -111,13 +125,9 @@ class PostPoll extends Component
         }
 
         $device = substr($device, 0, 64);
+        Cookie::queue(self::GUEST_VOTER_COOKIE, $device, 60 * 24 * self::GUEST_VOTER_DAYS);
 
-        // Renew (or move an older session ID into) the long-lasting cookie
-        if ($create || ! request()->cookie(self::GUEST_VOTER_COOKIE)) {
-            Cookie::queue(self::GUEST_VOTER_COOKIE, $device, 60 * 24 * self::GUEST_VOTER_DAYS);
-        }
-
-        return 'guest:'.$device;
+        return $device;
     }
 
     public function render(): View
