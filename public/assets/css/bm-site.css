@@ -1685,6 +1685,7 @@ body.bm {
 .bm-poll { margin-top: 32px; padding: 22px; border: 1px solid var(--bm-line); border-radius: var(--bm-radius); background: var(--bm-surface); }
 .bm-poll__eyebrow { display: inline-flex; align-items: center; gap: 6px; color: var(--bm-accent); font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .bm-poll__question { margin: 8px 0 16px; font-family: var(--bm-serif); font-size: 22px; line-height: 1.3; color: var(--bm-ink); }
+.bm-poll__closed { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; padding: 2px 8px; border-radius: 999px; background: var(--bm-surface-2); color: var(--bm-muted); font-size: 10.5px; letter-spacing: .06em; }
 .bm-poll__form { display: grid; gap: 10px; }
 .bm-poll__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin-top: 4px; }
 .bm-poll__error { margin: 0 !important; color: var(--bm-danger); font-size: 13.5px; }

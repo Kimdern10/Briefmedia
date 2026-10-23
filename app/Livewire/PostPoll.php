@@ -77,6 +77,11 @@ class PostPoll extends Component
 
         $poll = Poll::findOrFail($this->pollId);
 
+        // Closed while the reader had the page open: just show the final results
+        if ($poll->isClosed()) {
+            return;
+        }
+
         // One vote per person: not again from this account, nor from this browser before logging in
         if (! $this->hasAlreadyVoted($poll)) {
             $voterKey = auth()->check() ? 'user:'.auth()->id() : 'guest:'.$this->guestDevice(create: true);
@@ -137,6 +142,7 @@ class PostPoll extends Component
         return view('livewire.post-poll', [
             'poll' => $poll,
             'total' => $poll->totalVotes(),
+            'closed' => $poll->isClosed(),
         ]);
     }
 }

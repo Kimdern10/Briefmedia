@@ -321,6 +321,74 @@ class NewsroomFeaturesTest extends TestCase
         $this->assertGreaterThan(now()->addDays(399)->getTimestamp(), $renewed->getExpiresTime());
     }
 
+    public function test_admin_can_close_and_reopen_a_poll_and_readers_see_final_results(): void
+    {
+        $this->actingAs($this->admin)
+            ->post(route('admin.posts.store'), $this->postForm([
+                'title' => 'Zz Closing Poll Story',
+                'poll_question' => 'Zz Who wins?',
+                'poll_options' => "Zz Ada\nZz Obi",
+            ]))
+            ->assertSessionHasNoErrors();
+        $post = Post::where('title', 'Zz Closing Poll Story')->firstOrFail();
+        $poll = $post->poll;
+        $ada = $poll->options->firstWhere('label', 'Zz Ada');
+        $poll->vote($ada->id, 'guest:'.str_repeat('c', 64));
+        $this->assertFalse($poll->fresh()->isClosed());
+
+        // Close voting from the post form
+        $this->actingAs($this->admin)
+            ->put(route('admin.posts.update', $post->id), $this->postForm([
+                'title' => $post->title,
+                'poll_question' => 'Zz Who wins?',
+                'poll_options' => "Zz Ada\nZz Obi",
+                'poll_closed' => '1',
+            ]))
+            ->assertSessionHasNoErrors();
+        $poll = $poll->fresh();
+        $this->assertTrue($poll->isClosed());
+        $this->assertSame(1, $poll->totalVotes(), 'closing keeps the votes');
+
+        auth()->logout();
+        $this->get(route('posts.show', $post))->assertOk()
+            ->assertSee('Poll closed')
+            ->assertSee('Final results')
+            ->assertSee('Winner')
+            ->assertDontSee('<input type="radio"', false);
+
+        // No more votes, even straight to the server
+        Livewire::test(PostPoll::class, ['poll' => $poll])
+            ->set('choice', $poll->options->firstWhere('label', 'Zz Obi')->id)
+            ->call('vote');
+        $this->assertFalse($poll->vote($ada->id, 'guest:'.str_repeat('d', 64)));
+        $this->assertSame(1, $poll->fresh()->totalVotes());
+
+        // Unticking reopens it
+        $this->actingAs($this->admin)
+            ->put(route('admin.posts.update', $post->id), $this->postForm([
+                'title' => $post->title,
+                'poll_question' => 'Zz Who wins?',
+                'poll_options' => "Zz Ada\nZz Obi",
+                'poll_closed' => '0',
+            ]))
+            ->assertSessionHasNoErrors();
+        $this->assertFalse($poll->fresh()->isClosed());
+    }
+
+    public function test_a_poll_closes_by_itself_at_its_closing_time(): void
+    {
+        $post = $this->makePost();
+        Poll::syncFor($post, 'Zz Timed poll?', ['Zz A', 'Zz B'], false, now()->addDay());
+        $poll = $post->fresh()->poll;
+        $this->assertFalse($poll->isClosed());
+
+        $this->get(route('posts.show', $post))->assertOk()->assertSee('closes '.$poll->closes_at->format('j M'), false);
+
+        $this->travel(25)->hours();
+        $this->assertTrue($poll->fresh()->isClosed());
+        $this->assertFalse($poll->fresh()->vote($poll->options->first()->id, 'guest:'.str_repeat('e', 64)));
+    }
+
     public function test_extra_story_photos_sit_inside_the_text(): void
     {
         $post = $this->makePost([

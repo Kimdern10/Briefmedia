@@ -505,6 +505,8 @@ class PostController extends Controller
             'is_live' => 'nullable|boolean',
             'correction_note' => 'nullable|string|max:1000',
             'poll_question' => 'nullable|string|max:200',
+            'poll_closed' => 'nullable|boolean',
+            'poll_closes_at' => 'nullable|date',
             'poll_options' => ['nullable', 'string', 'max:1000', function ($attribute, $value, $fail) {
                 $count = count($this->pollOptionsFrom($value));
                 if (trim((string) request('poll_question')) !== '' && $count < 2) {
@@ -536,7 +538,13 @@ class PostController extends Controller
         } else {
             $post->syncTags($request->input('tags'));
         }
-        Poll::syncFor($post, $request->input('poll_question'), $this->pollOptionsFrom($request->input('poll_options')));
+        Poll::syncFor(
+            $post,
+            $request->input('poll_question'),
+            $this->pollOptionsFrom($request->input('poll_options')),
+            $request->boolean('poll_closed'),
+            $request->filled('poll_closes_at') ? Carbon::parse($request->input('poll_closes_at')) : null,
+        );
     }
 
     /**

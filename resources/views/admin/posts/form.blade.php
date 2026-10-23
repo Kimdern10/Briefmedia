@@ -522,6 +522,33 @@
                         </div>
                         @error('poll_options') <span class="ad-error">{{ $message }}</span> @enderror
                     </div>
+
+                    <div class="ad-field" style="margin: 16px 0 0;">
+                        <label class="ad-check" for="poll_closed">
+                            <input type="hidden" name="poll_closed" value="0">
+                            <input type="checkbox" name="poll_closed" id="poll_closed" value="1"
+                                   {{ old('poll_closed', optional($existingPoll)->is_closed) ? 'checked' : '' }}>
+                            <span>
+                                <strong>Close voting</strong>
+                                <small>Readers see the final results marked "Poll closed". Untick to reopen it.</small>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="ad-field" style="margin-bottom: 0;">
+                        <label class="ad-label" for="poll_closes_at">Close automatically on <small>optional</small></label>
+                        <input type="datetime-local" name="poll_closes_at" id="poll_closes_at"
+                               value="{{ old('poll_closes_at', optional(optional($existingPoll)->closes_at)->format('Y-m-d\TH:i')) }}"
+                               class="ad-input @error('poll_closes_at') is-invalid @enderror">
+                        <div class="ad-help">
+                            <span>
+                                Nigeria time ({{ config('app.timezone') }}). Leave empty to keep it open until you close it.
+                                @if($existingPoll && $existingPoll->isClosed())
+                                    <strong>This poll is closed now.</strong>
+                                @endif
+                            </span>
+                        </div>
+                        @error('poll_closes_at') <span class="ad-error">{{ $message }}</span> @enderror
+                    </div>
                 </div>
             </div>
 

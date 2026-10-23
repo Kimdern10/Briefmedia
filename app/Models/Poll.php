@@ -12,9 +12,22 @@ use Illuminate\Support\Facades\DB;
  */
 class Poll extends Model
 {
-    protected $fillable = ['post_id', 'question'];
+    protected $fillable = ['post_id', 'question', 'is_closed', 'closes_at'];
+
+    protected $casts = [
+        'is_closed' => 'boolean',
+        'closes_at' => 'datetime',
+    ];
 
     public const MAX_OPTIONS = 6;
+
+    /**
+     * Closed by the admin's switch, or its closing time has passed: no more votes, final results show.
+     */
+    public function isClosed(): bool
+    {
+        return $this->is_closed || ($this->closes_at !== null && $this->closes_at->isPast());
+    }
 
     public function post(): BelongsTo
     {
@@ -37,11 +50,11 @@ class Poll extends Model
     }
 
     /**
-     * Record one vote. Returns false when this voter already voted or the option isn't in this poll.
+     * Record one vote. Returns false when the poll is closed, this voter already voted, or the option isn't in this poll.
      */
     public function vote(int $optionId, string $voterKey, ?int $userId = null): bool
     {
-        if (! $this->options()->whereKey($optionId)->exists()) {
+        if ($this->isClosed() || ! $this->options()->whereKey($optionId)->exists()) {
             return false;
         }
 
@@ -74,11 +87,12 @@ class Poll extends Model
 
     /**
      * Create, update or remove the poll for $post from the post form.
-     * Options keep their votes when their wording stays the same.
+     * Options keep their votes when their wording stays the same. $closed is the Close voting switch,
+     * $closesAt an optional time the poll closes by itself.
      *
      * @param  array<int, string>  $labels
      */
-    public static function syncFor(Post $post, ?string $question, array $labels): void
+    public static function syncFor(Post $post, ?string $question, array $labels, bool $closed = false, ?\DateTimeInterface $closesAt = null): void
     {
         $question = trim((string) $question);
         $labels = collect($labels)->map(fn ($label) => trim((string) $label))->filter()->unique()->take(self::MAX_OPTIONS)->values();
@@ -94,7 +108,16 @@ class Poll extends Model
             return;
         }
 
-        $poll = static::updateOrCreate(['post_id' => $post->id], ['question' => $question]);
+        $poll = static::updateOrCreate(['post_id' => $post->id], [
+            'question' => $question,
+            'is_closed' => $closed,
+            'closes_at' => $closesAt,
+        ]);
+
+        // Saved story pages show the poll, so opening or closing it shows at once
+        if ($poll->wasChanged(['is_closed', 'closes_at'])) {
+            Post::forgetHomeCache();
+        }
         $current = $poll->options()->get()->keyBy('label');
 
         foreach ($labels as $position => $label) {
